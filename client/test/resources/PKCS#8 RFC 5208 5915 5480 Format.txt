@@ -1,0 +1,23 @@
+// RFC 5208 - PKCS#8
+  PrivateKeyInfo ::= SEQUENCE {
+	version                   Version, // always 0
+	privateKeyAlgorithm       PrivateKeyAlgorithmIdentifier, // Object ID
+		AlgorithmIdentifier  ::=  SEQUENCE  {
+			algorithm   OBJECT IDENTIFIER, id_ecPrivateKey
+			parameters  ANY DEFINED BY algorithm OPTIONAL 
+				Object ID NamedCurve 
+			}
+	privateKey                PrivateKey,
+		ECPrivateKey ::= SEQUENCE {
+			version        INTEGER { ecPrivkeyVer1(1) } (ecPrivkeyVer1),
+			privateKey     OCTET STRING,
+			parameters [0] ECParameters {{ NamedCurve }} OPTIONAL, // Object ID
+			publicKey  [1] BIT STRING OPTIONAL
+				SubjectPublicKeyInfo  ::=  SEQUENCE  {
+				    algorithm         AlgorithmIdentifier,
+				    subjectPublicKey  BIT STRING
+						ECPoint ::= OCTET STRING	
+				}
+			}
+    attributes           [0]  IMPLICIT Attributes OPTIONAL } // Not used by us.
+	

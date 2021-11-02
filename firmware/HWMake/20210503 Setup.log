@@ -1,0 +1,101 @@
+csadm KeyType=EC GenKey=IBM_eRP_RU_AltMdlSig.key#password,eRPFirmware
+generating EC key: IBM_eRP_RU_AltMdlSig.key, curve brainpoolP320t1, owner: eRPFirmware
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm KeyType=RSA GenKey=IBM_eRP_RU_RSAAltMdlSig.key#password,4096,eRPFirmware
+generating RSA key: IBM_eRP_RU_RSAAltMdlSig.key, 4096 bits, owner: eRPFirmware
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm Model=cs5 MMCSignKey=IBM_eRP_RU_RSAAltMdlSig.key#password MakeMTC=..\hwmake50\ERP.out
+..\hwmake50\ERP.out:
+        building MMC ...
+        OK
+        building MTC ...
+        OK
+		
+// Then set MMCSIGNKEY in pathdefs to point to this file.
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost GetState
+
+mode      = Operational Mode
+state     = INITIALIZED (0x00100004)
+temp      = 28.3 [C]
+alarm     = OFF
+bl_ver    = 5.01.0.5          (Model: Se-Series Gen2)
+hw_ver    = 5.01.4.0
+uid       = a200001b be34da01                    |     4          |
+adm1      = 53653135 30302020  43533731 31303831 |Se1500  CS711081|
+adm2      = 53656375 72697479  53657276 65722020 |SecurityServer  |
+adm3      = 494e5354 414c4c45  44202020 20202020 |INSTALLED       |
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost ListUsers
+Name       Permission   Mechanism      Attributes
+ADMIN       22000000    RSA sign       Z[0]
+BACKADM     22000000    HMAC passwd    Z[0]
+ERP_SET1    00000100    HMAC passwd
+ERP_SET2    00000100    HMAC passwd
+ERP_SETUP   00000200    HMAC passwd    Z[0]
+ERP_UPDT    00002000    HMAC passwd
+ERP_WORK    00000020    HMAC passwd    Z[0]
+
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost LogonPass=BACKADM,backpwd LoadAltMdlSigKey=IBM_eRP_RU_RSAAltMdlSig.key
+
+#d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost LogonPass=BACKADM,backpwd LoadFile=..\hwmake50\erp.mtc
+
+d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost LogonPass=BACKADM,backpwd restart
+
+// 20210603 Adding keyfile working HSM user.
+// Start with a running instance of the simulated HSM active on port 3001 on localhost
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost GetState
+
+mode      = Operational Mode
+state     = INITIALIZED (0x00100004)
+temp      = 30.0 [C]
+alarm     = OFF
+bl_ver    = 5.01.4.4          (Model: Se-Series Gen2)
+hw_ver    = 0.00.8.15
+uid       = 7a534d32 30337153                    |zSM203qS        |
+adm1      = 5554494d 41434f20  43533030 30303030 |UTIMACO CS000000|
+adm2      = 53696d75 6c61746f  72000000 00000000 |Simulator       |
+adm3      = 496e6974 2d446576  2d312d4b 65790000 |Init-Dev-1-Key  |
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm KeyType=EC GenKey=ERP_KWRK_keyfile.key#RUTU,eRPVAU
+generating EC key: ERP_KWRK_keyfile.key, curve brainpoolP320t1, owner: eRPVAU
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost ListUsers
+Name       Permission   Mechanism      Attributes
+ADMIN       22000000    RSA sign       Z[0]
+ERP_SET1    00000100    HMAC passwd
+ERP_SET2    00000100    HMAC passwd
+ERP_SETUP   00000200    HMAC passwd
+ERP_UPDT    00002000    HMAC passwd
+ERP_WORK    00000020    HMAC passwd
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost LogonSign=ADMIN,..\..\..\firmware\build-x86-debug\simulator\keys\admin_logon.key AddUser=ERP_KWRK,00000020,ecdsa,ERP_KWRK_keyfile.key
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost LogonSign=ERP_KWRK,ERP_KWRK_keyfile.key#RUTU GetState
+
+mode      = Operational Mode
+state     = INITIALIZED (0x00100004)
+temp      = 30.0 [C]
+alarm     = OFF
+bl_ver    = 5.01.4.4          (Model: Se-Series Gen2)
+hw_ver    = 0.00.8.15
+uid       = 7a534d32 30337153                    |zSM203qS        |
+adm1      = 5554494d 41434f20  43533030 30303030 |UTIMACO CS000000|
+adm2      = 53696d75 6c61746f  72000000 00000000 |Simulator       |
+adm3      = 496e6974 2d446576  2d312d4b 65790000 |Init-Dev-1-Key  |
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost ListUsers
+Name       Permission   Mechanism      Attributes
+ADMIN       22000000    RSA sign       Z[0]
+ERP_KWRK    00000020    ECDSA sign     Z[0]
+ERP_SET1    00000100    HMAC passwd
+ERP_SET2    00000100    HMAC passwd
+ERP_SETUP   00000200    HMAC passwd
+ERP_UPDT    00002000    HMAC passwd
+ERP_WORK    00000020    HMAC passwd
+
+d:\work\IBM\dev\vau-hsm\client\test\resources>csadm dev=3001@localhost LogonSign=ADMIN,..\..\..\firmware\build-x86-debug\simulator\keys\admin_logon.key backupDatabase=user.db
+
+// Now copy user.db to firmware/hsm/backups/databases

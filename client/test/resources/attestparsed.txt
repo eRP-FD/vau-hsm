@@ -1,0 +1,58 @@
+TPM Magic Number
+FF 54 43 47 // TPM_GENERATED_VALUE - Always 0xff"TCG"
+80 18 // TPMI_ST_ATTEST - TPMI_ST_ATTEST_QUOTE 0x8018
+Signing key qualified name TPM2B_NAME
+00 22 // size 2 bytes
+// TPMU_NAME - 
+00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
+9A 9D 5C 78 E6 F2 9B 6A DB 8D 9F C0 16 4E B3 C4 92 0A 7C C3 FB 74 82 59 E7 06 74 40 FB E4 8E 3C 
+// Qualifying Data(NONCE) - comes from me.
+00 20 35 6F 9C 3A 24 8D 82 A9 76 9D 27 EF 6F 08 A3 C5 4D FE 40 82 FC C9 C1 04 71 80 F3 6B 40 F3 97 B2 
+// TPMS_CLOCK_INFO
+// Firmware Version
+00 00 00 00 01 F1 4D 6B // Uint64 clock
+00 00 00 09 // UINT32 reset count
+00 00 00 00 // unint32 Restart Count
+01 // Safe - TPMI_YES_NO - TRUE = 1
+20 19 10 23 00 16 36 36 // uint64 Firmware Version 
+// TPMS_QUOTE_INFO(
+// TPML_PCR_SELECTION
+00 00 00 01 // Count
+// TPMS_PCR_SELECTION
+00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
+03 // Size of select array
+01 00 00 // Bitmap of selected PCRs.
+// Digest of hashes in quote.
+00 20 66 68 7A AD F8 62 BD 77 6C 8F C1 8B 8E 9F 8E 20 08 97 14 85 6E E2 33 B3 90 2A 59 1D 0D 5F 29 25
+
+magic TPM_GENERATED the indication that this structure was created by a TPM (always 
+TPM_GENERATED_VALUE)
+type TPMI_ST_ATTEST type of the attestation structure
+qualifiedSigner TPM2B_NAME Qualified Name of the signing key
+extraData TPM2B_DATA external information supplied by caller
+NOTE A TPM2B_DATA structure provides room for a digest and a 
+method indicator to indicate the components of the digest. 
+The definition of this method indicator is outside the scope 
+of this specification.
+clockInfo TPMS_CLOCK_INFO Clock, resetCount, restartCount, and Safe
+firmwareVersion UINT64 TPM-vendor-specific value identifying the version number of the 
+firmware
+[type]attested TPMU_ATTEST the type-specific attestation information
+
+// Multi-pcr attestation quote
+FF 54 43 47 
+80 18 
+00 22 00 0B A9 17 18 A7 F6 6E E2 C3 00 9D 06 61 FB E3 A4 FB 19 CA 1D E8 51 92 AC C6 E4 75 8B 3A C5 DF 09 E0 
+00 20 0C D2 3F 02 78 54 48 08 C1 8A 0C 77 48 E7 50 E8 AC 74 3E A8 F4 04 45 36 02 83 AC AA AC 76 E5 CF 
+00 00 00 00 05 D8 2C 2B 
+00 00 00 2F 
+00 00 00 00 
+01 
+20 19 10 23 00 16 36 36 
+00 00 00 01 
+00 0B 
+03 
+0F 00 00 // Flags of PCRs.
+00 20 38 72 3A 2E 5E 8A 17 AA 79 50 DC 00 82 09 94 4E 89 8F 69 A7 BD 10 A2 3C 83 9D 34 1E 93 5F D5 CA
+
+0000000000000000000000000000000000000000000000000000000000000000

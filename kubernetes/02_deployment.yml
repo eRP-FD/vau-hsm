@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vau-hsm-simulator
+  namespace: %NAMESPACE%
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vau-hsm-simulator
+      serverpod: vau-hsm-simulator
+  template:
+    metadata:
+      labels:
+        app: vau-hsm-simulator
+        serverpod: vau-hsm-simulator
+    spec:
+      imagePullSecrets:
+        - name: %IMAGE_PULL_SECRET%
+      containers:
+        - name: vau-hsm-simulator
+          image: %ICR_INSTANCE%/%ICR_NAMESPACE%/vau-hsm:%VERSION%
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3001
+              name: sdk-port

@@ -1,0 +1,117 @@
+ERPModule DEFINITIONS ::= BEGIN -- Module parameters preamble
+
+INTSequence ::= SEQUENCE {
+anInt INTEGER }
+SingleBlob ::= SEQUENCE {
+blobGeneration INTEGER,
+aBlob OCTET STRING
+}
+NONCEAndBlob ::= SEQUENCE {
+aNONCE OCTET STRING (32), 
+aNONCEBlob SingleBlob
+}
+X509CSR ::= SEQUENCE {
+csrData OCTET STRING
+}
+SHA256Hash ::= SEQUENCE {
+hashValue OCTET STRING (32)
+}
+BlobKeyInfo ::= SEQUENCE {
+generation INTEGER,
+keyHash SHA256Hash -- binary encoded SHA256 hash of key.
+}
+BlobKeyInfoList ::= SEQUENCE {
+blobKeyInfos SEQUENCE OF BlobKeyInfo
+}
+SingleBlobRequest ::= SEQUENCE {
+blobIn SingleBlob
+}
+TrustTPMMfrRequest ::= SEQUENCE {
+desiredGeneration INTEGER,
+certificateData OCTET STRING -- x509v3 ASN1.DER encoded Certificate.
+}
+EnrollTPMRequest ::= SEQUENCE {
+desiredGeneration INTEGER,
+certTPMMfrBlob SingleBlob, -- Trusted TPM Mfr Blob of key used to sign EK certificate
+certificateEK OCTET STRING -- x509v3 ASN1.DER encoded Certificate.
+}
+GetAKChallenge ::= SEQUENCE {
+desiredGeneration INTEGER,
+trustedEKBlob SingleBlob,
+nameAK OCTET STRING (34), -- 0x000B plus SHA256 hash of AK Public - used by TPM as name
+certAK OCTET STRING -- Decision: ASN1.DER encoded public key or x509v3 Certificate?
+}
+-- This is the response to the get AK challenge command to the HSM, not the response to the challenge.
+AKChallengeResponse ::= SEQUENCE {
+secret OCTET STRING, -- TPM2 Secret to decrpyt credential
+credential OCTET STRING, -- TPM2 encrypted Credential
+challengeBlob SingleBlob -- Blob to allow HSM to verify credential decryption.
+}
+EnrollAKRequest ::= SEQUENCE {
+desiredGeneration INTEGER,
+nameAK OCTET STRING (34), -- 0x000B plus SHA256 hash of AK Public - used by TPM as name
+certAK OCTET STRING, -- Decision: ASN1.DER encoded public key or x509v3 Certificate?
+decryptedCredential OCTET STRING, -- decrypted credential from theAK Challenge
+challengeBlob SingleBlob, -- Blob returned from the getAKChallenge call.
+trustedEKBlob SingleBlob
+}
+EnrollEnclaveRequest ::= SEQUENCE {
+desiredGeneration INTEGER,
+nameAK OCTET STRING (34), -- TPM Name hash 0x000b + SHA256 of AK Public - used by TPM as name
+trustedAKBlob SingleBlob,
+aNONCEBlob SingleBlob,
+quotedData OCTET STRING, -- Data of the TPM Quote
+signature OCTET STRING -- Signature by the TPM using AK over Quoted Data including NONE.
+}
+TEETokenRequest ::= SEQUENCE { -- TEEToken is always newest Generation.
+nameAK OCTET STRING (34), -- TPM Name hash 0x000b + SHA256 of AK Public - used by TPM as name
+knownAKBlob SingleBlob,
+knownQuoteBlob SingleBlob,
+aNONCEBlob SingleBlob,
+quoteData OCTET STRING, -- Can we impose any more structure on this?
+quoteSignature OCTET STRING -- Can we impose any more structure on this?
+}
+DeriveKeyRequest ::= SEQUENCE {
+nameAK OCTET STRING (34), -- TPM Name hash 0x000b + SHA256 of AK Public - used by TPM as name
+tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+derivationData OCTET STRING, -- Derivation data to be used.   Possibly to be extended if InitialDerivation is true
+initialDerivation BOOLEAN, -- if TRUE then derivation data will be extended by HSM.
+derivationKeyBlob SingleBlob -- Blob containing the derivation key to be used.
+}
+DerivedKey ::= SEQUENCE {
+derivedKey OCTET STRING (32), -- AES 256 Symmetric key.
+usedDerivationData OCTET STRING -- derivation data actually used by HSM.   For an initial derivation, this will 
+                                -- differ from the derivation data passed in the request.
+}
+ERPOctetString ::= SEQUENCE {
+octets OCTET STRING  -- variable length of Random data.
+}
+DoVAUECIESRequest ::= SEQUENCE {
+tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+keyPair SingleBlob, -- Currently validECIES KeyPair blob.
+clientPublicKey OCTET STRING -- ASN1.DER encoded client Public key.
+}
+AES128 ::= SEQUENCE {
+keyValue OCTET STRING (16) -- 128 bit AES Key value.
+}
+AES256 ::= SEQUENCE {
+keyValue OCTET STRING (32) -- 256 bit AES Key value.
+}
+ECParams ::=    SEQUENCE {
+algID OBJECT IDENTIFIER, -- must be id_ecPublicKey 1,2,840,10045,2,1
+curveID OBJECT IDENTIFIER 
+}
+ECCPublicKey ::= SEQUENCE { -- actually same as x.509
+params ECParams,
+value BIT STRING -- curve-dependent encoding of ECC public key.
+}
+TwoBlobKeyRequest ::= SEQUENCE { -- used for GetECKeyRequests and UnwrapHashKey
+teeToken SingleBlob,
+key SingleBlob
+}
+GetVAUCSRRequest ::= SEQUENCE {
+keyPair SingleBlob, -- Currently valid ECIES or VAUSIG KeyPair blob.
+candidateCSR OCTET STRING -- candidate ASN1.DER x509 CSR - all correct,
+ -- except for the wrong public key and the signature does not need to be valid.
+}
+END -- End

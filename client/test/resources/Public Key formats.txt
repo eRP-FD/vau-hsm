@@ -1,0 +1,33 @@
+// ANSI X9.62
+// -------------
+30 59 // SEQUENCE
+30 13 // SEQUENCE
+06 07 2A 86 48 CE 3D 02 01 // OBJECT ID
+06 08 2A 86 48 CE 3D 03 01 07 // OBJECT ID
+03 42 // BIT STRING
+00 // Ignored trailing bits
+04 // public key identifier
+// XCoord
+1C C6 75 88 66 B0 B4 48 BC AB E8 65 1B 0F CE 75 0E 92 79 17 9A 52 CD 08 CA 58 FE EB C4 9F 70 38 
+// YCoord
+33 2D 1C A2 75 1D 59 60 47 BA 1D C2 50 6A E5 C8 A4 A4 77 36 FF A3 DC F0 36 44 3E 5F 71 DB 92 51
+
+// TPMT_PUBLIC
+// ---------------
+00 23 // TPMI_ALG_PUBLIC - TPM_ALG_ECC
+00 0B // TPMI_ALG_HASH - name hash algorithm - SHA_256
+00 05 04 72 // TPMA_OBJECT - object attributes - uint32 - flags
+// TPMI_DIGEST - optional policy.
+00 20 E5 87 C1 1A B5 0F 9D 87 30 F7 21 E3 FE A4 2B 46 C0 45 5B 24 6F 96 AE E8 5D 18 EB 3B E6 4D 66 6A 
+// TPMU_PUBLIC_PARMS - algorithm or structure details, e.g. curve ID.
+// Because of TPMI_ALG_PUBLIC this will be a TPMS_ECC_PARMS
+00 10 
+00 18 
+00 0B 
+00 03 
+00 10 
+// TPMU_PUBLIC_ID
+// XCoord
+00 20 1C C6 75 88 66 B0 B4 48 BC AB E8 65 1B 0F CE 75 0E 92 79 17 9A 52 CD 08 CA 58 FE EB C4 9F 70 38 
+// YCoord
+00 20 33 2D 1C A2 75 1D 59 60 47 BA 1D C2 50 6A E5 C8 A4 A4 77 36 FF A3 DC F0 36 44 3E 5F 71 DB 92 51

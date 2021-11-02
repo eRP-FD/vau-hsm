@@ -1,0 +1,21 @@
+[generators]
+cmake
+
+[build_requires]
+asn1c/0.9.29
+openssl/1.1.1k
+gtest/1.10.0
+
+[requires]
+csxapi/1.0
+
+[options]
+asn1c:silent=False
+asn1c:with_unit_tests=False
+gtest:build_gmock=False
+gtest:shared=True
+csxapi:shared=True
+
+[imports]
+bin, *.dll -> bin
+lib, *.so* -> lib @ root_package=csxapi

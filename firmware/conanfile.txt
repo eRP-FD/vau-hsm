@@ -1,0 +1,10 @@
+[generators]
+cmake
+
+[requires]
+cryptoserversdk/2.0
+
+[imports]
+bin, * -> simulator/bin @ root_package=cryptoserversdk
+devices, * -> simulator/devices @ root_package=cryptoserversdk
+keys, * -> simulator/keys @ root_package=cryptoserversdk

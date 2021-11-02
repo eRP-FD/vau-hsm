@@ -1,0 +1,913 @@
+Using username "jumphsm".
+Authenticating with public key "imported-openssh-key"
+Welcome to Ubuntu 20.04.2 LTS (GNU/Linux 5.4.0-1032-kvm x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue Mar 23 13:04:41 UTC 2021
+
+  System load:  0.01               Processes:             213
+  Usage of /:   17.9% of 96.75GB   Users logged in:       5
+  Memory usage: 12%                IPv4 address for ens3: 10.243.64.4
+  Swap usage:   0%
+
+ * Introducing self-healing high availability clusters in MicroK8s.
+   Simple, hardened, Kubernetes for production, from RaspberryPi to DC.
+
+     https://microk8s.io/high-availability
+
+31 updates can be installed immediately.
+0 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+
+*** System restart required ***
+Last login: Tue Mar 23 11:54:59 2021 from 93.203.145.148
+jumphsm@jumphost:~$ ssh tss@192.168.25.3
+The authenticity of host '192.168.25.3 (192.168.25.3)' can't be established.
+ECDSA key fingerprint is SHA256:OXozdS50NqW5LWX2aR/C5HbicHy2yfsUtv1PV5Xdu6Y.
+Are you sure you want to continue connecting (yes/no/[fingerprint])? yes
+Warning: Permanently added '192.168.25.3' (ECDSA) to the list of known hosts.
+tss@192.168.25.3's password:
+Permission denied, please try again.
+tss@192.168.25.3's password:
+Connection closed by 192.168.25.3 port 22
+jumphsm@jumphost:~$ ssh tss@192.168.25.3
+tss@192.168.25.3's password:
+Permission denied, please try again.
+tss@192.168.25.3's password:
+Welcome to Ubuntu 18.04.5 LTS (GNU/Linux 5.10.10-051010-generic x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue Mar 23 13:09:47 UTC 2021
+
+  System load:    0.0       Processes:               202
+  Usage of /home: unknown   Users logged in:         1
+  Memory usage:   0%        IP address for enp4s0f0: 192.168.25.3
+  Swap usage:     0%
+
+
+7 packages can be updated.
+0 of these updates are security updates.
+To see these additional updates run: apt list --upgradable
+
+Failed to connect to https://changelogs.ubuntu.com/meta-release-lts. Check your Internet connection or proxy settings
+
+
+Last login: Tue Mar 23 12:46:30 2021 from 10.243.64.4
+To run a command as administrator (user "root"), use "sudo <command>".
+See "man sudo_root" for details.
+
+tss@tpm-dbug:~$ tssnvread
+
+Command 'tssnvread' not found, but can be installed with:
+
+sudo apt install tss2
+
+tss@tpm-dbug:~$ /root/tss/install/utils
+-bash: /root/tss/install/utils: Permission denied
+tss@tpm-dbug:~$ cd /root/tss/install/utils
+-bash: cd: /root/tss/install/utils: Permission denied
+tss@tpm-dbug:~$ sudo root
+[sudo] password for tss:
+Sorry, try again.
+[sudo] password for tss:
+sudo: root: command not found
+tss@tpm-dbug:~$ su root
+Password:
+su: Authentication failure
+tss@tpm-dbug:~$ passwd
+Changing password for tss.
+(current) UNIX password:
+Enter new UNIX password:
+Retype new UNIX password:
+passwd: password updated successfully
+tss@tpm-dbug:~$ sudo root cd /root/tss/install/bin
+sudo: root: command not found
+tss@tpm-dbug:~$ ls-al /root
+ls-al: command not found
+tss@tpm-dbug:~$ ls -al /root
+ls: cannot open directory '/root': Permission denied
+tss@tpm-dbug:~$ ls -al /root/tss/install/bin
+ls: cannot access '/root/tss/install/bin': Permission denied
+tss@tpm-dbug:~$ sudo ls -al /root/tss/install/bin
+total 1427
+drwxr-xr-x 2 root root  2739 Mar 22 10:20 .
+drwxr-xr-x 4 root root   161 Mar 22 10:28 ..
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssactivatecredential
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsscertify
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsscertifycreation
+-rwxr-xr-x 1 root root 30832 Mar 22 10:20 tsscertifyx509
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsschangeeps
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsschangepps
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssclear
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssclearcontrol
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssclockrateadjust
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssclockset
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsscommit
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsscontextload
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsscontextsave
+-rwxr-xr-x 1 root root 22504 Mar 22 10:20 tsscreate
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsscreateek
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsscreateekcert
+-rwxr-xr-x 1 root root 18408 Mar 22 10:20 tsscreateloaded
+-rwxr-xr-x 1 root root 22504 Mar 22 10:20 tsscreateprimary
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssdictionaryattacklockreset
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssdictionaryattackparameters
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssduplicate
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsseccparameters
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssecephemeral
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssencryptdecrypt
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsseventextend
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsseventsequencecomplete
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssevictcontrol
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssflushcontext
+-rwxr-xr-x 1 root root 30776 Mar 22 10:20 tssgetcapability
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssgetcommandauditdigest
+-rwxr-xr-x 1 root root  6120 Mar 22 10:20 tssgetcryptolibrary
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssgetrandom
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssgetsessionauditdigest
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssgettestresult
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssgettime
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsshash
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsshashsequencestart
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsshierarchychangeauth
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsshierarchycontrol
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsshmac
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsshmacstart
+-rwxr-xr-x 1 root root 18408 Mar 22 10:20 tssimaextend
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssimport
+-rwxr-xr-x 1 root root 18408 Mar 22 10:20 tssimportpem
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssload
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssloadexternal
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssmakecredential
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssntc2getconfig
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssntc2lockconfig
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssntc2preconfig
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssnvcertify
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvchangeauth
+-rwxr-xr-x 1 root root 18408 Mar 22 10:20 tssnvdefinespace
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvextend
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvglobalwritelock
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvincrement
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssnvread
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvreadlock
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssnvreadpublic
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvsetbits
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvundefinespace
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvundefinespacespecial
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssnvwrite
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssnvwritelock
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssobjectchangeauth
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspcrallocate
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspcrevent
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspcrextend
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspcrread
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspcrreset
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyauthorize
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyauthorizenv
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyauthvalue
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicycommandcode
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicycountertimer
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicycphash
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyduplicationselect
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicygetdigest
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicymaker
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspolicymakerpcr
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicynamehash
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspolicynv
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicynvwritten
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyor
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicypassword
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicypcr
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicyrestart
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspolicysecret
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspolicysigned
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspolicytemplate
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspolicyticket
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsspowerup
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssprintattr
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsspublicname
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssquote
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssreadclock
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssreadpublic
+-rwxr-xr-x 1 root root  6120 Mar 22 10:20 tssreturncode
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssrewrap
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssrsadecrypt
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssrsaencrypt
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsssequencecomplete
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsssequenceupdate
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsssetcommandcodeauditstatus
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsssetprimarypolicy
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssshutdown
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsssign
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsssignapp
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssstartauthsession
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssstartup
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssstirrandom
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsstimepacket
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsstpm2pem
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsstpmcmd
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsstpmpublic2eccpoint
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tssunseal
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tssverifysignature
+-rwxr-xr-x 1 root root 10216 Mar 22 10:20 tsswriteapp
+-rwxr-xr-x 1 root root 14312 Mar 22 10:20 tsszgen2phase
+tss@tpm-dbug:~$ setenv
+setenv: command not found
+tss@tpm-dbug:~$ sudo setenv
+sudo: setenv: command not found
+tss@tpm-dbug:~$ export
+declare -x HOME="/home/tss"
+declare -x LANG="C.UTF-8"
+declare -x LESSCLOSE="/usr/bin/lesspipe %s %s"
+declare -x LESSOPEN="| /usr/bin/lesspipe %s"
+declare -x LOGNAME="tss"
+declare -x LS_COLORS="rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:"
+declare -x MAIL="/var/mail/tss"
+declare -x OLDPWD
+declare -x PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+declare -x PWD="/home/tss"
+declare -x SHELL="/bin/bash"
+declare -x SHLVL="1"
+declare -x SSH_CLIENT="10.243.64.4 52014 22"
+declare -x SSH_CONNECTION="10.243.64.4 52014 192.168.25.3 22"
+declare -x SSH_TTY="/dev/pts/0"
+declare -x TERM="xterm"
+declare -x USER="tss"
+declare -x XDG_DATA_DIRS="/usr/local/share:/usr/share:/var/lib/snapd/desktop"
+declare -x XDG_RUNTIME_DIR="/run/user/1001"
+declare -x XDG_SESSION_ID="7"
+tss@tpm-dbug:~$ export TPM_INTERFACE_TYPE=dev
+tss@tpm-dbug:~$ export
+declare -x HOME="/home/tss"
+declare -x LANG="C.UTF-8"
+declare -x LESSCLOSE="/usr/bin/lesspipe %s %s"
+declare -x LESSOPEN="| /usr/bin/lesspipe %s"
+declare -x LOGNAME="tss"
+declare -x LS_COLORS="rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:"
+declare -x MAIL="/var/mail/tss"
+declare -x OLDPWD
+declare -x PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+declare -x PWD="/home/tss"
+declare -x SHELL="/bin/bash"
+declare -x SHLVL="1"
+declare -x SSH_CLIENT="10.243.64.4 52014 22"
+declare -x SSH_CONNECTION="10.243.64.4 52014 192.168.25.3 22"
+declare -x SSH_TTY="/dev/pts/0"
+declare -x TERM="xterm"
+declare -x TPM_INTERFACE_TYPE="dev"
+declare -x USER="tss"
+declare -x XDG_DATA_DIRS="/usr/local/share:/usr/share:/var/lib/snapd/desktop"
+declare -x XDG_RUNTIME_DIR="/run/user/1001"
+declare -x XDG_SESSION_ID="7"
+tss@tpm-dbug:~$ /root/tss/install/bin/tssnvread -ha 01c00002 -cert
+-bash: /root/tss/install/bin/tssnvread: Permission denied
+tss@tpm-dbug:~$ su /root/tss/install/bin/tssnvread -ha 01c00002 -cert
+Usage: su [options] [LOGIN]
+
+Options:
+  -c, --command COMMAND         pass COMMAND to the invoked shell
+  -h, --help                    display this help message and exit
+  -, -l, --login                make the shell a login shell
+  -m, -p,
+  --preserve-environment        do not reset environment variables, and
+                                keep the same shell
+  -s, --shell SHELL             use SHELL instead of the default in passwd
+
+tss@tpm-dbug:~$ sunroot
+sunroot: command not found
+tss@tpm-dbug:~$ su root
+Password:
+su: Authentication failure
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c00002 -cert
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            ea:e0:05:06:cb:74:39:e6:1c:1e
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+        Validity
+            Not Before: Jan 16 15:20:54 2019 GMT
+            Not After : Jan 12 15:20:54 2039 GMT
+        Subject:
+        Subject Public Key Info:
+            Public Key Algorithm: rsaEncryption
+                RSA Public-Key: (2048 bit)
+                Modulus:
+                    00:cf:21:5b:07:84:41:d0:ce:55:86:c5:eb:89:82:
+                    78:48:bc:9c:18:04:cd:da:34:5f:6c:ab:10:00:ab:
+                    74:6e:95:96:ac:a6:1e:13:0f:a5:68:63:6f:db:78:
+                    98:d4:5e:43:0d:e3:1a:2d:2c:cc:7c:48:33:9a:b5:
+                    d7:bd:23:ae:3e:15:40:66:6d:0d:8c:19:1b:8e:c8:
+                    75:89:7b:aa:63:6b:1e:5f:ae:e8:46:a5:f1:38:77:
+                    43:9d:9c:54:db:db:35:fa:57:36:61:05:cb:3b:b4:
+                    74:ce:2f:b2:fc:51:65:c8:21:30:93:93:a2:ae:03:
+                    31:41:f7:46:56:83:31:8f:e5:b1:ea:f9:98:3a:a1:
+                    53:68:6a:64:95:7a:4b:b0:73:0e:37:d5:54:a7:8b:
+                    c8:b0:c0:21:94:d6:67:49:af:b2:8a:e8:73:49:69:
+                    7b:ac:29:25:e9:e9:9d:78:6f:4a:eb:eb:57:6d:40:
+                    23:98:64:62:c3:d5:2d:af:a9:e5:e9:c3:b9:0b:41:
+                    58:98:0f:6e:db:76:e3:ec:ad:de:f7:be:8b:07:ea:
+                    de:7f:1d:39:14:35:1c:c6:74:bd:1d:cd:93:ad:dc:
+                    30:9d:fe:06:cd:80:5c:36:9d:2f:0f:35:ca:d3:03:
+                    90:3b:b2:5e:7d:58:13:8c:cb:f7:2b:6a:03:39:07:
+                    8c:5f
+                Exponent: 65537 (0x10001)
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: critical
+                DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                2.23.133.8.1
+            X509v3 Authority Key Identifier:
+                keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+
+            X509v3 Key Usage: critical
+                Key Encipherment
+            X509v3 Subject Directory Attributes:
+0...2.0.....t0M..g....1D0B........
+....
+....
+....0...3.1
+..
+.......
+..140-2
+..........
+            X509v3 Certificate Policies:
+                Policy: X509v3 Any Policy
+                  CPS: http://www.nuvoton.com/security/
+
+            Authority Information Access:
+                CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+
+    Signature Algorithm: ecdsa-with-SHA256
+         30:44:02:20:2a:db:ed:ed:a8:12:d0:50:32:49:b1:6b:14:a9:
+         67:9a:c3:f9:1d:67:e5:ff:91:c6:c4:81:7e:5b:5b:d1:58:b1:
+         02:20:19:a9:3f:6d:72:e8:bf:d6:cb:db:f0:fc:67:c9:9e:53:
+         a4:31:a9:8b:21:bd:7f:9e:d4:58:4b:58:be:75:38:98
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c0000a -cert
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            10:ee:76:d0:60:40:0b:bf:bc:09
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+        Validity
+            Not Before: Jan 16 15:20:54 2019 GMT
+            Not After : Jan 12 15:20:54 2039 GMT
+        Subject:
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:
+                    d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:
+                    10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:
+                    71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:
+                    a4:c3:ec:d2:a9
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: critical
+                DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                2.23.133.8.1
+            X509v3 Authority Key Identifier:
+                keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+
+            X509v3 Key Usage: critical
+                Key Encipherment
+            X509v3 Subject Directory Attributes:
+0...2.0.....t0M..g....1D0B........
+....
+....
+....0...3.1
+..
+.......
+..140-2
+..........
+            X509v3 Certificate Policies:
+                Policy: X509v3 Any Policy
+                  CPS: http://www.nuvoton.com/security/
+
+            Authority Information Access:
+                CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+
+    Signature Algorithm: ecdsa-with-SHA256
+         30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:
+         8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:
+         ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:
+         cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/pcrread -ha 0
+sudo: /root/tss/install/bin/pcrread: command not found
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsspcrread -ha 0
+count 1 pcrUpdateCounter 80
+ digest length 32
+ 02 13 57 8c b4 e3 b2 1b 6e 88 c5 df 86 7a 91 30
+ a3 33 67 ea d4 bf e8 82 6e 9c 25 4b d3 a3 50 b1
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsspcrread
+Missing or bad PCR handle parameter -ha
+
+pcrread
+
+Runs TPM2_PCR_Read
+
+        -ha     pcr handle
+        [-halg  (sha1, sha256, sha384, sha512) (default sha256)]
+                -halg may be specified more than once
+        [-of    data file for first algorithm specified, in binary]
+        [-ahalg  to extend session audit digest for testing (sha1, sha256, sha384, sha512) (default sha256)]
+        [-iosad  file for session audit digest testing]
+        [-ns    no space, no text, no newlines]
+                Used for scripting policy construction
+
+        -se0 session handle / attributes (default NULL)
+        01      continue
+        80      audit
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsspcrread -ha 01 -halgsha256
+
+-halgsha256 is not a valid option
+
+pcrread
+
+Runs TPM2_PCR_Read
+
+        -ha     pcr handle
+        [-halg  (sha1, sha256, sha384, sha512) (default sha256)]
+                -halg may be specified more than once
+        [-of    data file for first algorithm specified, in binary]
+        [-ahalg  to extend session audit digest for testing (sha1, sha256, sha384, sha512) (default sha256)]
+        [-iosad  file for session audit digest testing]
+        [-ns    no space, no text, no newlines]
+                Used for scripting policy construction
+
+        -se0 session handle / attributes (default NULL)
+        01      continue
+        80      audit
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsspcrread -ha 01 -halg sha256
+count 1 pcrUpdateCounter 80
+ digest length 32
+ 1b 50 9f 2f 9c 99 6e 2f 2e ae f2 6d d2 36 2b 3a
+ d8 d1 5c 33 3c d2 20 b2 e4 98 59 81 98 b4 33 db
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsspcrread -ha 01
+count 1 pcrUpdateCounter 80
+ digest length 32
+ 1b 50 9f 2f 9c 99 6e 2f 2e ae f2 6d d2 36 2b 3a
+ d8 d1 5c 33 3c d2 20 b2 e4 98 59 81 98 b4 33 db
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/getcapability -cap 1 -pr 80000000
+sudo: /root/tss/install/bin/getcapability: command not found
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssgetcapability -cap 1 -pr 80000000
+0 handles
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssgetcapability -cap 1 -pr 81000000
+0 handles
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssgetcapability -cap 1 -pr 01000000
+5 handles
+        01400000
+        01c00002
+        01c0000a
+        01c10102
+        01c10103
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tss nvread -ha 01c10102 -cert
+sudo: /root/tss/install/bin/tss: command not found
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c10102 -cert
+nvread: failed, rc 0000014a
+TPM_RC_NV_UNINITIALIZED - an NV Index is used before being initialized
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c10103 -cert
+convertDerToX509: Could not parse X509 certificate
+nvread: failed, rc 000b007e
+TSS_RC_X509_ERROR - X509 parse error
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01400000 -cert
+convertDerToX509: Could not parse X509 certificate
+nvread: failed, rc 000b007e
+TSS_RC_X509_ERROR - X509 parse error
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c0000a -cert
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            10:ee:76:d0:60:40:0b:bf:bc:09
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+        Validity
+            Not Before: Jan 16 15:20:54 2019 GMT
+            Not After : Jan 12 15:20:54 2039 GMT
+        Subject:
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:
+                    d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:
+                    10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:
+                    71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:
+                    a4:c3:ec:d2:a9
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: critical
+                DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                2.23.133.8.1
+            X509v3 Authority Key Identifier:
+                keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+
+            X509v3 Key Usage: critical
+                Key Encipherment
+            X509v3 Subject Directory Attributes:
+0...2.0.....t0M..g....1D0B........
+....
+....
+....0...3.1
+..
+.......
+..140-2
+..........
+            X509v3 Certificate Policies:
+                Policy: X509v3 Any Policy
+                  CPS: http://www.nuvoton.com/security/
+
+            Authority Information Access:
+                CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+
+    Signature Algorithm: ecdsa-with-SHA256
+         30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:
+         8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:
+         ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:
+         cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tssnvread -ha 01c0000a -cert^C
+tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsscreateek -pwdk erpek -ecc nistp256 -cp
+processPrimary: EK nonce not found, use default template
+ createprimary: ECC public key x length 32
+ 58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7 02
+ 71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed e7
+ createprimary: ECC public key y length 32
+ 47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d 40
+ 83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2 a9
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            10:ee:76:d0:60:40:0b:bf:bc:09
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+        Validity
+            Not Before: Jan 16 15:20:54 2019 GMT
+            Not After : Jan 12 15:20:54 2039 GMT
+        Subject:
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:
+                    d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:
+                    10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:
+                    71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:
+                    a4:c3:ec:d2:a9
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: critical
+                DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                2.23.133.8.1
+            X509v3 Authority Key Identifier:
+                keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+
+            X509v3 Key Usage: critical
+                Key Encipherment
+            X509v3 Subject Directory Attributes:
+0...2.0.....t0M..g....1D0B........
+....
+....
+....0...3.1
+..
+.......
+..140-2
+..........
+            X509v3 Certificate Policies:
+                Policy: X509v3 Any Policy
+                  CPS: http://www.nuvoton.com/security/
+
+            Authority Information Access:
+                CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+
+    Signature Algorithm: ecdsa-with-SHA256
+         30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:
+         8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:
+         ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:
+         cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed
+ Certificate public key: length 65
+ 04 58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7
+ 02 71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed
+ e7 47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d
+ 40 83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2
+ a9
+processValidatePrimary: Public key from X509 certificate matches output of createprimary
+Public key from X509 certificate matches output of createprimary
+tss@tpm-dbug:~$ ^C
+tss@tpm-dbug:~$ tss@tpm-dbug:~$ sudo /root/tss/install/bin/tsscreateek -pwdk erpek -ecc nistp256 -cp
+ 58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7 02
+ 71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed e7
+ createprimary: ECC public key y length 32
+ 47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d 40
+ 83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2 a9
+Certificate:
+    Data:
+        Version: 3 (0x2)
+        Serial Number:
+            10:ee:76:d0:60:40:0b:bf:bc:09
+        Signature Algorithm: ecdsa-with-SHA256
+        Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+        Validity
+            Not Before: Jan 16 15:20:54 2019 GMT
+            Not After : Jan 12 15:20:54 2039 GMT
+        Subject:
+        Subject Public Key Info:
+            Public Key Algorithm: id-ecPublicKey
+                Public-Key: (256 bit)
+                pub:
+                    04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:
+                    d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:
+                    10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:
+                    71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:
+                    a4:c3:ec:d2:a9
+                ASN1 OID: prime256v1
+                NIST CURVE: P-256
+        X509v3 extensions:
+            X509v3 Subject Alternative Name: critical
+                DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+            X509v3 Basic Constraints: critical
+                CA:FALSE
+            X509v3 Extended Key Usage:
+                2.23.133.8.1
+            X509v3 Authority Key Identifier:
+                keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+
+            X509v3 Key Usage: critical
+                Key Encipherment
+            X509v3 Subject Directory Attributes:
+0...2.0.....t0M..g....1D0B........
+....
+....
+....0...3.1
+..
+.......
+..140-2
+..........
+            X509v3 Certificate Policies:
+                Policy: X509v3 Any Policy
+                  CPS: http://www.nuvoton.com/security/
+
+            Authority Information Access:
+                CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+
+    Signature Algorithm: ecdsa-with-SHA256
+         30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:
+         8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:
+         ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:
+         cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed
+ Certificate public key: length 65
+ 04 58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7
+ 02 71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed
+ e7 47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d
+ 40 83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2
+ a9
+processValidatePrimary: Public key from X509 certificate matches output of createprimary
+Public key from X509 certificate matches output of createprimary
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$: command not found
+tss@tpm-dbug:~$ processPrimary: EK nonce not found, use default template
+processPrimary:: command not found
+tss@tpm-dbug:~$  createprimary: ECC public key x length 32
+createprimary:: command not found
+tss@tpm-dbug:~$  58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7 02
+58: command not found
+tss@tpm-dbug:~$  71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed e7
+71: command not found
+tss@tpm-dbug:~$  createprimary: ECC public key y length 32
+createprimary:: command not found
+tss@tpm-dbug:~$  47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d 40
+47: command not found
+tss@tpm-dbug:~$  83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2 a9
+83: command not found
+tss@tpm-dbug:~$ Certificate:
+Certificate:: command not found
+tss@tpm-dbug:~$     Data:
+Data:: command not found
+tss@tpm-dbug:~$         Version: 3 (0x2)
+-bash: syntax error near unexpected token `('
+tss@tpm-dbug:~$         Serial Number:
+Serial: command not found
+tss@tpm-dbug:~$             10:ee:76:d0:60:40:0b:bf:bc:09
+10:ee:76:d0:60:40:0b:bf:bc:09: command not found
+tss@tpm-dbug:~$         Signature Algorithm: ecdsa-with-SHA256
+Signature: command not found
+tss@tpm-dbug:~$         Issuer: CN=Nuvoton TPM Root CA 2110, O=Nuvoton Technology Corporation, C=TW
+Issuer:: command not found
+tss@tpm-dbug:~$         Validity
+Validity: command not found
+tss@tpm-dbug:~$             Not Before: Jan 16 15:20:54 2019 GMT
+
+Command 'Not' not found, did you mean:
+
+  command 'hot' from deb hopenpgp-tools
+  command 'jot' from deb athena-jot
+  command 'dot' from deb graphviz
+
+Try: sudo apt install <deb name>
+
+tss@tpm-dbug:~$             Not After : Jan 12 15:20:54 2039 GMT
+
+Command 'Not' not found, did you mean:
+
+  command 'hot' from deb hopenpgp-tools
+  command 'jot' from deb athena-jot
+  command 'dot' from deb graphviz
+
+Try: sudo apt install <deb name>
+
+tss@tpm-dbug:~$         Subject:
+Subject:: command not found
+tss@tpm-dbug:~$         Subject Public Key Info:
+Subject: command not found
+tss@tpm-dbug:~$             Public Key Algorithm: id-ecPublicKey
+Public: command not found
+tss@tpm-dbug:~$                 Public-Key: (256 bit)
+-bash: syntax error near unexpected token `256'
+tss@tpm-dbug:~$                 pub:
+
+Command 'pub:' not found, did you mean:
+
+  command 'publ' from deb atfs
+
+Try: sudo apt install <deb name>
+
+tss@tpm-dbug:~$                     04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:
+04:58:b8:b1:81:78:e7:b6:24:dc:7f:ea:94:6b:d2:: command not found
+tss@tpm-dbug:~$                     d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:
+d7:02:71:ee:03:4a:d0:85:87:77:d6:cf:ee:8e:86:: command not found
+tss@tpm-dbug:~$                     10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:
+10:ed:e7:47:c4:8d:d5:be:4c:92:54:2f:e1:43:26:: command not found
+tss@tpm-dbug:~$                     71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:
+71:a7:3d:40:83:96:cc:f0:dd:39:1f:96:4d:74:9c:: command not found
+tss@tpm-dbug:~$                     a4:c3:ec:d2:a9
+a4:c3:ec:d2:a9: command not found
+tss@tpm-dbug:~$                 ASN1 OID: prime256v1
+ASN1: command not found
+tss@tpm-dbug:~$                 NIST CURVE: P-256
+NIST: command not found
+tss@tpm-dbug:~$         X509v3 extensions:
+X509v3: command not found
+tss@tpm-dbug:~$             X509v3 Subject Alternative Name: critical
+X509v3: command not found
+tss@tpm-dbug:~$                 DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13
+-bash: DirName:/2.23.133.2.1=id:4E544300/2.23.133.2.2=NPCT6xx/2.23.133.2.3=id:13: No such file or directory
+tss@tpm-dbug:~$             X509v3 Basic Constraints: critical
+X509v3: command not found
+tss@tpm-dbug:~$                 CA:FALSE
+CA:FALSE: command not found
+tss@tpm-dbug:~$             X509v3 Extended Key Usage:
+X509v3: command not found
+tss@tpm-dbug:~$                 2.23.133.8.1
+2.23.133.8.1: command not found
+tss@tpm-dbug:~$             X509v3 Authority Key Identifier:
+X509v3: command not found
+tss@tpm-dbug:~$                 keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7
+keyid:9F:BB:79:AA:0F:52:62:78:BE:D1:50:92:9A:71:71:E9:6A:35:BE:F7: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$             X509v3 Key Usage: critical
+X509v3: command not found
+tss@tpm-dbug:~$                 Key Encipherment
+
+Command 'Key' not found, did you mean:
+
+  command 'key' from deb donkey
+
+Try: sudo apt install <deb name>
+
+tss@tpm-dbug:~$             X509v3 Subject Directory Attributes:
+X509v3: command not found
+tss@tpm-dbug:~$ 0...2.0.....t0M..g....1D0B........
+0...2.0.....t0M..g....1D0B........: command not found
+tss@tpm-dbug:~$ ....
+....: command not found
+tss@tpm-dbug:~$ ....
+....: command not found
+tss@tpm-dbug:~$ ....0...3.1
+....0...3.1: command not found
+tss@tpm-dbug:~$ ..
+..: command not found
+tss@tpm-dbug:~$ .......
+.......: command not found
+tss@tpm-dbug:~$ ..140-2
+..140-2: command not found
+tss@tpm-dbug:~$ ..........
+..........: command not found
+tss@tpm-dbug:~$             X509v3 Certificate Policies:
+X509v3: command not found
+tss@tpm-dbug:~$                 Policy: X509v3 Any Policy
+Policy:: command not found
+tss@tpm-dbug:~$                   CPS: http://www.nuvoton.com/security/
+CPS:: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$             Authority Information Access:
+Authority: command not found
+tss@tpm-dbug:~$                 CA Issuers - URI:http://www.nuvoton.com/security/NTC-TPM-EK-Cert/Nuvoton TPM Root CA 2110.cer
+CA: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$     Signature Algorithm: ecdsa-with-SHA256
+Signature: command not found
+tss@tpm-dbug:~$          30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:
+30:46:02:21:00:b9:69:d0:d6:38:48:8e:59:48:b5:75:63:c4:: command not found
+tss@tpm-dbug:~$          8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:
+8c:51:1a:e3:63:b2:5e:1c:ad:bf:96:6d:71:48:18:04:1d:34:: command not found
+tss@tpm-dbug:~$          ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:
+ce:02:21:00:e8:75:67:8f:3b:60:75:10:67:be:a5:51:5d:e0:: command not found
+tss@tpm-dbug:~$          cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed
+cc:5d:6b:f2:56:77:46:b9:fa:c3:d9:8e:08:62:51:26:b5:ed: command not found
+tss@tpm-dbug:~$  Certificate public key: length 65
+Certificate: command not found
+tss@tpm-dbug:~$  04 58 b8 b1 81 78 e7 b6 24 dc 7f ea 94 6b d2 d7
+04: command not found
+tss@tpm-dbug:~$  02 71 ee 03 4a d0 85 87 77 d6 cf ee 8e 86 10 ed
+02: command not found
+tss@tpm-dbug:~$  e7 47 c4 8d d5 be 4c 92 54 2f e1 43 26 71 a7 3d
+e7: command not found
+tss@tpm-dbug:~$  40 83 96 cc f0 dd 39 1f 96 4d 74 9c a4 c3 ec d2
+40: command not found
+tss@tpm-dbug:~$  a9
+a9: command not found
+tss@tpm-dbug:~$ processValidatePrimary: Public key from X509 certificate matches output of createprimary
+processValidatePrimary:: command not found
+tss@tpm-dbug:~$ Public key from X509 certificate matches output of createprimaryPublic: command not found
+tss@tpm-dbug:~$ tss@tpm-dbug:~$
+tss@tpm-dbug:~$: command not found
+tss@tpm-dbug:~$ Authenticating with public key "imported-openssh-key"
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Tue Mar 23 13:04:41 UTC 2021
+
+  System load:  0.01               Processes:             213
+  Usage of /:   17.9% of 96.75GB   Users logged in:       5
+  Memory usage: 12%                IPv4 address for ens3: 10.243.64.4
+  Swap usage:   0%
+
+ * Introducing self-healing high availability clusters in MicroK8s.
+   Simple, hardened, Kubernetes for production, from RaspberryPi to DC.
+
+Authenticating: command not found
+tss@tpm-dbug:~$ Welcome to Ubuntu 20.04.2 LTS (GNU/Linux 5.4.0-1032-kvm x86_64)
+-bash: syntax error near unexpected token `('
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$  * Documentation:  https://help.ubuntu.com
+h01400000.bin: command not found
+tss@tpm-dbug:~$  * Management:     https://landscape.canonical.com
+h01400000.bin: command not found
+tss@tpm-dbug:~$  * Support:        https://ubuntu.com/advantage
+h01400000.bin: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$   System information as of Tue Mar 23 13:04:41 UTC 2021
+System: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$   System load:  0.01               Processes:             213
+System: command not found
+tss@tpm-dbug:~$   Usage of /:   17.9% of 96.75GB   Users logged in:       5
+
+Command 'Usage' not found, did you mean:
+
+  command 'osage' from deb graphviz
+  command 'sage' from deb sagemath-common
+
+Try: sudo apt install <deb name>
+
+tss@tpm-dbug:~$   Memory usage: 12%                IPv4 address for ens3: 10.243.64.4
+Memory: command not found
+tss@tpm-dbug:~$   Swap usage:   0%
+Swap: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$  * Introducing self-healing high availability clusters in MicroK8s.
+h01400000.bin: command not found
+tss@tpm-dbug:~$    Simple, hardened, Kubernetes for production, from RaspberryPi to DC.
+Simple,: command not found
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$
+tss@tpm-dbug:~$ tss@tpm-dbug:~$  * Introducing s
+tss@tpm-dbug:~$: command not found
+tss@tpm-dbug:~$ tss@tpm-dbug:~$  * Introducing s

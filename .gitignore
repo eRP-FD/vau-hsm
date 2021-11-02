@@ -1,0 +1,28 @@
+# IDE settings folders
+#
+**/.vs
+**/.idea
+
+# build folders
+#
+**/build
+!docker/build
+**/build*debug
+**/build*release
+
+# asn1 generated stubs
+#
+client/src/**/asn1_*
+
+# test resources
+#
+**/test/resources/*.out
+**/test/resources/erp*.pem
+**/test/resources/*.log
+**/test/resources/*.bin
+
+# temporary build system for real HSM hardware
+#
+firmware/obj
+firmware/hwmake/cryptoserversdk
+firmware/hwmake50
