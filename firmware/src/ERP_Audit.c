@@ -1,19 +1,21 @@
-// Audit log code for the IBM eRezept VAU HSM Custom firmware.
-
-#include "ERP_Audit.h"
-#include "ERP_MDLError.h"
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ *
+ * Description: Audit log code for the IBM eRezept VAU HSM Custom firmware.
+ **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
 #define no_init_all 
 
-#include <cryptoserversdk/load_store.h>
-#include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
-
 #include <cryptoserversdk/os_mem.h>
 #include <cryptoserversdk/os_str.h>
-#include <cryptoserversdk/os_task.h>
 #include <cryptoserversdk/os_audit.h>
+
+#include "ERP_Audit.h"
+#include "ERP_MDLError.h"
 
 static const unsigned char AuditMessages[ERP_AUDIT_LastUsedId + 1][ERP_AUDIT_MAX_MESSAGE] = {
     "ERP Not an Event.   Report to Development team.", // ERP_AUDIT_No_Event = 0, // reserve this for programmatic use.
@@ -50,7 +52,21 @@ static const unsigned char AuditMessages[ERP_AUDIT_LastUsedId + 1][ERP_AUDIT_MAX
     "ERP Failed TPM Manufacturer Root Certificate Enrollment.", // = 31
     "ERP Failed Get NONCE.", // = 32
     "ERP Failed Blob Generation Key Deletion.", // = 33
-    "ERP Not an Event Report to Development Team." };//  34
+    "ERP Failed EC KeyPair Generation.", // = 34,
+    "ERP EC KeyPair Generated.", // = 35,
+    "ERP EC CSR Generated.", // = 36,
+    "ERP Failed EC CSR Generation.", // = 37,
+    "ERP Failed EC Get Public Key.", // = 38,
+    "ERP Failed ECIES DO VAUECIES.", // = 39,
+    "ERP Failed VAUSIG Get Private Key.", // = 40,
+    "ERP Failed Unwrap Hash Key.", // = 41,
+    "ERP Exported Single Blob Generation.", // = 42,
+    "ERP Imported Single Blob Generation.", // = 43,
+    "ERP Failed Export Single Blob Generation.", // = 44,
+    "ERP Failed Import Single Blob Generation.", // = 45,
+    "ERP Failed to Get Content Hash", // = 46,
+    "ERP Failed Migrate Blob", // = 47,
+    "ERP Not an Event Report to Development Team." };//  48
 
 unsigned int getAuditClass(ERP_AuditID_t id)
 {
@@ -68,6 +84,8 @@ unsigned int getAuditClass(ERP_AuditID_t id)
         case ERP_AUDIT_TPM_Quote_Enrolled: // = 14,
         case ERP_AUDIT_Key_Derivation_Key_Generated: // = 18,
         case ERP_AUDIT_Hash_Key_Generated: // = 19,
+        case ERP_AUDIT_Exported_Single_Blob_Generation: // = 42,
+        case ERP_AUDIT_Imported_Single_Blob_Generation: // = 43,
             class = ERP_MDL_AUDIT_SETUP_MASK;
             break;
 
@@ -85,7 +103,11 @@ unsigned int getAuditClass(ERP_AuditID_t id)
         case ERP_AUDIT_Failed_Blob_Generation_Key_Deletion: // = 33,
         case ERP_AUDIT_Failed_TPM_Manufacturer_Root_Certificate_Enrollment: // = 31,
         case ERP_AUDIT_Failed_Get_AK_Challenge: // = 30,
-            class = ERP_MDL_AUDIT_FAILED_SETUP_MASK;
+        case ERP_AUDIT_Failed_Export_Single_Blob_Generation: // = 44,
+        case ERP_AUDIT_Failed_Import_Single_Blob_Generation: // = 45,
+        case ERP_AUDIT_Failed_Get_Blob_Content_Hash: // = 46,
+        case ERP_AUDIT_Failed_Migrate_Blob: // = 47,
+                class = ERP_MDL_AUDIT_FAILED_SETUP_MASK;
             break;
 
         case ERP_AUDIT_Formal_Parameter_Check_Failed: // = 25,
@@ -93,7 +115,7 @@ unsigned int getAuditClass(ERP_AuditID_t id)
         case ERP_AUDIT_Failed_Get_NONCE: // = 32,
         case ERP_AUDIT_Permission_Failure: // = 23,
         case ERP_AUDIT_Failed_getTEEToken: // = 24,
-            class = ERP_MDL_AUDIT_FAILED_WORKING_MASK;
+                class = ERP_MDL_AUDIT_FAILED_WORKING_MASK;
             break;
 
         case ERP_AUDIT_Logon_Failure: // = 22,

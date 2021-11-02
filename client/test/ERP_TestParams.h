@@ -1,3 +1,9 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #ifndef ERP_TEST_PARAMS_H
 #define ERP_TEST_PARAMS_H
 
@@ -42,7 +48,7 @@ public:
     HSMLoggerOff logoff;
 };
 
-using HSMParameterSetFactory = std::function<HSMParameterSet(void)>;
+using HSMParameterSetFactory = std::function<HSMParameterSet()>;
 HSMParameterSetFactory createSingleSimHSMParameterSetFactory();
 HSMParameterSetFactory createClusterSimHSMParameterSetFactory();
 HSMParameterSetFactory createFailoverPairSimHSMParameterSetFactory();

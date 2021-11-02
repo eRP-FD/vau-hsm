@@ -6,7 +6,7 @@
 # ATTENTION! Use forward slashes (/) only
 #
 
-UTIMACO_ROOT = /vau-hsm/firmware/HWMake/csdk
+UTIMACO_ROOT = /opt/cryptoserversdk
 
 # location of SDK
 SDK_PATH = $(UTIMACO_ROOT)/SDK
@@ -21,7 +21,7 @@ GINC = $(UTIMACO_ROOT)/SDK/cs2/include
 GLIB = $(UTIMACO_ROOT)/SDK/lib
 
 # location of global bin directory
-GBIN = $(UTIMACO_ROOT)/software/Linux/x86-64/Administration
+GBIN = $(UTIMACO_ROOT)/Software/Linux/x86-64/Administration
 
 # MS Visual Studio version: VS 9 (use ARCH = i686 for VS 6)
 ARCH = x86

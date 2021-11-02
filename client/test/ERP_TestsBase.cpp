@@ -1,12 +1,20 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_Client.h"
 #include "ERP_Error.h"
-#include "ERP_TestsBase.h"
-#include "ERP_TestUtils.h"
 #include "ERP_TestParams.h"
+#include "ERP_TestUtils.h"
+#include "ERP_TestsBase.h"
 
 #include <fstream>
 
 const std::string ErpBaseTestsFixture::devIP = SINGLE_SIM_HSM;
+
+HSMSession ErpBaseTestsFixture::m_logonSession = {0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0};
 
 ErpBaseTestsFixture::ErpBaseTestsFixture()
 {
@@ -16,7 +24,7 @@ ErpBaseTestsFixture::ErpBaseTestsFixture()
 void ErpBaseTestsFixture::connect()
 {
     // code here will execute just before the test ensues
-    m_logonSession = ERP_Connect(devIP.c_str(), 5000, 1800000);
+    m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
 }
 
 void ErpBaseTestsFixture::logonSetup()
@@ -58,6 +66,69 @@ void ErpBaseTestsFixture::logoff()
         m_logonSession = ERP_Logoff(m_logonSession);
         ASSERT_EQ(HSMAnonymousOpen, m_logonSession.status);
     }
+}
+
+const unsigned int ErpBaseTestsFixture::generationSaved = THE_ANSWER;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedRoot;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedEK;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedAKChallenge1Blob;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedAKChallenge2Blob;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedAK;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::teeToken;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedECIESKeyPairBlob;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedEnrollmentNONCE;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedAttestationNONCE;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedQuote;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedVAUSIGKeyPairBlob;
+
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedAKName;
+std::vector<std::uint8_t> ErpBaseTestsFixture::clientPub;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedAKPub;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedEnrollmentQuote;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedEnrollmentQuoteSignature;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedAttestationQuote;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedAttestationQuoteSignature;
+std::vector<std::uint8_t> ErpBaseTestsFixture::savedDecCred;
+
+void ErpBaseTestsFixture::SetUpTestSuite()
+{
+    savedTrustedRoot = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedRootSaved.blob"));
+    savedTrustedEK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedEKSaved.blob"));
+    savedAKChallenge1Blob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AKChallengeSaved.blob"));
+    savedAKChallenge2Blob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AKChallenge2Saved.blob"));
+    savedTrustedAK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedAkSaved.blob"));
+    teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    savedECIESKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
+    savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
+    savedAttestationNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AttestationQuoteNONCESaved.blob"));
+    savedTrustedQuote = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedQuoteSaved.blob"));
+    savedVAUSIGKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved.blob"));
+    clientPub = readERPResourceFile("saved/clientECIESPub.bin");
+    savedAKName = readERPResourceFile("saved/h80000002.bin");
+    savedAKPub = readERPResourceFile("saved/AKPub.bin");
+    savedEnrollmentQuote = readERPResourceFile("saved/EnrollmentQuoteSaved.bin");
+    savedEnrollmentQuoteSignature = readERPResourceFile("saved/EnrollmentQuoteSigSaved.bin");
+    savedAttestationQuote = readERPResourceFile("saved/AttestationQuoteSaved.bin");
+    savedAttestationQuoteSignature = readERPResourceFile("saved/AttestationQuoteSigSaved.bin");
+    savedDecCred = readERPResourceFile("saved/credDecHSMSaved.bin");
+
+    ASSERT_NE(nullptr, savedTrustedRoot.get());
+    ASSERT_NE(nullptr, savedTrustedEK.get());
+    ASSERT_NE(nullptr, savedTrustedAK.get());
+    ASSERT_NE(nullptr, savedECIESKeyPairBlob.get());
+    ASSERT_NE(nullptr, teeToken.get());
+    ASSERT_NE(nullptr, savedEnrollmentNONCE.get());
+    ASSERT_NE(nullptr, savedAttestationNONCE.get());
+    ASSERT_NE(nullptr, savedTrustedQuote.get());
+    ASSERT_NE(nullptr, savedVAUSIGKeyPairBlob.get());
+
+    ASSERT_NE(clientPub.empty(), true);
+    ASSERT_NE(savedAKName.empty(), true);
+    ASSERT_NE(savedEnrollmentQuote.empty(), true);
+    ASSERT_NE(savedEnrollmentQuoteSignature.empty(), true);
+    ASSERT_NE(savedAttestationQuote.empty(), true);
+    ASSERT_NE(savedAttestationQuoteSignature.empty(), true);
+
 }
 
 void ErpBaseTestsFixture::SetUp()

@@ -1,54 +1,56 @@
 ## HSM Firmware
 
+#### Design Notes
+
+- Siehe vau-hsm/Design.md für Kommentare zum Design.
 
 #### Pre-build steps
 
-- a `SSH` key must be generated and its public part added to your [GitHub account](https://github.ibmgcloud.net/settings/keys). Instructions for doing so you can find [here](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
-
+- es muss ein `SSH` Key erzeugt werden und der öffentlicher Teil zu Ihrem [GitHub account](https://github.ibmgcloud.net/settings/keys) hinzugefügt werden. Eine Anleitung dazu finden Sie [hier](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
 
 #### How to build on Linux
 
-- install dependencies: `conan`, `cmake`, `make`, `gcc`, `libc6-dev-i386`
+- Installieren der Abhängigkeiten: `conan`, `cmake`, `make`, `gcc`, `libc6-dev-i386`
 
-- add the eRP Conan repository from Nexus: `conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal`
+- Fügen Sie die eRP Conan Repositories von Nexus hinzu: `conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal`
 
-- optional: if you installed Conan for the first time and plan to use it for any C++>=11 project, also do the following: `conan profile update settings.compiler.libcxx=libstdc++11 default`
+- Optional: Wenn Sie Conan zum ersten Mal installiert haben und es für ein C++>=11-Projekt verwenden wollen, führen Sie außerdem folgende Schritte aus: `conan profile update settings.compiler.libcxx=libstdc++11 default`
 
-- update your (perhaps `default`) Conan profile for the right build type (`Debug` or `Release`): `conan profile update settings.build_type=Debug default`
+- Aktualisieren Sie Ihr (vielleicht `default`) Conan-Profil für den richtigen Build-Typ (`Debug` oder `Release`): `conan profile update settings.build_type=Debug default`
 
-- create a build folder for the right build type: `mkdir build-debug`
+- Erstellen Sie einen Build-Ordner für den richtigen Build-Typ: mkdir build-debug
 
-- change working directory into the newly created folder and invoke CMake with the right build type: `cmake -DCMAKE_BUILD_TYPE=Debug ..`
+- Wechseln Sie das Arbeitsverzeichnis in den neu erstellten Ordner und rufen Sie CMake mit dem richtigen Build-Typ auf: `cmake -DCMAKE_BUILD_TYPE=Debug ..`
 
-- build the project: `make -j4`
+- Bauen Sie das Projekt: `make -j4`
 
-- artefacts can be found in the build folder under `lib`
+- Artefakte können im Build-Ordner unter `lib` gefunden werden
 
-- HSM simulator can be found in the build folder under `simulator`
+- Der HSM-Simulator befindet sich im Build-Ordner unter `Simulator`
 
 #### How to build on Windows
 
-- Microsoft Visual Studio 2019 is the only toolchain supported. Other versions might work too.
+- Microsoft Visual Studio 2019 ist die einzige Toolchain, die unterstützt wird. Andere Versionen können auch funktionieren.
 
-- install Conan from [here](https://conan.io/downloads.html) (via installer or via `pip`, both options should be fine)
+- Installieren Sie Conan von [here](https://conan.io/downloads.html) (per Installer oder per `pip`, beide Optionen sollten funktionieren)
 
-- make sure Conan is installed correctly and added to your `PATH`
+- Vergewissern Sie sich, dass Conan korrekt installiert und zu Ihrem `PATH` hinzugefügt wurde
 
-- create a fresh Conan profile: `conan profile new default --detect`
+- Erstellen Sie ein neues Conan-Profil: `conan profil new default --detect`
 
-- update your newly added profile for the right build type (`Debug` or `Release`): `conan profile update settings.build_type=Debug default`
+- Aktualisieren Sie Ihr neu hinzugefügtes Profil für den richtigen Build-Typ (`Debug` oder `Release`): `conan profile update settings.build_type=Debug default`
 
-- open up this `firmware` folder in Visual Studio. Do not open the root `vau-hsm`, but only the `firmware`.
+- Öffnen Sie den Ordner `firmware` in Visual Studio. Öffnen Sie nicht Root `vau-hsm`, sondern nur die `firmware`.
 
-- VS should invoke CMake automatically and you should be able to build the solution from the UI, both in `Debug` or in `Release` mode
+- VS sollte CMake automatisch aufrufen und Sie sollten in der Lage sein, die Lösung von der Benutzeroberfläche aus zu erstellen, sowohl im "Debug"- als auch im "Release"-Modus
 
-- artefacts can be found in the build folder under `bin`
+- Artefakte können im Build-Ordner unter `bin` gefunden werden
 
-- HSM simulator can be found in the build folder under `simulator`
+- Der HSM-Simulator befindet sich im Build-Ordner unter `Simulator`
 
 #### How to use with CLion
 
-Integration with `CLion` works too, without (too much of a) hassle, the only things nice to have being couple adjustments under `Settings` > `Build, Execution, Deployment` > `CMake`:
-- create two profiles (from the small `+` icon): `Debug` and `Release`
-- for each profile, set (accordingly) the `CMake Options` to `-DCMAKE_BUILD_TYPE=Debug` and the `Build directory` to `build-debug`
-- optionally, `Build options` can be set for both profiles to `-- -j 4`
+Die Integration mit `CLion` funktioniert ebenfalls, ohne (zu viel) Aufwand, die einzigen Dinge, die zu beachten sind, sind ein paar Anpassungen unter `Settings` > `Build, Execution, Deployment` > `CMake`:
+- Erstellung von zwei Profilen (über das kleine `+` Symbol): `Debug` und `Release`
+- Für jedes Profil setzen Sie (entsprechend) die `CMake Options` auf `-DCMAKE_BUILD_TYPE=Debug` und das `Build directory` auf `build-debug`
+- Optional können die `Build options` für beide Profile auf `-- -j 4` gesetzt werden

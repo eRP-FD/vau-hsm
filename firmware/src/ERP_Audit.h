@@ -1,6 +1,13 @@
-#ifndef __ERP_AUDIT_H
-#define __ERP_AUDIT_H
-// Header file for Audit code for IBM eRezept VAU HSM Firmware.
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ *
+ * Description: Audit log code for the IBM eRezept VAU HSM Custom firmware.
+ **************************************************************************************************/
+
+#ifndef ERP_AUDIT_H
+#define ERP_AUDIT_H
 
 #include "ERP_AuditIDs.h"
 

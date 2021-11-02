@@ -1,3 +1,9 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #ifndef ERP_SFC_H
 #define ERP_SFC_H
 
@@ -30,5 +36,10 @@
 #define ERP_SFC_GENERATE_VAUSIG_KEYPAIR  22 
 #define ERP_SFC_GENERATE_VAUSIG_CSR      23
 #define ERP_SFC_GET_VAUSIG_PRIVATE_KEY   24
+#define ERP_SFC_EXPORT_SINGLE_BLOB_KEY   25
+#define ERP_SFC_IMPORT_SINGLE_BLOB_KEY   26
+#define ERP_SFC_MIGRATE_BLOB             27
+#define ERP_SFC_GET_BLOB_CONTENT_HASH    28
+#define ERP_SFC_GET_BLOB_CONTENT_HASH_WITH_TOKEN    29
 
 #endif

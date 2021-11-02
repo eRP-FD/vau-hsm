@@ -1,8 +1,14 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_Client.h"
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
-#include "ERP_TestsBase.h"
 #include "ERP_TestUtils.h"
+#include "ERP_TestsBase.h"
+
 #include <gtest/gtest.h>
 
 class ErpPermissionTestsFixture : public ErpBaseTestsFixture {
@@ -12,76 +18,17 @@ public:
     // this blob key generation is only used for the create and delete calls.
     static const unsigned int generation = 0x55;
 
-    // this blob key generation is used for the tests with the pre computed blobs
-    static const unsigned int generationSaved = 0x42;
-
-    static std::unique_ptr<ERPBlob> savedTrustedRoot;
-    static std::unique_ptr<ERPBlob> savedTrustedEK;
-    static std::unique_ptr<ERPBlob> savedTrustedAK;
-    static std::unique_ptr<ERPBlob> savedAKChallengeBlob;
-
-    static std::vector<char> savedAKName;
-    static std::vector<char> savedAKPub;
-
-    std::unique_ptr<ERPBlob> pTEEToken;
-
-    static void SetUpTestSuite()
-    {
-        savedTrustedRoot = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedRootSaved.blob"));
-        savedTrustedEK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedEKSaved.blob"));
-        savedTrustedAK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedAkSaved.blob"));
-        savedAKChallengeBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AKChallengeSaved.blob"));
-
-        savedAKName = readERPResourceFile("saved/h80000002.bin");
-        savedAKPub = readERPResourceFile("saved/AKPub.bin");
-
-    }
-
     void SetUp() override
     {
         ErpBaseTestsFixture::SetUp();
 
         unsigned int err = teststep_DeleteBlobKey(m_logonSession, generation);
         ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
-
-        ASSERT_EQ(ERP_ERR_NOERROR, teststep_GenerateBlobKey(m_logonSession, generation));
-
-        // Create a token for the test
-        auto attestQuote = readERPResourceFile("saved/AttestationQuoteSaved.bin");
-        auto attestQuoteSignature = readERPResourceFile("saved/AttestationQuoteSigSaved.bin");
-        auto enrollQuote = readERPResourceFile("saved/EnrollmentQuoteSaved.bin");
-        auto enrollQuoteSignature = readERPResourceFile("saved/EnrollmentQuoteSigSaved.bin");
-
-        std::unique_ptr<ERPBlob> savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(
-            readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
-        std::unique_ptr<ERPBlob> savedAttestationNONCE = std::unique_ptr<ERPBlob>(
-            readBlobResourceFile("saved/AttestationQuoteNONCESaved.blob"));
-        std::unique_ptr<ERPBlob> pTrustedQuote = std::unique_ptr<ERPBlob>(
-                readBlobResourceFile("saved/trustedQuoteSaved.blob"));
-
-        pTEEToken = getEmptyBlob(generationSaved);
-        err = teststep_getTEEToken(
-                m_logonSession,
-                savedTrustedAK.get(),
-                pTrustedQuote.get(),
-                savedAttestationNONCE.get(),
-                reinterpret_cast<unsigned char *>(savedAKName.data()),
-                attestQuote.size(), reinterpret_cast<unsigned char *>(attestQuote.data()),
-                attestQuoteSignature.size(), reinterpret_cast<unsigned char *>(attestQuoteSignature.data()),
-                pTEEToken.get());
-
+        err = teststep_GenerateBlobKey(m_logonSession, generation);
         ASSERT_EQ(ERP_ERR_NOERROR, err);
     }
 
 };
-
-std::unique_ptr<ERPBlob> ErpPermissionTestsFixture::savedTrustedRoot = std::make_unique<ERPBlob>();
-std::unique_ptr<ERPBlob> ErpPermissionTestsFixture::savedTrustedEK = std::make_unique<ERPBlob>();
-std::unique_ptr<ERPBlob> ErpPermissionTestsFixture::savedTrustedAK = std::make_unique<ERPBlob>();
-std::unique_ptr<ERPBlob> ErpPermissionTestsFixture::savedAKChallengeBlob = std::make_unique<ERPBlob>();
-std::vector<char> ErpPermissionTestsFixture::savedAKName;
-std::vector<char> ErpPermissionTestsFixture::savedAKPub;
-
 
 TEST_F(ErpPermissionTestsFixture, PermissionTrustTPMMfr)
 {
@@ -124,7 +71,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionEnrollTPMEK)
                 ErpPermissionTestsFixture::savedTrustedRoot.get(),
                 pNewTrustedEK.get(),
                 pEKCert.size(),
-                reinterpret_cast<unsigned char *>(pEKCert.data()));
+                pEKCert.data());
         EXPECT_EQ(expErr, err);
     };
 
@@ -157,9 +104,9 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetAKChallenge)
                 m_logonSession,
                 generation,
                 savedTrustedEK.get(),
-                reinterpret_cast<unsigned char *>(savedAKName.data()), // SHA_1_LEN...
+                savedAKName.data(), // SHA_1_LEN...
                 savedAKPub.size() - 2, // file includes two leading length bytes that we don't want.
-                reinterpret_cast<unsigned char *>((savedAKPub.data() + 2)),
+                savedAKPub.data() + 2,
                 pCredChallengeBlob.get(),
                 &encCredentialLength,
                 &(encCredentialData[0]),
@@ -182,8 +129,6 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetAKChallenge)
 //ERP_EnrollTPMAK
 TEST_F(ErpPermissionTestsFixture, PermissionEnrollTPMAK)
 {
-    auto savedDecCred = readERPResourceFile("saved/credDecHSMSaved.bin");
-
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
@@ -193,12 +138,12 @@ TEST_F(ErpPermissionTestsFixture, PermissionEnrollTPMAK)
                 m_logonSession,
                 generationSaved,
                 savedTrustedEK.get(),
-                savedAKChallengeBlob.get(),
-                reinterpret_cast<unsigned char *>(savedAKName.data()),
+                savedAKChallenge1Blob.get(),
+                savedAKName.data(),
                 savedAKPub.size() - 2,
-                reinterpret_cast<unsigned char *>(savedAKPub.data() + 2),
+                savedAKPub.data() + 2,
                 savedDecCred.size(),
-                (unsigned char *) savedDecCred.data(),
+                savedDecCred.data(),
                 pTrustedAK.get());
 
         EXPECT_EQ(expErr, err);
@@ -308,7 +253,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionGenerateECIESCSR)
         };
 
         inCsr.candidateCSRLength = savedCSR.size();
-        memcpy(inCsr.candidateCSR, savedCSR.data(), savedCSR.size());
+        memcpy(&(inCsr.candidateCSR[0]), savedCSR.data(), savedCSR.size());
 
         auto out = ERP_GenerateECIESCSR(m_logonSession, inCsr);
 
@@ -328,15 +273,12 @@ TEST_F(ErpPermissionTestsFixture, PermissionGenerateECIESCSR)
 //ERP_DoVAUECIES128
 TEST_F(ErpPermissionTestsFixture, PermissionDoVAUECIES128)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
-    auto clientPub = readERPResourceFile("saved/clientECIESPub.bin");
-
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
         DoVAUECIESInput in = {
-                *pTEEToken,
-                *savedKeyPairBlob,
+                *teeToken,
+                *savedECIESKeyPairBlob,
                 0, {0}
         };
         ASSERT_GT(clientPub.size(),0);
@@ -402,7 +344,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionGenerateVAUSIGCSR)
         };
 
         inCsr.candidateCSRLength = savedCSR.size();
-        memcpy(inCsr.candidateCSR, savedCSR.data(), savedCSR.size());
+        memcpy(&(inCsr.candidateCSR[0]), savedCSR.data(), savedCSR.size());
 
         auto out = ERP_GenerateVAUSIGCSR(m_logonSession, inCsr);
 
@@ -421,7 +363,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionGenerateVAUSIGCSR)
 }
 
 //ERP_GetVAUSIGPrivateKey
-TEST_F(ErpPermissionTestsFixture, GetVAUSIGPrivateKey)
+TEST_F(ErpPermissionTestsFixture, PermissionGetVAUSIGPrivateKey)
 {
     UIntInput in = {
             generationSaved
@@ -435,7 +377,7 @@ TEST_F(ErpPermissionTestsFixture, GetVAUSIGPrivateKey)
         logon(setOfUsers);
 
         TwoBlobGetKeyInput twoBlobsIn = {
-                *(pTEEToken.get()),
+                *(teeToken.get()),
                 outKP.BlobOut
         };
         auto out = ERP_GetVAUSIGPrivateKey(m_logonSession, twoBlobsIn);
@@ -454,7 +396,7 @@ TEST_F(ErpPermissionTestsFixture, GetVAUSIGPrivateKey)
 
 
 //ERP_UnwrapHashKey
-TEST_F(ErpPermissionTestsFixture, UnwrapHashKey)
+TEST_F(ErpPermissionTestsFixture, PermissionUnwrapHashKey)
 {
     UIntInput in = {
             generationSaved
@@ -468,7 +410,7 @@ TEST_F(ErpPermissionTestsFixture, UnwrapHashKey)
         logon(setOfUsers);
 
         TwoBlobGetKeyInput twoBlobsIn = {
-                *(pTEEToken.get()),
+                *(teeToken.get()),
                 outK.BlobOut
         };
         auto out = ERP_UnwrapHashKey(m_logonSession, twoBlobsIn);
@@ -493,29 +435,26 @@ TEST_F(ErpPermissionTestsFixture, PermissionDeriveTaskKey)
     auto err = teststep_GenerateDerivationKey(m_logonSession, generationSaved, pDerivationKeyBlob.get());
     ASSERT_EQ(ERP_ERR_NOERROR, err);
 
-    auto teeToken = pTEEToken.get();
-
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
-        unsigned char derivationData[] = "(Dummy Derivation Data) KVNR:Z123-45678";
-        size_t derivationDataLength = strlen((const char *) derivationData) + 1;
+        auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
         unsigned char usedDerivationData[MAX_BUFFER];
         size_t usedDerivationDataLength = 0;
         unsigned char initialDerivedKey[AES_256_LEN];
 
         err = teststep_deriveTaskPersistenceKey(
                 m_logonSession,
-                reinterpret_cast<unsigned char *>(savedAKName.data()), // SHA_1_LEN...
-                teeToken,
+                savedAKName.data(), // SHA_1_LEN...
+                ErpBaseTestsFixture::teeToken.get(),
                 pDerivationKeyBlob.get(),
-                derivationDataLength,
-                derivationData,
+                derivationData.size(),
+                derivationData.data(),
                 1, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
-                usedDerivationData, // MAX_BUFFER
-                initialDerivedKey); // AES_256_LEN
+                &(usedDerivationData[0]), // MAX_BUFFER
+                &(initialDerivedKey[0])); // AES_256_LEN
 
         EXPECT_EQ(expErr, err);
     };
@@ -540,24 +479,23 @@ TEST_F(ErpPermissionTestsFixture, PermissionDeriveAuditKey)
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
-        unsigned char derivationData[] = "(Dummy Derivation Data) KVNR:Z123-45678";
-        size_t derivationDataLength = strlen((const char *) derivationData) + 1;
+        auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
         unsigned char usedDerivationData[MAX_BUFFER];
         size_t usedDerivationDataLength = 0;
         unsigned char initialDerivedKey[AES_256_LEN];
 
         err = teststep_deriveAuditKey(
                 m_logonSession,
-                reinterpret_cast<unsigned char *>(savedAKName.data()), // SHA_1_LEN...
-                pTEEToken.get(),
+                savedAKName.data(), // SHA_1_LEN...
+                ErpBaseTestsFixture::teeToken.get(),
                 pDerivationKeyBlob.get(),
-                derivationDataLength,
-                derivationData,
+                derivationData.size(),
+                derivationData.data(),
                 1, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
-                usedDerivationData, // MAX_BUFFER
-                initialDerivedKey); // AES_256_LEN
+                &(usedDerivationData[0]), // MAX_BUFFER
+                &(initialDerivedKey[0])); // AES_256_LEN
 
         EXPECT_EQ(expErr, err);
     };
@@ -583,24 +521,23 @@ TEST_F(ErpPermissionTestsFixture, PermissionDeriveCommsKey)
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
-        unsigned char derivationData[] = "(Dummy Derivation Data) KVNR:Z123-45678";
-        size_t derivationDataLength = strlen((const char *) derivationData) + 1;
+        auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
         unsigned char usedDerivationData[MAX_BUFFER];
         size_t usedDerivationDataLength = 0;
         unsigned char initialDerivedKey[AES_256_LEN];
 
         err = teststep_deriveCommsKey(
                 m_logonSession,
-                reinterpret_cast<unsigned char *>(savedAKName.data()), // SHA_1_LEN...
-                pTEEToken.get(),
+                savedAKName.data(), // SHA_1_LEN...
+                ErpBaseTestsFixture::teeToken.get(),
                 pDerivationKeyBlob.get(),
-                derivationDataLength,
-                derivationData,
+                derivationData.size(),
+                derivationData.data(),
                 1, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
-                usedDerivationData, // MAX_BUFFER
-                initialDerivedKey); // AES_256_LEN
+                &(usedDerivationData[0]), // MAX_BUFFER
+                &(initialDerivedKey[0])); // AES_256_LEN
 
         EXPECT_EQ(expErr, err);
     };
@@ -637,9 +574,9 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetTEEToken)
                 savedTrustedAK.get(),
                 pTrustedQuote.get(),
                 savedNONCE.get(),
-                reinterpret_cast<unsigned char *>(savedAKName.data()),
-                quote.size(), reinterpret_cast<unsigned char *>(quote.data()),
-                quoteSignature.size(), reinterpret_cast<unsigned char *>(quoteSignature.data()),
+                savedAKName.data(),
+                quote.size(), quote.data(),
+                quoteSignature.size(), quoteSignature.data(),
                 pLocalTEEToken.get());
         EXPECT_EQ(expErr, err);
 
@@ -791,7 +728,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionListLoadedBlobKeys)
     testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Set1, users::Set2}, ERP_ERR_NOERROR);
-    testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Update}, ERP_ERR_NOERROR);
     testFn({users::Working}, ERP_ERR_NOERROR);
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
 }
@@ -823,7 +760,7 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetRNDBytes)
     auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
         logon(setOfUsers);
 
-        UIntInput desiredBytes = {32};
+        UIntInput desiredBytes = {RND_256_LEN};
 
         auto rndOut = ERP_GetRNDBytes(m_logonSession, desiredBytes);
         EXPECT_EQ(expErr, rndOut.returnCode);
@@ -837,4 +774,200 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetRNDBytes)
     testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Working}, ERP_ERR_NOERROR);
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionExportSingleBlobKey)
+{
+    unsigned int exportGeneration = TEST_BLOB_GEN;
+
+    logonSetup();
+
+    unsigned int err = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+    ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+    err = teststep_GenerateBlobKey(m_logonSession, exportGeneration);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        BUBlobOutput_t backupResult = { 0 , {0, {0}, {0},{0},{0},0,{0}} };
+        UIntInput intIn;
+        intIn.intValue = exportGeneration;
+
+        // First backup an existing blob generation.
+        backupResult = ERP_ExportSingleBlobKey(m_logonSession, intIn);
+        EXPECT_EQ(expErr, backupResult.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_NOERROR);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_NOERROR);
+    testFn({ users::Update }, ERP_ERR_NOERROR);
+    testFn({ users::Working }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionImportSingleBlobKey)
+{
+    unsigned int exportGeneration = TEST_BLOB_GEN;
+
+    logonSetup();
+
+    unsigned int firstErr = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+    ASSERT_TRUE(firstErr == ERP_ERR_NOERROR || firstErr == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+    firstErr = teststep_GenerateBlobKey(m_logonSession, exportGeneration);
+    ASSERT_EQ(ERP_ERR_NOERROR, firstErr);
+
+    BUBlobOutput_t backupResult = { 0 , {0, {0},{0},{0},{0},0,{0}} };
+    UIntInput intIn;
+    intIn.intValue = exportGeneration;
+
+    // First backup an existing blob generation.
+    backupResult = ERP_ExportSingleBlobKey(m_logonSession, intIn);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logonSetup();
+        unsigned int err = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+        ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+        logon(setOfUsers);
+
+        EmptyOutput restoreResult = { 0 };
+        BUBlobInput blobIn;
+        blobIn.BUBlob = backupResult.BUBlob;
+
+        // Another attempt to restore the blob generation should now work.
+        restoreResult = ERP_ImportSingleBlobKey(m_logonSession, blobIn);
+        EXPECT_EQ(expErr, restoreResult.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_NOERROR);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_NOERROR);
+    testFn({ users::Update }, ERP_ERR_NOERROR);
+    testFn({ users::Working }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionMigrateBlob)
+{
+    unsigned int exportGeneration = TEST_BLOB_GEN;  // 0x55
+
+    logonSetup();
+
+    unsigned int err = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+    ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+    err = teststep_GenerateBlobKey(m_logonSession, exportGeneration);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        SingleBlobOutput migrateResult = { 0 , {0, 0, {0}} };
+        MigrateBlobInput_t migrateIn = { 0 , {0, 0, {0}} };
+        migrateIn.NewBlobGeneration = exportGeneration;
+        // Not really important which blob we take here...
+        migrateIn.BlobIn = *(savedVAUSIGKeyPairBlob.get());
+
+        // Another attempt to restore the blob generation should now work.
+        migrateResult = ERP_MigrateBlob(m_logonSession, migrateIn);
+        EXPECT_EQ(expErr, migrateResult.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_NOERROR);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_NOERROR);
+    testFn({ users::Update }, ERP_ERR_NOERROR);
+    testFn({ users::Working }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionGetBlobContentHash)
+{
+    unsigned int exportGeneration = TEST_BLOB_GEN; // 0x55;
+
+    logonSetup();
+
+    unsigned int err = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+    ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+    err = teststep_GenerateBlobKey(m_logonSession, exportGeneration);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        SHA256Output hashResult = { 0 , {0} };
+        SingleBlobInput hashIn = { {0, 0, {0}} };
+        // Not really important which blob we take here...
+        hashIn.BlobIn = *(savedVAUSIGKeyPairBlob.get());
+
+        // Another attempt to restore the blob generation should now work.
+        hashResult = ERP_GetBlobContentHash(m_logonSession, hashIn);
+        EXPECT_EQ(expErr, hashResult.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_NOERROR);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_NOERROR);
+    testFn({ users::Update }, ERP_ERR_NOERROR);
+    testFn({ users::Working }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionGetBlobContentHashWithToken)
+{
+    unsigned int exportGeneration = TEST_BLOB_GEN; // 0x55;
+
+    logonSetup();
+
+    unsigned int err = teststep_DeleteBlobKey(m_logonSession, exportGeneration);
+    ASSERT_TRUE(err == ERP_ERR_NOERROR || err == ERP_ERR_UNKNOWN_BLOB_GENERATION);
+
+    err = teststep_GenerateBlobKey(m_logonSession, exportGeneration);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        SHA256Output hashResult = { 0 , {0} };
+        TwoBlobGetKeyInput hashIn = { {0, 0, {0}}, {0, 0, {0}} };
+        // Not really important which blob we take here...
+        hashIn.Key = *(savedVAUSIGKeyPairBlob.get());
+        hashIn.TEEToken = *(teeToken.get());
+
+        // Another attempt to restore the blob generation should now work.
+        hashResult = ERP_GetBlobContentHashWithToken(m_logonSession, hashIn);
+        EXPECT_EQ(expErr, hashResult.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Update }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working }, ERP_ERR_NOERROR);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
 }

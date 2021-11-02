@@ -1,14 +1,21 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_Client.h"
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
-#include "ERP_TestUtils.h"
+#include "ERP_SFC.h"
 #include "ERP_TestParams.h"
+#include "ERP_TestUtils.h"
+
 #include <gtest/gtest.h>
 
-#include <vector>
+#include <cstddef>
 #include <fstream>
 #include <memory>
-#include <cstddef>
+#include <vector>
 
 class ErpClusterTestFixture : public ::testing::Test {
 public:
@@ -30,7 +37,7 @@ public:
         ASSERT_LT(nDevices, 10);
         devArray[nDevices] = NULL;
 
-        m_logonSession = ERP_ClusterConnect(devArray, 5000, 1800000,300);
+        m_logonSession = ERP_ClusterConnect(devArray, TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS,TEST_RECONNECT_INTERVAL_MS);
     }
     void logonSetup() {
         bool doLogon = true;
@@ -112,8 +119,8 @@ ERPBlob ErpClusterTestFixture::m_SavedTEEToken = { 0,0,{'\0'} };
 
 TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
 {
-    unsigned int err = 0;
-    unsigned int Gen = 0x42; // This should be present on default simulator.
+    unsigned int err = ERP_ERR_NOERROR;
+    unsigned int Gen = THE_ANSWER; // This should be present on default simulator.
     // Sequence:
     // 1. Trust Mfr Root CA Certificate
     auto pTrustedRoot = getEmptyBlob(Gen);
@@ -121,7 +128,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
 
     err = teststep_TrustTPMMfr(ErpClusterTestFixture::m_logonSession, Gen, pTrustedRoot.get(), MfrRootCert);
 
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("saved/trustedRoot.blob", pTrustedRoot.get());
@@ -137,7 +144,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
 
     // 4. Enroll EK
     auto pTrustedEK = getEmptyBlob(Gen);
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_EnrollTPMEK(
             ErpClusterTestFixture::m_logonSession,
@@ -147,7 +154,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
             pEKCert.size(),
             reinterpret_cast<unsigned char*>(pEKCert.data()));
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("saved/trustedEK.blob", pTrustedEK.get());
@@ -164,7 +171,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     size_t encCredentialLength = 0;
     unsigned char secretData[MAX_BUFFER] = "";
     size_t secretLength = 0;
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_GetAKChallenge(
             ErpClusterTestFixture::m_logonSession,
@@ -192,11 +199,11 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     writeBlobResourceFile("EnrollmentQuoteNONCE.blob", &(quoteNONCE.BlobOut));
     unsigned char variedEnrollmentNONCE[NONCE_LEN];
     // Don't save the NONCE, but save the varied NONCE value instead.
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = varyNONCE("ERP_ENROLLMENT", quoteNONCE.NONCE, &(variedEnrollmentNONCE[0]));
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<char>(variedEnrollmentNONCE, variedEnrollmentNONCE + 0x20));
     }
@@ -204,11 +211,11 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     NONCEOutput attestNONCE = ERP_GenerateNONCE(ErpClusterTestFixture::m_logonSession, genIn);
     writeBlobResourceFile("AttestationQuoteNONCE.Blob", &(attestNONCE.BlobOut));
     unsigned char variedAttestationNONCE[NONCE_LEN];
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = varyNONCE("ERP_ATTESTATION", attestNONCE.NONCE, &(variedAttestationNONCE[0]));
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<char>(variedAttestationNONCE, variedAttestationNONCE + 0x20));
     }
@@ -223,7 +230,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
 TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
 {
     unsigned int err = ERP_ERR_NOERROR;
-    unsigned int Gen = 0x42; // This should be present on default simulator.
+    unsigned int Gen = THE_ANSWER; // This should be present on default simulator.
     // 7. Enroll AK
     // Use blob and decyrpted credential from a previous test run
     std::unique_ptr<ERPBlob> savedAKChallengeBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AKChallengeSaved.blob"));
@@ -232,7 +239,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     auto savedAKPub = readERPResourceFile("saved/AKPub.bin");
     auto savedAKName = readERPResourceFile("saved/h80000002.bin");
     auto pTrustedAK = getEmptyBlob(Gen);
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_EnrollAK(
             ErpClusterTestFixture::m_logonSession,
@@ -255,7 +262,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     std::unique_ptr<ERPBlob> savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
     // 7. Enroll Enclave
     auto pTrustedQuote = getEmptyBlob(Gen);
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_TrustQuote(
             ErpClusterTestFixture::m_logonSession,
@@ -273,7 +280,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     auto attestSig = readERPResourceFile("saved/AttestationQuoteSigSaved.bin");
     // 11. getTEEToken
     auto pTEEToken = getEmptyBlob(Gen);
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_getTEEToken(
             ErpClusterTestFixture::m_logonSession,
@@ -286,13 +293,13 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
             pTEEToken.get());
     }
     // Save the TEEToken for use in other tests.
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = writeBlobResourceFile("saved/StaticTEEToken.blob", pTEEToken.get());
     }
     // 12. Derive or retrieve a new Derivation Key Blob.
     auto pDerivationKeyBlob = getEmptyBlob(Gen);
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         if (1) // 1 == TRUE...
         {
@@ -303,7 +310,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
         }
     }
     // Save the Derivation Key for use in other tests.
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = writeBlobResourceFile("saved/StaticDerivationKey.blob", pDerivationKeyBlob.get());
     }
@@ -313,7 +320,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     unsigned char usedDerivationData[MAX_BUFFER];
     size_t usedDerivationDataLength = 0;
     unsigned char initialDerivedKey[AES_256_LEN];
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_deriveTaskPersistenceKey(
             ErpClusterTestFixture::m_logonSession,
@@ -332,7 +339,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     unsigned char subsequentDerivedKey[AES_256_LEN];
     for (int m = 0; m < 10; m++)
     {
-        if (err == 0)
+        if (err == ERP_ERR_SUCCESS)
         {
             err = teststep_deriveTaskPersistenceKey(
                 ErpClusterTestFixture::m_logonSession,
@@ -349,7 +356,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
         }
     }
     // 15. Compare the two keys
-    // TO DO.
+    // TODO.
     // Save the last TEEToken for anyone else who wants to use it.
     ErpClusterTestFixture::m_SavedTEEToken = *(pTEEToken.get());
     EXPECT_EQ(ERP_ERR_NOERROR, err);
@@ -358,7 +365,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
 // Test that the key derivation is possible with static data from previous test.
 TEST_F(ErpClusterTestFixture, StaticKeyDerivation)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     auto pAKName = readERPResourceFile("saved/h80000002.bin");
     std::unique_ptr<ERPBlob> teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
     std::unique_ptr<ERPBlob> derivationKey = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticDerivationKey.blob"));
@@ -368,7 +375,7 @@ TEST_F(ErpClusterTestFixture, StaticKeyDerivation)
     unsigned char usedDerivationData[MAX_BUFFER];
     size_t usedDerivationDataLength = 0;
     unsigned char initialDerivedKey[AES_256_LEN];
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_deriveTaskPersistenceKey(
             ErpClusterTestFixture::m_logonSession,
@@ -392,7 +399,7 @@ TEST_F(ErpClusterTestFixture, StaticKeyDerivation)
 // Other tests for the update user will go into the general permissions testing.
 TEST_F(ErpClusterTestFixture, UpdateUserTest)
 {
-    unsigned int Gen = 0x42;
+    unsigned int Gen = THE_ANSWER;
     logoff();
     logonUpdate();
     auto pDerivationKeyBlob = getEmptyBlob(Gen);
@@ -409,9 +416,9 @@ TEST_F(ErpClusterTestFixture, UpdateUserTest)
 }
 
 TEST_F(ErpClusterTestFixture, ConnectTests)
-{ // TO DO - add tests trying to reuse a disconnected session.
-    // TO DO - add tests for multi-threaded access.
-    // TO DO - Try using a disconnected session for a working command.
+{ // TODO - add tests trying to reuse a disconnected session.
+    // TODO - add tests for multi-threaded access.
+    // TODO - Try using a disconnected session for a working command.
     EXPECT_EQ(HSMLoggedIn, ErpClusterTestFixture::m_logonSession.status);
     ErpClusterTestFixture::m_logonSession = ERP_Logoff(ErpClusterTestFixture::m_logonSession);
     EXPECT_EQ(HSMAnonymousOpen, ErpClusterTestFixture::m_logonSession.status);
@@ -433,7 +440,7 @@ TEST_F(ErpClusterTestFixture, ConnectionTestMethod)
 }
 TEST_F(ErpClusterTestFixture, ConnectionTestDirect)
 {
-    unsigned int             err = 0;
+    unsigned int             err = ERP_ERR_NOERROR;
 
     printf("\nExecuting DumpHSMMemory command ...\n");
 
@@ -503,7 +510,7 @@ TEST_F(ErpClusterTestFixture, GetRNDBytesTests)
     RNDBytesOutput rndOut = ERP_GetRNDBytes(ErpClusterTestFixture::m_logonSession, desiredBytes);
     EXPECT_EQ(ERP_ERR_NOERROR, rndOut.returnCode);
     EXPECT_EQ(32, rndOut.RNDDataLen);
-    // TO DO log rnd data here...
+    // TODO log rnd data here...
     // 0 bytes - param err
     desiredBytes.intValue = 0;
     rndOut = ERP_GetRNDBytes(ErpClusterTestFixture::m_logonSession, desiredBytes);
@@ -532,7 +539,7 @@ TEST_F(ErpClusterTestFixture, GetRNDBytesTests)
     desiredBytes.intValue = MAX_RND_BYTES + 1;
     rndOut = ERP_GetRNDBytes(ErpClusterTestFixture::m_logonSession, desiredBytes);
     EXPECT_EQ(ERP_ERR_PARAM, rndOut.returnCode);
-    // to do - asn1 integer input tests - refactor from GenerateNONCE.
+    // TODO - asn1 integer input tests - refactor from GenerateNONCE.
     teststep_ASN1IntegerInput(ErpClusterTestFixture::m_logonSession, ERP_SFC_GET_RND_BYTES, false);
 }
 

@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # enable testing only if the build was configured with tests
 #
 if (BUILD_TESTS)
@@ -5,6 +11,10 @@ if (BUILD_TESTS)
 endif()
 
 ########################################################################################################################
+
+# set the general supported/required compiler features (like C & C++ standard versions, etc)
+#
+set_general_compile_features()
 
 # fetch the dependencies' build infos via Conan
 #
@@ -44,8 +54,6 @@ endfunction()
 # private function that given a target name applies the corresponding compilation and linking flags in order to build it
 #
 function (_private_apply_build_options_to_target TARGET_NAME)
-    set_general_compile_features()
-
     get_compile_definitions(COMPILE_DEFINITIONS_RESULT)
     target_compile_definitions(${TARGET_NAME} PRIVATE ${COMPILE_DEFINITIONS_RESULT})
 

@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # private function that sets the install runpath of a target
 # to $ORIGIN so that its dependencies can be found at runtime
 #
@@ -18,42 +24,10 @@ endfunction()
 
 ########################################################################################################################
 
-# private function that installs dependencies via `conan imports`
-#
-function (_private_install_dependencies)
-    install(CODE "message(STATUS \"Installing dependencies\")
-
-                  find_program(CONAN conan)
-                  if (NOT CONAN)
-                      message(FATAL_ERROR \"Cannot find conan. Is it installed?\")
-                  endif()
-
-                  execute_process(COMMAND \${CONAN} imports ${ROOT_DIRECTORY} -imf ${CMAKE_INSTALL_PREFIX}
-                                  WORKING_DIRECTORY ${BUILD_DIRECTORY}
-                                  RESULT_VARIABLE RESULT)
-
-                  if (NOT RESULT STREQUAL \"0\")
-                      message(FATAL_ERROR \"Unable to install dependencies. See errors above.\")
-                  endif()
-
-                  message(STATUS \"Removing '${CONAN_IMPORTS_MANIFEST_NAME}'\")
-
-                  file(REMOVE_RECURSE ${CMAKE_INSTALL_PREFIX}/${CONAN_IMPORTS_MANIFEST_NAME})")
-endfunction()
-
-########################################################################################################################
-
 # function that given a target name (and optionally a list of its public API headers),
 # it instructs the generated build system to install its artefacts (in system wide locations)
 #
 function (install_target TARGET_NAME PUBLIC_HEADERS)
-    _private_check_target_exists(${TARGET_NAME})
-
-    if (NOT _PRIVATE_DEPENDENCIES_INSTALLED)
-        _private_install_dependencies()
-        set(_PRIVATE_DEPENDENCIES_INSTALLED 1 CACHE BOOL "Whether dependencies have already been installed.")
-    endif()
-
     set_target_properties(${TARGET_NAME} PROPERTIES PUBLIC_HEADER "${PUBLIC_HEADERS}")
     install(TARGETS ${TARGET_NAME} PUBLIC_HEADER DESTINATION include/${TARGET_NAME})
 

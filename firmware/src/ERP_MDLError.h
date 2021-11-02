@@ -1,5 +1,11 @@
-#ifndef __ERP_MDL_ERROR_H
-#define __ERP_MDL_ERROR_H
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
+#ifndef ERP_MDL_ERROR_H
+#define ERP_MDL_ERROR_H
 
 // This file is duplicated in the Client subproject - make sure that changes introduced are copied into both 
 // destinations.
@@ -71,6 +77,13 @@
 #define E_ERP_CSR_ADMISSIONS_MISMATCH   0xB101003b      // The admissions section of a candidate CSR does not match the keypair.
 #define E_ERP_BLOB_SEMAPHORE_DEADLOCK   0xB101003c      // The BLOB Semaphore has caused a deadlock.
 #define E_ERP_DERIVATION_DATA_LENGTH    0xB101003d      // The derivation data for a key derivation is too short - it must be at least as long as the KeyPrefix.
+#define E_ERP_CERT_WRONG_ISCA_VALUE     0xB101003e      // x509 Certificate BasicConstraints isCA value is wrong for the purpose of this certificate.
+#define E_ERP_CERT_WRONG_ROOT_STATUS    0xB101003f      // x509 Certificate Root status is wrong for this certificate.   (is root, when it shouldn't be, or vice versa)
+#define E_ERP_CERT_BAD_BASIC_CONSTRAINTS 0xB1010040     // x509 Certificate Basic Constraints field is badly formatted.
+#define E_ERP_BACKUP_WRONG_MBK_NAME     0xB1010041      // HSM AES 256 Master Backup Key name does not match the backup blob.
+#define E_ERP_BACKUP_WRONG_MBK_KCV      0xB1010042      // HSM AES 256 Master Backup Key Check Value (KCV) does not match the backup blob.
+#define E_ERP_BACKUP_WRONG_DATA_LEN     0xB1010043      // The length of the encoded Data field in a backup blob is wrong.
+#define E_ERP_BACKUP_WRONG_BLOB_KEY_KCV 0xB1010044      // The KCV of the decoded blob key in the backup does not match the KCV in the metadata.
 // --- END ERROR CODES ---
 
 #endif

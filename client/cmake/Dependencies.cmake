@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # function that returns the list of third party
 # libraries (dependencies) that a target needs to link against
 #

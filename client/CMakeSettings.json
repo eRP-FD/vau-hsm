@@ -10,7 +10,13 @@
       "variables": [
         {
           "name": "BUILD_TESTS",
-          "value": "1"
+          "value": "1",
+          "type": "STRING"
+        },
+        {
+          "name": "CLANG_TIDY",
+          "value": "",
+          "type": "FILEPATH"
         }
       ]
     },

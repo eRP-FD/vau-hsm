@@ -1,7 +1,12 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_TestParams.h"
 
 #include "ERP_Client.h"
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
 #include "ERP_TestUtils.h"
 
@@ -63,7 +68,7 @@ HSMSession parametrisedLogon(HSMSession sesh, bool bUsePassword, std::string wor
     return retVal;
 }
 
-HSMSession parametrisedLogoff(HSMSession & sesh)
+HSMSession parametrisedLogoff(const HSMSession & sesh)
 {
     HSMSession retVal = ERP_Logoff(sesh);
     EXPECT_EQ(HSMAnonymousOpen,retVal.status);
@@ -114,7 +119,7 @@ HSMParameterSetFactory createSingleSimHSMParameterSetFactory()
         parameters.StaticBlobDataDirectory = std::string("saved");
 
         parameters.SessionFactory = []()->HSMSession {
-            return ERP_Connect(SINGLE_SIM_HSM, 5000, 1800000);
+            return ERP_Connect(SINGLE_SIM_HSM, TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
         };
 
         parameters.SessionTestFactory = []()->HSMSessionTest {
@@ -123,15 +128,15 @@ HSMParameterSetFactory createSingleSimHSMParameterSetFactory()
                 return pThread;
             };
         };
-        parameters.workingLogon = [](HSMSession& sesh)->HSMSession {
+        parameters.workingLogon = [](const HSMSession& sesh)->HSMSession {
             // user with permissions 00000020
             return parametrisedLogon(sesh, false, "ERP_KWRK", "resources/ERP_KWRK_keyfile.key", "RUTU");
         };
-        parameters.setupLogon = [](HSMSession& sesh)->HSMSession {
+        parameters.setupLogon = [](const HSMSession& sesh)->HSMSession {
             // user with permissions 00000200
             return parametrisedLogon(sesh, true, "ERP_SETUP", "", "password");
         };
-        parameters.logoff = [](HSMSession& sesh)->HSMSession {
+        parameters.logoff = [](const HSMSession& sesh)->HSMSession {
             return parametrisedLogoff(sesh);
         };
         return parameters;
@@ -153,14 +158,14 @@ HSMParameterSetFactory createClusterSimHSMParameterSetFactory()
             // code here will execute just before the test ensues 
             const char* devArray[] = CLUSTER_HSM; // 10 is maximum
             int NDevices = 0;
-            while ((devArray[NDevices] != NULL) && (NDevices < 10))
+            while ((devArray[NDevices] != NULL) && (NDevices < MAX_CLUSTER_HSMS))
             {
                 NDevices++;
             }
-            EXPECT_LT(NDevices, 10);
+            EXPECT_LT(NDevices, MAX_CLUSTER_HSMS);
             devArray[NDevices] = NULL;
 
-            return ERP_ClusterConnect(devArray, 5000, 1800000, 300);
+            return ERP_ClusterConnect(&(devArray[0]), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS, TEST_RECONNECT_INTERVAL_MS);
         };
 
         parameters.SessionTestFactory = []()->HSMSessionTest {
@@ -198,14 +203,14 @@ HSMParameterSetFactory createFailoverPairSimHSMParameterSetFactory()
             // code here will execute just before the test ensues 
             const char* devArray[] = FAILOVER_PAIR_HSM; // 10 is maximum
             int NDevices = 0;
-            while ((devArray[NDevices] != NULL) && (NDevices < 10))
+            while ((devArray[NDevices] != NULL) && (NDevices < MAX_CLUSTER_HSMS))
             {
                 NDevices++;
             }
             EXPECT_LT(NDevices, 10);
             devArray[NDevices] = NULL;
 
-            return ERP_ClusterConnect(devArray, 5000, 1800000, 300);
+            return ERP_ClusterConnect(&(devArray[0]), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS, TEST_RECONNECT_INTERVAL_MS);
         };
 
         parameters.SessionTestFactory = []()->HSMSessionTest {
@@ -233,44 +238,40 @@ HSMParameterSetFactory createSingleHWHSMParameterSetFactory()
 {
     if (isSingleHardwareHSMConfigured())
     {
-        return []()->HSMParameterSet
+        return []()
         {
-            // ToDo.
+            // TODO(chris).   This parameterised test setup is not ready yet.
             HSMParameterSet parameters;
             parameters.TestEnabled = false;
             return parameters;
         };
     }
-    else
+
+    return []()
     {
-        return []()->HSMParameterSet
-        {
-            HSMParameterSet parameters;
-            parameters.TestEnabled = false;
-            return parameters;
-        };
-    }
+        HSMParameterSet parameters;
+        parameters.TestEnabled = false;
+        return parameters;
+    };
 }
 
 HSMParameterSetFactory createClusterHWHSMParameterSetFactory() 
 {
     if (isClusteredHardwareHSMConfigured())
     {
-        return []()->HSMParameterSet
+        return []()
         {
-            // ToDo.
+            // TODO(chris).   This parameterised test setup is not ready yet.
             HSMParameterSet parameters;
             parameters.TestEnabled = false;
             return parameters;
         };
     }
-    else
+
+    return []()
     {
-        return []()->HSMParameterSet
-        {
-            HSMParameterSet parameters;
-            parameters.TestEnabled = false;
-            return parameters;
-        };
-    }
+        HSMParameterSet parameters;
+        parameters.TestEnabled = false;
+        return parameters;
+    };
 }

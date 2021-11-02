@@ -1,18 +1,24 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 // Test cases to generate static data set for new HSMs, including hardware HSMs.
 // Read test/resources/SavedData.md
 // Set devIP to correct HSM.
 
 #include "ERP_Client.h"
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
-#include "ERP_TestUtils.h"
 #include "ERP_TestParams.h"
+#include "ERP_TestUtils.h"
+
 #include <gtest/gtest.h>
 
-#include <vector>
-#include <fstream>
-#include <memory>
+
 #include <cstddef>
+#include <memory>
+#include <vector>
 
 class ErpRUAttestationTestFixture : public ::testing::Test {
 public:
@@ -35,15 +41,13 @@ public:
     // Used for dynamic and transient blobs.
     static const unsigned int workingGeneration = 6;
 
-    ErpRUAttestationTestFixture() {
-        // initialization code here
-    }
+    ErpRUAttestationTestFixture() =default;
 
-    void connect() {
+    void static connect() {
         // code here will execute just before the test ensues 
-        m_logonSession = ERP_Connect(devIP.c_str(), 5000, 1800000);
+        m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
-    void logonSetup() {
+    void static logonSetup() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -62,7 +66,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void logonWorking() {
+    void static logonWorking() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -80,7 +84,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void logonUpdate() {
+    void static logonUpdate() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -98,7 +102,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void logoff()
+    void static logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
         {
@@ -107,7 +111,7 @@ public:
         }
     }
 
-    void forceCreateBlobGeneration(unsigned int generation)
+    void static forceCreateBlobGeneration(unsigned int generation)
     {
         unsigned int err = teststep_GenerateBlobKey(m_logonSession, generation);
         EXPECT_TRUE((err == ERP_ERR_NOERROR) || (err == ERP_ERR_BAD_BLOB_GENERATION));
@@ -145,7 +149,7 @@ const std::string ErpRUAttestationTestFixture::devIP = HARDWARE_HSM;
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     // Sequence:
     // 1. Trust Mfr Root CA Certificate
     auto pTrustedRoot = getEmptyBlob();
@@ -157,7 +161,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
         pTrustedRoot.get(),
         MfrRootCert);
 
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("rusaved/trustedMfrRoot.blob", pTrustedRoot.get());
@@ -171,7 +175,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
 
     // 4. Enroll EK
     auto pTrustedEK = getEmptyBlob();
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_EnrollTPMEK(
             ErpRUAttestationTestFixture::m_logonSession,
@@ -179,9 +183,9 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
             pTrustedRoot.get(),
             pTrustedEK.get(),
             pEKCert.size(),
-            reinterpret_cast<unsigned char*>(pEKCert.data()));
+            pEKCert.data());
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("rusaved/trustedEK.blob", pTrustedEK.get());
@@ -198,15 +202,15 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
     size_t encCredentialLength = 0;
     unsigned char secretData[MAX_BUFFER] = "";
     size_t secretLength = 0;
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_GetAKChallenge(
             ErpRUAttestationTestFixture::m_logonSession,
             workingGeneration,
             pTrustedEK.get(),
-            reinterpret_cast<unsigned char*>(pAKName.data()), // SHA_1_LEN...
+            pAKName.data(), // SHA_1_LEN...
             pAKPub.size() - 2, // file includes two leading length bytes that we don't want.
-            reinterpret_cast<unsigned char*>((pAKPub.data() + 2)),
+            pAKPub.data() + 2,
             pCredChallengeBlob.get(),
             &encCredentialLength,
             &(encCredentialData[0]),
@@ -215,9 +219,9 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
     }
     if (err == ERP_ERR_NOERROR)
     {
-        writeERPResourceFile("encCredHSM.bin", std::vector<char>(
+        writeERPResourceFile("encCredHSM.bin", std::vector<std::uint8_t>(
             &(encCredentialData[0]), &(encCredentialData[0]) + encCredentialLength));
-        writeERPResourceFile("secretHSM.bin", std::vector<char>(
+        writeERPResourceFile("secretHSM.bin", std::vector<std::uint8_t>(
             &(secretData[0]), &(secretData[0]) + secretLength));
         writeBlobResourceFile("AKChallenge.blob", pCredChallengeBlob.get());
     }
@@ -238,25 +242,25 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
     writeBlobResourceFile("EnrollmentQuoteNONCE.blob", &(quoteNONCE.BlobOut));
     unsigned char variedEnrollmentNONCE[NONCE_LEN];
     // Don't save the NONCE, but save the varied NONCE value instead.
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
-        err = varyNONCE("ERP_ENROLLMENT", quoteNONCE.NONCE, &(variedEnrollmentNONCE[0]));
+        err = varyNONCE("ERP_ENROLLMENT", &(quoteNONCE.NONCE[0]), &(variedEnrollmentNONCE[0]));
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
-        writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<char>(variedEnrollmentNONCE, variedEnrollmentNONCE + 0x20));
+        writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<std::uint8_t>(&(variedEnrollmentNONCE[0]), &(variedEnrollmentNONCE[0]) + RND_256_LEN));
     }
     // 10. get New NONCE for TEE Token request - do this out of sequence to allow a single manual TPM step.
     NONCEOutput attestNONCE = ERP_GenerateNONCE(ErpRUAttestationTestFixture::m_logonSession, genIn);
     writeBlobResourceFile("AttestationQuoteNONCE.Blob", &(attestNONCE.BlobOut));
     unsigned char variedAttestationNONCE[NONCE_LEN];
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
-        err = varyNONCE("ERP_ATTESTATION", attestNONCE.NONCE, &(variedAttestationNONCE[0]));
+        err = varyNONCE("ERP_ATTESTATION", &(attestNONCE.NONCE[0]), &(variedAttestationNONCE[0]));
     }
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
-        writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<char>(variedAttestationNONCE, variedAttestationNONCE + 0x20));
+        writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<std::uint8_t>(&(variedAttestationNONCE[0]), &(variedAttestationNONCE[0]) + RND_256_LEN));
     }
     EXPECT_EQ(ERP_ERR_NOERROR, err);
 }
@@ -274,18 +278,18 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
     auto savedAKPub = readERPResourceFile("rusaved/AKPub.bin");
     auto savedAKName = readERPResourceFile("rusaved/h80000002.bin");
     auto pTrustedAK = getEmptyBlob();
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_EnrollAK(
             ErpRUAttestationTestFixture::m_logonSession,
             enrollmentGeneration,
             savedTrustedEKBlob.get(),
             savedAKChallengeBlob.get(),
-            reinterpret_cast<unsigned char*>(savedAKName.data()),
+            savedAKName.data(),
             savedAKPub.size() - 2,
-            reinterpret_cast<unsigned char*>(savedAKPub.data() + 2),
+            savedAKPub.data() + 2,
             savedDecCred.size(),
-            (unsigned char*)savedDecCred.data(),
+            savedDecCred.data(),
             pTrustedAK.get());
     }
 
@@ -310,16 +314,16 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
         readBlobResourceFile("rusaved/EnrollmentQuoteNONCESaved.blob"));
     // 7. Enroll Enclave
     auto pTrustedQuote = getEmptyBlob();
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_TrustQuote(
             ErpRUAttestationTestFixture::m_logonSession,
             enrollmentGeneration,
             pTrustedAK.get(),
             enrollNONCE.get(),
-            reinterpret_cast<unsigned char*>(savedAKName.data()),
-            enrollQuote.size(), reinterpret_cast<unsigned char*>(enrollQuote.data()),
-            enrollSig.size(), reinterpret_cast<unsigned char*>(enrollSig.data()),
+            savedAKName.data(),
+            enrollQuote.size(), enrollQuote.data(),
+            enrollSig.size(), enrollSig.data(),
             pTrustedQuote.get());
     }
     if (err == ERP_ERR_NOERROR)
@@ -334,20 +338,20 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
 
     // 11. getTEEToken
     auto pTEEToken = getEmptyBlob();
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_getTEEToken(
             ErpRUAttestationTestFixture::m_logonSession,
             pTrustedAK.get(),
             pTrustedQuote.get(),
             attestNONCE.get(),
-            reinterpret_cast<unsigned char*>(savedAKName.data()),
-            attestQuote.size(), reinterpret_cast<unsigned char*>(attestQuote.data()),
-            attestSig.size(), reinterpret_cast<unsigned char*>(attestSig.data()),
+            savedAKName.data(),
+            attestQuote.size(), attestQuote.data(),
+            attestSig.size(), attestSig.data(),
             pTEEToken.get());
     }
     // Save the TEEToken for use in other tests.
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = writeBlobResourceFile("rusaved/staticTEEToken.blob", pTEEToken.get());
     }
@@ -465,44 +469,43 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
     std::unique_ptr<ERPBlob> savedTaskDerivationKey = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/taskDerivationKeySaved.blob"));
     auto savedAKName = readERPResourceFile("rusaved/h80000002.bin");
     // 13. derive Task persistence Key for initial derivation
-    unsigned char derivationData[] = "(Dummy Derivation Data) KVNR:Z123-45678";
-    size_t derivationDataLength = strlen((const char*)derivationData) + 1;
+    auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
     unsigned char usedDerivationData[MAX_BUFFER];
     size_t usedDerivationDataLength = 0;
     unsigned char initialDerivedKey[AES_256_LEN];
-    if (err == 0)
+    if (err == ERP_ERR_SUCCESS)
     {
         err = teststep_deriveTaskPersistenceKey(
             ErpRUAttestationTestFixture::m_logonSession,
-            reinterpret_cast<unsigned char*>(savedAKName.data()), // SHA_1_LEN...
+            savedAKName.data(), // SHA_1_LEN...
             savedTEEToken.get(),
             savedTaskDerivationKey.get(),
-            derivationDataLength,
-            derivationData,
+            derivationData.size(),
+            derivationData.data(),
             1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
             // Output
             &usedDerivationDataLength,
-            usedDerivationData, // MAX_BUFFER
-            initialDerivedKey); // AES_256_LEN
+            &(usedDerivationData[0]), // MAX_BUFFER
+            &(initialDerivedKey[0])); // AES_256_LEN
     }
     // 14. Derive Task persistence key again for a non-initial derivation
     unsigned char subsequentDerivedKey[AES_256_LEN];
-    for (int m = 0; m < 10; m++)
+    for (int m = 0; m < SMALL_LOOP; m++)
     {
-        if (err == 0)
+        if (err == ERP_ERR_SUCCESS)
         {
             err = teststep_deriveTaskPersistenceKey(
                 ErpRUAttestationTestFixture::m_logonSession,
-                reinterpret_cast<unsigned char*>(savedAKName.data()), // SHA_1_LEN...
+                savedAKName.data(), // SHA_1_LEN...
                 savedTEEToken.get(),
                 savedTaskDerivationKey.get(),
                 usedDerivationDataLength,
-                usedDerivationData,
+                &(usedDerivationData[0]),
                 0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
                 // Output
                 &usedDerivationDataLength,
-                usedDerivationData, // MAX_BUFFER
-                subsequentDerivedKey); // AES_256_LEN
+                &(usedDerivationData[0]), // MAX_BUFFER
+                &(subsequentDerivedKey[0])); // AES_256_LEN
         }
     }
     EXPECT_EQ(ERP_ERR_NOERROR, err);
@@ -524,7 +527,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_getVAUSIGPrivateKey)
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
  /**
- // TO DO - set up check of expected output.
+ // TODO(chris) - set up check of expected output.
     unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
         0x01, 0x06, 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07, 0x04, 0x7a, 0x30, 0x78,
         0x02, 0x01, 0x01, 0x04, 0x20, 0x52, 0xbb, 0xa0, 0x49, 0xee, 0x4f, 0x9a, 0x4d, 0xcc, 0xc5, 0x30,
@@ -556,14 +559,14 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_generateVAUSIGCSR)
     x509CSROutput keyOut = ERP_GenerateVAUSIGCSR(m_logonSession, vauCSR);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
-    // TO DO - set up check of expected output.
+    // TODO(chris) - set up check of expected output.
 //    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
 //        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
 //    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
 //    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TO DO check CSR Signature?
+    // TODO(chris) check CSR Signature?
     writeERPResourceFile("rusaved/generatedVAUSIG.csr",
-        std::vector<char>(keyOut.CSRData, keyOut.CSRData + keyOut.CSRDataLength));
+        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }
 
 // Cannot work without test data matching our ECIES KeyPair.
@@ -587,7 +590,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_doVAUECIES)
     vauECIES.clientPublicKeyLength = clientPub.size();
     AES128KeyOutput keyOut = ERP_DoVAUECIES128(m_logonSession, vauECIES);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-    unsigned char expectedKey[] = { 0xda, 0x7c, 0x96, 0x48, 0xf7, 0xab, 0xa4, 0x6d
+    const unsigned char expectedKey[] = { 0xda, 0x7c, 0x96, 0x48, 0xf7, 0xab, 0xa4, 0x6d
         , 0x6f, 0x7b, 0x98, 0x5e, 0xf8, 0xa9, 0x4b, 0x02 };
     ASSERT_TRUE(0 == memcmp(&(keyOut.AESKey[0]), &(expectedKey[0]), 16));
 }
@@ -606,20 +609,20 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_generateECIESCSR)
     eciesCSR.candidateCSRLength = candidateCSR.size();
     memcpy(&(eciesCSR.candidateCSR[0]), candidateCSR.data(), candidateCSR.size());
     x509CSROutput keyOut = { 0,0,{0} };
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < MEDIUM_LOOP; i++)
     {
         keyOut = ERP_GenerateECIESCSR(m_logonSession, eciesCSR);
         ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
     }
 
-    // TO DO - set up check of expected output.
+    // TODO(chris) - set up check of expected output.
 //    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
 //        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
 //    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
 //    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TO DO check CSR Signature?
+    // TODO(chris) check CSR Signature?
     writeERPResourceFile("rusaved/generatedECIES.csr",
-        std::vector<char>(keyOut.CSRData, keyOut.CSRData + keyOut.CSRDataLength));
+        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_UnwrapHashKey)
@@ -644,5 +647,5 @@ unsigned char expectedKey[] = {
     ASSERT_TRUE(0 == memcmp(&(keyOut.Key[0]), &(expectedKey[0]), 32));
 **/
     writeERPResourceFile("rusaved/ERPHashKey.bin",
-        std::vector<char>(keyOut.Key, keyOut.Key + AES_256_LEN));
+        std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
 }

@@ -1,7 +1,13 @@
-#ifndef __ERP_AUDIT_IDS_H
-#define __ERP_AUDIT_IDS_H
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ *
+ * Description: Header file for Audit Event IDs. May be included on client side.
+ **************************************************************************************************/
 
-// Header file for IBM eRezept VAU HSM Audit Event IDs.   May be included on client side
+#ifndef ERP_AUDIT_IDS_H
+#define ERP_AUDIT_IDS_H
 
 typedef enum ERP_AuditID {
     ERP_AUDIT_No_Event = 0, // reserve this for programmatic use.
@@ -46,7 +52,13 @@ typedef enum ERP_AuditID {
     ERP_AUDIT_Failed_ECIES_DO_VAUECIES                              = 39,
     ERP_AUDIT_Failed_VAUSIG_Get_Private_Key                         = 40,
     ERP_AUDIT_Failed_Unwrap_Hash_Key                                = 41,
-    ERP_AUDIT_LastUsedId                                            = 42 // Used for programmatic reasons.
+    ERP_AUDIT_Exported_Single_Blob_Generation                       = 42,
+    ERP_AUDIT_Imported_Single_Blob_Generation                       = 43,
+    ERP_AUDIT_Failed_Export_Single_Blob_Generation                  = 44,
+    ERP_AUDIT_Failed_Import_Single_Blob_Generation                  = 45,
+    ERP_AUDIT_Failed_Get_Blob_Content_Hash                               = 46,
+    ERP_AUDIT_Failed_Migrate_Blob                                   = 47,
+    ERP_AUDIT_LastUsedId                                            = 48 // Used for programmatic reasons.
 }ERP_AuditID_t;
 
 // Used for successful setup operations

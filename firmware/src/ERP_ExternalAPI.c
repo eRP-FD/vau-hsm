@@ -1,14 +1,10 @@
 /**************************************************************************************************
- * $File Identification                    $
- * $Filename          : ERP_ext.c          $
- * $Module version    : FF.FF.01.01        $
- * $Module name       : ERP                $
- * $Release Date      : DD.MM.YYYY         $
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
  *
- * Author             : Chris Cracknell
- *
- * Description        : Implementation of extern Functions (called by the host application)
- *                        This module implements the IBM eRezept custom HSM firmware
+ * Description: Implementation of extern Functions (called by the host application).
+ *              This module implements the IBM eRezept custom HSM firmware.
  **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
@@ -17,16 +13,13 @@
 #include <cryptoserversdk/load_store.h>
 #include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
-
 #include <cryptoserversdk/os_mem.h>
 #include <cryptoserversdk/os_str.h>
 #include <cryptoserversdk/os_log.h>
 #include <cryptoserversdk/os_task.h>
 #include <cryptoserversdk/os_file.h>
 #include <cryptoserversdk/os_audit.h>
-
 #include <cryptoserversdk/os_crypt.h>
-
 #include <cryptoserversdk/cmds.h>
 #include <cryptoserversdk/util.h>
 #include <cryptoserversdk/db.h>
@@ -48,42 +41,46 @@
 #include "ERP_Audit.h"
 #include "ERP_CryptoUtils.h"
 
-#define TRUST_KEY "ERP_TRUST_KEY"
-#define DERIVATION_KEY "ERP_DERIVATION_KEY"
-
 /******************************************************************************
  * Globals
  ******************************************************************************/
 
-
-
-// Method to carry out a dump of currently allocated HSM Heap.
+// Externally callable FWAPI Command to carry out a dump of currently allocated HSM Heap.
 // Output will be printed in the simulator.
 // In Production the method will return E_ERP_DEV_FUNCTION_ONLY
+// Return: Success or Error code.
 int ERP_DumpHSMMemory(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    // TO DO - Build-dependent return error or do work
+    // This is a build-dependent return error or do work
+#ifdef DEBUG
     unsigned int err = E_ERP_SUCCESS;
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
     }
     err = DumpHSMMemory();
+    // No Audit error here -this is diagnostic time only.
     return (int)err;
-//    return E_ERP_DEV_FUNCTION_ONLY;
+#else 
+    return E_ERP_DEV_FUNCTION_ONLY;
+#endif
 }
 
+// Externally callable FWAPI Command
 // This method may be used as a place holder in the SFC Code table.
+// Return: Success or Error code.
 int ERP_NotUsed(T_CMDS_HANDLE *p_hdl, int l_cmd, unsigned char *p_cmd)
 {
     return E_ERP_OBSOLETE_FUNCTION;
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new Blob Trust Key with a new Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is incremented by one and used.   Otherwise the input value must
-//           not match ay existing Blob Key Generations present in the HSM.
-// Output: none
+//           not match any existing Blob Key Generations present in the HSM.
+// Output: Integer Generation of newly created Blob key.
+// Return: Success or Error code.
 int ERP_GenerateBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -91,8 +88,8 @@ int ERP_GenerateBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     unsigned int Generation = 0;
 
     // This operation requires ERP Setup or ERP Update Rights.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 3, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -143,9 +140,11 @@ int ERP_GenerateBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to list the currently loaded Blob Trust Keys
 // Input: none
 // Output: List of <Generation,SHA256 Hashes of Key Values>
+// Return: Success or Error code.
 int ERP_ListBlobKeys(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -153,8 +152,9 @@ int ERP_ListBlobKeys(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     T_BLOBK* const* pBlobList = NULL;
 
     // This can be called by either setup or working users.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 1, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
     }
@@ -214,17 +214,19 @@ int ERP_ListBlobKeys(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     return(int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to delete a Blob Trust Key with a given Generation
 // Input: unsigned int Undesired Generation - the input value must
 //        match an existing Blob Key Generation present in the HSM.
 // Output: none
+// Return: Success or Error code.
 int ERP_DeleteBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_Blob_Generation_Key_Deletion;
     unsigned int Generation = 0;
 
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -242,7 +244,7 @@ int ERP_DeleteBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
         }
     }
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Delete the key
         err = deleteBlobKey(p_hdl, Generation);
     }
 
@@ -256,11 +258,13 @@ int ERP_DeleteBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new Hash Key with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
 //           not match ay existing Blob Key Generations present in the HSM.
 // Output: Hash Key Blob
+// Return: Success or Error code.
 int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -268,8 +272,8 @@ int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     unsigned int Generation = 0;
 
     // This operation requires ERP Setup or ERP Update Rights.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 3, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -285,7 +289,7 @@ int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     ClearBlob_t* clear = NULL;
 
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new hash key
         err = getHashKeyBlob(p_hdl, &clear);
     }
     SealedBlob_t* sealed = NULL;
@@ -309,11 +313,13 @@ int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new Derivation Key Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: Derivation Key Blob
+// Return: Success or Error code.
 int ERP_GenerateDerivationKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -321,8 +327,8 @@ int ERP_GenerateDerivationKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
     unsigned int Generation = 0;
 
     // This operation requires ERP Setup or ERP Update Rights.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 3, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -338,7 +344,7 @@ int ERP_GenerateDerivationKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
     ClearBlob_t* clear = NULL;
 
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new derivation key
         err = getDerivationKeyBlob(p_hdl, &clear);
     }
     SealedBlob_t* sealed = NULL;
@@ -362,20 +368,21 @@ int ERP_GenerateDerivationKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
     return (int)err;
 }
 
-
+// Shared implmentation for multiple externally callable FWAPI Commands
 // Command to generate a new EC KeyPair
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: ECIES KeyPair Blob
+// Return: Success or Error code.
 extern int ERP_GenerateECKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd, ERPBlobType_t blobType, ERP_AuditID_t auditID)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     unsigned int Generation = 0;
 
     // This operation requires ERP Setup or ERP Update Rights.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 3, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -391,7 +398,7 @@ extern int ERP_GenerateECKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char*
     ClearBlob_t* clear = NULL;
 
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new keypair
         err = getECKeyPairBlob(p_hdl, &clear,blobType);
     }
 
@@ -414,23 +421,25 @@ extern int ERP_GenerateECKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char*
     else {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
 
+// Shared implmentation for multiple externally callable FWAPI Commands
 // Generate CSR for an EC Keypair
 // Input: ECIES or VAUSIG KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature 
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
 extern int ERP_GenerateECCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd, ERPBlobType_t blobType, ERP_AuditID_t auditID)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     SealedBlob_t* pKeyPairBlob = NULL;
     // This operation requires ERP Setup or ERP Update Rights.
-    if ((0 != check_permission(p_hdl, 2, 2)) &&
-        (0 != check_permission(p_hdl, 3, 2)))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -477,56 +486,66 @@ extern int ERP_GenerateECCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
     else {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new EC Signature KeyPair for VAU Signing operations
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: ECIES KeyPair Blob
+// Return: Success or Error code.
 extern int ERP_GenerateVAUSIGKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 { 
     return ERP_GenerateECKeyPair(p_hdl, l_cmd, p_cmd, VAUSIG_KeyPair,ERP_AUDIT_Failed_EC_KeyPair_Generation);
 }
 
+// Externally callable FWAPI Command
 // Generate CSR for a VAUSIG Keypair
 // Input: VAUSIG KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature 
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
 extern int ERP_GenerateVAUSIGCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     return ERP_GenerateECCSR(p_hdl, l_cmd, p_cmd, VAUSIG_KeyPair, ERP_AUDIT_Failed_EC_CSR_Generation);
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new ECIES KeyPair for ECIES key exchange with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: ECIES KeyPair Blob
+// Return: Success or Error code.
 extern int ERP_GenerateECIESKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     return ERP_GenerateECKeyPair(p_hdl, l_cmd, p_cmd, ECIES_KeyPair, ERP_AUDIT_Failed_EC_KeyPair_Generation);
 }
 
+// Externally callable FWAPI Command
 // Generate CSR for an ECIES Keypair
 // Input: ECIES KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature 
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
 extern int ERP_GenerateECIESCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     return ERP_GenerateECCSR(p_hdl, l_cmd, p_cmd, ECIES_KeyPair, ERP_AUDIT_Failed_EC_CSR_Generation);
 }
 
+// Externally callable FWAPI Command
 // Command to generate a new NONCE Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
 //           not match ay existing Blob Key Generations present in the HSM.
-// Output: Hash Key Blob
+// Output: NONCE Blob
+// Return: Success or Error code.
 int ERP_GenerateNONCE(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -534,8 +553,8 @@ int ERP_GenerateNONCE(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     unsigned int Generation = 0;
 
     // This can be called by either the setup or the working users.
-    if ((0 != check_permission(p_hdl, 1, 2)) && 
-        (0 != check_permission(p_hdl, 2, 2)))
+    if ((0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2)) && 
+        (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -551,7 +570,7 @@ int ERP_GenerateNONCE(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     ClearBlob_t* clear = NULL;
 
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the NONCE
         err = getNONCEBlob(p_hdl, &clear);
     }
     SealedBlob_t* sealed = NULL;
@@ -572,9 +591,11 @@ int ERP_GenerateNONCE(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Command to add a trusted TPM Manufacturer Root CA certificate.
 // Input: ASN1.DER encoded x509r3 Certificate for the TPM Manufacturer Root CA.
 // Output: Trusted TPM Manufacturer Root Certificate Blob 
+// Return: Success or Error code.
 int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 11
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -583,7 +604,7 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned int certLength = 0;
     unsigned char* pCertData = NULL;
 
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -604,6 +625,7 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned char* pECPointData = NULL;
     size_t curveIDLen = 0;
     unsigned char* pCurveID = NULL;
+    unsigned int bIsCA = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -612,11 +634,34 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
                     &signatureLength, &pSignatureData,
                     &x509ECKeyLength, &px509ECKeyData,
                     &ecPointLength, &pECPointData,
-                    &curveIDLen, &pCurveID);
+                    &curveIDLen, &pCurveID,
+                    &bIsCA);
     }
     if (err == E_ERP_SUCCESS)
     {
         err = CheckAvailableGeneration(p_hdl, desiredGeneration);
+    }
+    // ERP-5567 - Additional TPMMFRRoot Certicficate checks.
+    // Algorithm is ECDSA.   Already checked in parse method.
+    if (err == E_ERP_SUCCESS)
+    {
+        // Certificate is CA
+        if (bIsCA == 0)
+        {
+            err = E_ERP_CERT_WRONG_ISCA_VALUE;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // Certificate is self-signed (Root)
+        err = verifyECDSAWithANSISHA256Signature(p_hdl,
+            signableLength, pSignableData,
+            signatureLength, pSignatureData,
+            x509ECKeyLength, px509ECKeyData);
+        if (err == E_ECDSA_VERIFY_FAILED)
+        {
+            err = E_ERP_CERT_WRONG_ROOT_STATUS;
+        }
     }
     ClearBlob_t* clear = NULL;
     if (err == E_ERP_SUCCESS)
@@ -626,7 +671,7 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     }
     TPMMfrRootCertBlob_t* certy = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new Root cert Blob
         clear->BlobType = TPM_Mfr_RootCert;
         err = fillGeneric(clear);
     }
@@ -659,12 +704,14 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Enroll a TPM Endorsement Key.
 // Input: TPM Manufacturer Root Blob
 // Input: ASN1.DER encoded x509r3 certificate for the Endorsement Key
 // Input: NONCE Blob
 // Input: Signature with EKPriv over (EKPub | NONCE)
 // Output: Trusted EK Blob
+// Return: Success or Error code.
 int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 12
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -673,7 +720,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     SealedBlob_t * pTrustedTPMMfrRootBlob = NULL;
     unsigned int EKCertLength = 0;
     unsigned char * EKCertData = NULL;
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -704,6 +751,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned char* pEKECPointData = NULL;
     size_t EKCurveIDLen = 0;
     unsigned char* pEKCurveID = NULL;
+    unsigned int bIsEKCA = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -712,7 +760,8 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
             &EKSignatureLength, &pEKSignatureData,
             &EKx509ECKeyLength, &pEKx509ECKeyData,
             &EKECPointLength, &pEKECPointData,
-            &EKCurveIDLen, &pEKCurveID);
+            &EKCurveIDLen, &pEKCurveID,
+            &bIsEKCA);
     }
     // - Extract TPM MFR cert from blob.
     ClearBlob_t* clearTPMMfrRoot = NULL;
@@ -736,6 +785,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned char* pMfrECPointData = NULL;
     size_t MfrCurveIDLen = 0;
     unsigned char* pMfrCurveID = NULL;
+    unsigned int bIsMfrCA = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -744,7 +794,30 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
             &MfrSignatureLength, &pMfrSignatureData,
             &Mfrx509ECKeyLength, &pMfrx509ECKeyData,
             &MfrECPointLength, &pMfrECPointData,
-            &MfrCurveIDLen, &pMfrCurveID);
+            &MfrCurveIDLen, &pMfrCurveID,
+            &bIsMfrCA);
+    }
+    // ERP-5568 - Additional EK Certificate checks.
+    // Check that: Algorithm is ECDSA.   Already checked in parse method.
+    if (err == E_ERP_SUCCESS)
+    {
+        // Check that: Certificate is NOT a CA
+        if (bIsEKCA != 0)
+        {
+            err = E_ERP_CERT_WRONG_ISCA_VALUE;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // Check that: Certificate is NOT self-signed (i.e. is NOT a Root certificate)
+        // In this case, it means checking that the Mfr CA key is not the 
+        //   same as the subject key in this certificate, since we check the signature against
+        //   the Mfr Cert in the next step.
+        if ((EKx509ECKeyLength == Mfrx509ECKeyLength) &&
+            (0 == os_mem_cmp(pEKx509ECKeyData, pMfrx509ECKeyData, EKx509ECKeyLength)))
+        {
+            err = E_ERP_CERT_WRONG_ROOT_STATUS;
+        }
     }
     // - Check signature of EK Cert against the TPM Mfr Root CA cert.
     if (err == E_ERP_SUCCESS)
@@ -755,9 +828,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
             Mfrx509ECKeyLength, pMfrx509ECKeyData);
     }
 
-    // TO DO Remove extra parameters.   NONCE and Signature.
-
-    // Make the data for the clear blob...   At the moment thsi is simplistically just the EK Cert.
+    // Make the data for the clear blob...   At the moment this is simplistically just the EK Cert.
     ClearBlob_t* clearResponse = NULL;
     if (err == E_ERP_SUCCESS)
     {
@@ -766,11 +837,11 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     }
     KnownEKBlob_t* EKy = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new Known EK Blob
         clearResponse->BlobType = Trusted_EK;
         err = fillGeneric(clearResponse);
     }
-    // TO DO - Calculate EKName and store it in the Blob.
+    // If the TPM EKName is needed then it can be calculated from the public key in the certificate.
     if (err == E_ERP_SUCCESS)
     {
         clearResponse->DataLength = sizeof(KnownEKBlob_t) + EKCertLength;
@@ -802,6 +873,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // get an Attestation Key credential Chalenge to be signed by the TPM.
 // Input: Known Endoresement Key Blob
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
@@ -809,6 +881,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
 // Output: TPM2 Secret
 // Output: TPM2 Credential
 // Output: Credential Challenge Blob
+// Return: Success or Error code.
 int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 13
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -818,7 +891,7 @@ int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)   
     unsigned int AKPubLength = 0;
     unsigned char* AKPubData = NULL;
     unsigned char* nameAK = 0;
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -867,7 +940,7 @@ int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)   
     }
     AKChallengeBlob_t* challengeBlob = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new Challenge
         clearResponseBlob->BlobType = AKChallenge;
         err = fillGeneric(clearResponseBlob);
     }
@@ -928,6 +1001,7 @@ int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)   
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Enroll an Attestation Key using the results of a TPM decryption of the credential challenge.
 // Input: Known Endoresement Key Blob
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
@@ -935,6 +1009,7 @@ int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)   
 // Input: Decrypted Credential
 // Input: Credential Challenge Blob
 // Output: Trusted AK Blob
+// Return: Success or Error code.
 int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 14
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -947,7 +1022,7 @@ int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned int plainCredLength = 0;
     unsigned char* plainCredData = NULL;
     unsigned char* nameAK = 0;
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1029,7 +1104,7 @@ int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     }
     KnownAKBlob_t* AKBlob = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new known AK Blob
         clearResponseBlob->BlobType = Trusted_AK;
         err = fillGeneric(clearResponseBlob);
     }
@@ -1070,6 +1145,7 @@ int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Enroll a VAU Software stack quote.
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
 // Input: Trusted AK Blob
@@ -1078,6 +1154,7 @@ int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
 //        The quote data will include a NONCE-derived value of HMAC(HSM NONCE,"ERP_ENROLLMENT")
 // Input: TPM Signature of quote data and NONCE.
 // Output: Trusted Quote Blob
+// Return: Success or Error code.
 int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 15
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -1090,7 +1167,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
     unsigned int SignatureLength = 0;
     unsigned char* SignatureData = NULL;
     unsigned char* nameAK = 0;
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1147,7 +1224,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
             SignatureLength, SignatureData,
             pAKBlob->ANSIPubKeyLength, pAKBlob->ANSIPubKeyData);       // public key of signer in RFC 5480 format.
     }
-    // TO DO - other checks for a valid quote.
+    // Other checks for a valid quote:
     //     Check Quote formal validity
     unsigned char* pPCRFlags = NULL;
     unsigned char* pPCRHash = NULL; // This will be an SHA256 Hash.
@@ -1181,7 +1258,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
     //        - Signature over quote is valid and calculated with the AK named in the quote and passed in in TrustedAK Blob.
     //        - format and static contents of the quote are ok.
     //        - the quote contains one PCR Set.
-    // TO DO - identify if there are any other checks that make sense at this point.
+    // TODO:   ERP-6201 - identify if there are any other checks that make sense at this point.
 
     // Make the TrustedQuote Blob.
     //       At the moment this is just a repeat of the Quote Data.
@@ -1196,7 +1273,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
     }
     KnownQuoteBlob_t* quoteBlob = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new Quote Blob
         clearResponseBlob->BlobType = Trusted_Quote;
         err = fillGeneric(clearResponseBlob);
     }
@@ -1235,6 +1312,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Get a time limited Token to use the HSM as a VAU
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
 // Input: Trusted AK Blob
@@ -1243,6 +1321,7 @@ int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)    
 // Input: Quoted Data - TBD exact sub-structure here?
 // Input: TPM Signature over the quoted data using NONCE and AK
 // Output: TEE Token Blob
+// Return: Success or Error code.
 int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 16
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -1256,7 +1335,7 @@ int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     unsigned int SignatureLength = 0;
     unsigned char* SignatureData = NULL;
     unsigned char* nameAK = 0;
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1387,7 +1466,7 @@ int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     }
     TEETokenBlob_t* tokenBlob = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Create the new key
+    { // Create the new Token
         clearResponseBlob->BlobType = TEE_Token;
         err = fillGeneric(clearResponseBlob);
     }
@@ -1425,6 +1504,7 @@ int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     return (int)err;
 }
 
+// Shared implementation for multiple externally callable FWAPI Commands
 // Derive a TASK Persistence symmetric key.
 // Input: currently valid TEE Token
 // Input: Input Derivation Data
@@ -1435,6 +1515,7 @@ int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
 // Input: Key Prefix - will be XOR'd with the start of the key derivation data before derivation.
 // Output: Symmetric derived key.
 // Output: Used Derivation data - data actually used for the derivation, including any extra added by HSM.
+// Return: Success or Error code.
 int ERP_DerivePersistenceKey(
     T_CMDS_HANDLE* p_hdl, 
     int l_cmd, 
@@ -1450,7 +1531,7 @@ int ERP_DerivePersistenceKey(
     unsigned int derivationDataLength = 0;
     unsigned char* derivationData = NULL;
 
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1480,7 +1561,7 @@ int ERP_DerivePersistenceKey(
         err = UnsealBlobAndCheckType(p_hdl, Derivation_Key, pDerivationKeyBlob, &clearDerivationKey);
     }
     // Check Token Times - done in UnsealBlob
-    // TO DO - check AK in request against Token.
+    // TODO:   ERP-6201 - check AK in request against Token.
     unsigned int UsedDerivationDataLength = 0;
     unsigned char * UsedDerivationData = NULL;
     
@@ -1525,6 +1606,7 @@ int ERP_DerivePersistenceKey(
         }
     }
     // Derive the key here...
+    // The initial value here is to be overwritten with the derived value.
     unsigned char DerivedKey[AES_256_LEN / 8] =
             { 0,1,2,3,4,5,7,8,9,0xa,0xb,0xc,0xd,0xe,0xf,
             0xf,0xe,0xd,0xc,0xb,0xa,9,8,7,6,5,4,3,2,1,0 };
@@ -1573,6 +1655,7 @@ int ERP_DerivePersistenceKey(
     return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Derive a TASK Persistence symmetric key.
 // Input: currently valid TEE Token
 // Input: Input Derivation Data
@@ -1582,33 +1665,38 @@ int ERP_DerivePersistenceKey(
 // Input: Derivation Key Blob
 // Output: Symmetric derived key.
 // Output: Used Derivation data - data actually used for the derivation, including any extra added by HSM.
+// Return: Success or Error code.
 int ERP_DeriveTaskKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 17
 {
     return ERP_DerivePersistenceKey(p_hdl, l_cmd, p_cmd, "ERP_TASK");
 }
 
+// Externally callable FWAPI Command
 // As ERP_deriveTaskKey, but for Audit persistence keys.
 int ERP_DeriveAuditKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 18
 {
     return ERP_DerivePersistenceKey(p_hdl, l_cmd, p_cmd, "ERP_AUDIT");
 }
 
+// Externally callable FWAPI Command
 // As ERP_deriveTaskKey, but for Communications persistence keys.
 int ERP_DeriveCommsKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 19
 {
     return ERP_DerivePersistenceKey(p_hdl, l_cmd, p_cmd, "ERP_COMMS");
 }
 
+// Externally callable FWAPI Command
 // Command to generate a Random Data with the HSM hardware RND Generator
 // Input: none.
-// Output: 256 bits of RND Data
+// Output: The requested RND Data
+// Return: Success or Error code.
 extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Internal_Error;
     unsigned int RequestedBytes = 0;
 
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1648,19 +1736,21 @@ extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
     {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
+// Externally callable FWAPI Command
 // return public key for keypair.
 // input: TEE Token
 // input: ECIES KeyPair Blob
 // output: ASN1.DER encoded public key from the blob.
+// Return: Success or Error code.
 extern int ERP_GetECPublicKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_EC_Get_Public_Key;
     SealedBlob_t* pKeyPairBlob = NULL;
-    if (0 != check_permission(p_hdl, 2, 2))
+    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1706,21 +1796,23 @@ extern int ERP_GetECPublicKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
     {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
-// Do ECIES KEy Derivation for VAU Protocol
+// Externally callable FWAPI Command
+// Command to Do ECIES KEy Derivation for VAU Protocol
 // input: TEE Token
 // input: ECIES KeyPair Blob
 // input: Client ECIES Public key
 // output: AES128 vau protocol key.
+// Return: Success or Error code.
 extern int ERP_DoECIES128(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_ECIES_DO_VAUECIES;
     SealedBlob_t* pTEETokenBlob = NULL;
     SealedBlob_t* pKeyPairBlob = NULL;
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1773,20 +1865,22 @@ extern int ERP_DoECIES128(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
     {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
-// Do Get VAUSIG Private Key
+// Externally callable FWAPI Command
+// Command to Get VAUSIG Private Key
 // input: TEE Token
 // input: ECSIG KeyPair Blob
 // output: VAUSIG Private key in PKCS#8 /RFC5208/5915/5240 format.
+// Return: Success or Error code.
 extern int ERP_GetVAUSIGPrivateKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_VAUSIG_Get_Private_Key;
     SealedBlob_t* pTEETokenBlob = NULL;
     SealedBlob_t* pKeyPairBlob = NULL;
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1796,6 +1890,8 @@ extern int ERP_GetVAUSIGPrivateKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned cha
         // To avoid lots of copying and reallocating, the pointers returned by this method are all
         //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
         //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        // Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+        //   buffers and must be freed by the caller. 
         err = parseTwoBlobInputRequest(l_cmd, p_cmd,
             &pTEETokenBlob,
             &pKeyPairBlob);
@@ -1834,20 +1930,22 @@ extern int ERP_GetVAUSIGPrivateKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned cha
     {
         auditErrWithID(err, auditID);
     }
-    return err;
+    return (int)err;
 }
 
+// Externally callable FWAPI Command
 // Extract AES 256 Hash key
 // Input: currently valid TEE Token
 // Input: Hash Key Blob
 // Output: Symmetric AES256 hash key.
+// Return: Success or Error code.
 extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 {
-    int err = E_ERP_SUCCESS;
+     unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_Unwrap_Hash_Key;
     SealedBlob_t* pTEETokenBlob = NULL;
     SealedBlob_t* pKeyBlob = NULL;
-    if (0 != check_permission(p_hdl, 1, 2))
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
@@ -1857,6 +1955,8 @@ extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
         // To avoid lots of copying and reallocating, the pointers returned by this method are all
         //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
         //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        // Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+        //   buffers and must be freed by the caller. 
         err = parseTwoBlobInputRequest(l_cmd, p_cmd,
             &pTEETokenBlob,
             &pKeyBlob);
@@ -1885,6 +1985,295 @@ extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
     FREE_IF_NOT_NULL(clearKey);
     FREE_IF_NOT_NULL(pTEETokenBlob);
     FREE_IF_NOT_NULL(clearTEEToken);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Export a single Blob Generation using the AES256 MBK.
+// Requires: 20000000 - Administrator permission.
+// Blob Generation must exist in the HSM
+// input: Blob Generation
+// output: BUBlob Structure
+extern int ERP_ExportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Export_Single_Blob_Generation;
+    unsigned int Generation = 0;
+
+    // This operation requires ERP Setup or ERP Update Rights.
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseSingleIntInput(l_cmd, p_cmd, &Generation);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        if (Generation == 0)
+        {
+            err = E_ERP_BAD_BLOB_GENERATION;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        if (NULL == getSingleBlobKey(p_hdl, Generation))
+        { // Key is not present!
+            err = E_ERP_BAD_BLOB_GENERATION;
+            INDEX_ERR(err, 0x06);
+        }
+    }
+
+    // Now get the BackupBlob.
+    BackupBlob_t* pOutBlob = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Create the new key
+        err = backupBlobGeneration(p_hdl, Generation, &pOutBlob);
+    }
+
+    // This method will do all the work of building and allocating the firmware
+    //   response containing the integer. 
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeBackupBlobOutput(p_hdl, pOutBlob);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_Exported_Single_Blob_Generation);
+    }
+    else {
+        auditErrWithID(err, auditID);
+    }
+    FREE_IF_NOT_NULL(pOutBlob);
+    return (int)err;
+}
+
+// Import a single Blob Generation using the AES256 MBK.
+// Requires: 20000000 - Administrator permission.
+// The MBK loaded in the HSM must match that in the BUBlob
+// The Generation in the BUBlob must not already be present in the HSM, neither with the same key value, nor a different one.
+// input: BUBlob Structure
+// output: None.
+extern int ERP_ImportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Import_Single_Blob_Generation;
+    BackupBlob_t* pBackupBlob = NULL;
+
+    // This operation requires ERP Setup or ERP Update Rights.
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // The BackupBlob returned by this method will be in newly allocated 
+        //   buffers and must be freed by the caller. 
+        err = parseBackupBlobInputRequest(l_cmd, p_cmd,
+            &pBackupBlob);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        if ((pBackupBlob->Generation == 0) ||
+            (NULL != getSingleBlobKey(p_hdl, pBackupBlob->Generation)))
+        { // A Key is already present or gen == 0
+            err = E_ERP_BAD_BLOB_GENERATION;
+            INDEX_ERR(err, 0x07);
+        }
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = restoreBlobGeneration(p_hdl, pBackupBlob);
+    }
+
+    // No Output to command.
+
+    FREE_IF_NOT_NULL(pBackupBlob);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_Imported_Single_Blob_Generation);
+    }
+    else {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Create a new Blob containing the contents of an existing blob but reencoded with a different Generation.
+// The intention here is to allow preservation of blob contents when the blob generation of the original blob is to be deleted.   The
+//   intention is that only special cases will require this treatment, e.g. Security reasons mandate hard retiral of some keys
+// There is a guarantee that the new blob and the old blob will return the same Check Value in calls to GetBlobContentHash()
+// Requires: 00000200 ERP Setup or 00002000 ERP Update Permission
+// The Generation of the blob must be present in the HSM.
+// input:  newBlobGeneration               an integer Blob Generation for the new Blob.   This must be present in the HSM.
+// input:  blobIn                          The blob that is to be migrated.   The Blob generation for this blob must be present in the HSM.
+// output: new migrated blob.
+extern int ERP_MigrateBlob(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Migrate_Blob;
+    SealedBlob_t* pInputBlob = NULL;
+    unsigned int newGeneration = 0;
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // To avoid lots of copying and reallocating, the pointers returned by this method are all
+        //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
+        //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        err = parseMigrateBlobInput(l_cmd, p_cmd, &newGeneration, &pInputBlob);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = CheckAvailableGeneration(p_hdl, newGeneration);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = CheckAvailableGeneration(p_hdl, pInputBlob->Generation);
+    }
+    ClearBlob_t* pClearInput = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlob(p_hdl, pInputBlob, &pClearInput);
+    }
+    SealedBlob_t* pResealedBlob = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = SealBlob(p_hdl, pClearInput, newGeneration, &pResealedBlob);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSingleSealedBlobOutput(p_hdl, pResealedBlob);
+    }
+    
+    FREE_IF_NOT_NULL(pInputBlob);
+    FREE_IF_NOT_NULL(pClearInput);
+    FREE_IF_NOT_NULL(pResealedBlob);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return err;
+}
+
+// For Setup or Update users: Calculate and return the SHA256 hash of the contents of a blob.
+// Requires: 00000200 ERP Setup or 00002000 ERP Update Permission
+// Working users should use GetBlobContentHashWithToken
+// The Generation of the blob must be present in the HSM.
+// The intention here is to allow identification of a key that may be stored in multiple blobs with different generations.
+// The only guarantee is that multiple calls to this method with blobs containing the same contents will return the same hash.
+// "The same contents" implies that the blobs were related through use of ERP_MigrateBlob.
+// input: Blob to be hashed.
+// output: hash
+extern int ERP_GetBlobContentHash(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Get_Blob_Content_Hash;
+    SealedBlob_t* pInputBlob = NULL;
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) && 
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // To avoid lots of copying and reallocating, the pointers returned by this method are all
+        //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
+        //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        err = parseSingleBlobInput(l_cmd, p_cmd, &pInputBlob);
+    }
+
+    ClearBlob_t* clearInput = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlob(p_hdl, pInputBlob, &clearInput);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = hashAndReturnBlobContents(p_hdl, clearInput);
+    }
+
+    FREE_IF_NOT_NULL(pInputBlob);
+    FREE_IF_NOT_NULL(clearInput);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return err;
+}
+
+// For Working users with a TEE Token: Calculate and return the SHA256 hash of the contents of a blob.
+// Requires: 00000020 ERP Working permission with a valid TEE Token.
+// Setup or Update users should use ERP_GetBlobContentHash
+// The Generation of the blob must be present in the HSM.
+// The intention here is to allow identification of a derivation key that may be stored in multiple blobs with different generations.
+// The only guarantee is that multiple calls to this method with blobs containing the same contents will return the same hash.
+// "The same contents" implies that the blobs were related through use of ERP_MigrateBlob.
+// input: Derivation key Blob.
+// input: ECSIG KeyPair Blob
+// input: Data to be signed
+// output: Signature
+extern int ERP_GetBlobContentHashWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Get_Blob_Content_Hash;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    SealedBlob_t* pInputBlob = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // To avoid lots of copying and reallocating, the pointers returned by this method are all
+        //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
+        //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        // Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+        //   buffers and must be freed by the caller. 
+        err = parseTwoBlobInputRequest(l_cmd, p_cmd,
+            &pTEETokenBlob,
+            &pInputBlob);
+    }
+
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Note that this method will check expiry of the token.
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clearInput = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlob(p_hdl, pInputBlob, &clearInput);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = hashAndReturnBlobContents(p_hdl, clearInput);
+    }
+
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+    FREE_IF_NOT_NULL(pInputBlob);
+    FREE_IF_NOT_NULL(clearInput);
     if (err != E_ERP_SUCCESS)
     {
         auditErrWithID(err, auditID);

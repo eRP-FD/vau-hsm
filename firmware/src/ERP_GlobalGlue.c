@@ -1,30 +1,16 @@
 /**************************************************************************************************
- * $File Identification                   $
- * $Filename          : ERP_global.c      $
- * $Module version    : FF.FF.01.01       $
- * $Module name       : ERP               $
- * $Release Date      : DD.MM.YYYY        $
- *
- * Author             : Chris Ccacknell
- *
- * Description        : Global data definitions of CryptoServer module ERP
- *                        This module implements the IBM eRezept custom HSM firmware
- *
- * ------------------------------------------------------------------------------------------------
- * FF.FF.01.01  | 23.11.2020  | initial version, cloned from Utimaco exmp module  | Chris Cracknell
- * ------------------------------------------------------------------------------------------------
- */
- #define _ERP_C_INT_
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
+#define _ERP_C_INT_
 
 #include <cryptoserversdk/module_1.5.h>
 #include <cryptoserversdk/stype.h>
-
 #include <cryptoserversdk/os_log.h>
 #include <cryptoserversdk/os_file.h>
-#include <cryptoserversdk/os_task.h>
 #include <cryptoserversdk/cmds.h>
-#include <cryptoserversdk/mbk.h>
-#include <cryptoserversdk/adm.h>
 
 #include "ERP.h"
 #include "ERP_ExternalAPI.h"
@@ -134,6 +120,11 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_GenerateVAUSIGKeyPair  // SFC = 22 
     ,ERP_GenerateVAUSIGCSR      // SFC = 23
     ,ERP_GetVAUSIGPrivateKey    // SFC = 24
+    ,ERP_ExportSingleBlobKey    // SFC = 25
+    ,ERP_ImportSingleBlobKey    // SFC = 26
+    ,ERP_MigrateBlob            // SFC = 27
+    ,ERP_GetBlobContentHash     // SFC = 28
+    ,ERP_GetBlobContentHashWithToken   // SFC = 29
 };
 
 MDL_GLOBAL DB* p_BlobKDB;

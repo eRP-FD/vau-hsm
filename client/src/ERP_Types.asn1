@@ -1,3 +1,9 @@
+-- (C) Copyright IBM Deutschland GmbH 2021
+-- (C) Copyright IBM Corp. 2021
+-- SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+------------------------------------------------------------------------------------------------------------------------
+
 ERPModule DEFINITIONS ::= BEGIN -- Module parameters preamble
 
 INTSequence ::= SEQUENCE {
@@ -24,6 +30,10 @@ BlobKeyInfoList ::= SEQUENCE {
 blobKeyInfos SEQUENCE OF BlobKeyInfo
 }
 SingleBlobRequest ::= SEQUENCE {
+blobIn SingleBlob
+}
+MigrateBlobRequest ::= SEQUENCE {
+newGeneration INTEGER,
 blobIn SingleBlob
 }
 TrustTPMMfrRequest ::= SEQUENCE {
@@ -113,5 +123,16 @@ GetVAUCSRRequest ::= SEQUENCE {
 keyPair SingleBlob, -- Currently valid ECIES or VAUSIG KeyPair blob.
 candidateCSR OCTET STRING -- candidate ASN1.DER x509 CSR - all correct,
  -- except for the wrong public key and the signature does not need to be valid.
+}
+BackupBlob ::= SEQUENCE {
+generation INTEGER,
+domain OCTET STRING (5), -- Identifies the cryptographic domain of the blob key - "DVLP", "TEST", "PROD".
+mbkName OCTET STRING(8), -- Utimaco 8 byte name of Master Backup Key used to generate Blob.
+mbkKCV OCTET STRING (16), -- MDC2 hash as KCV for Master backup Key used to creat BUBlob.
+blobKeyKCV OCTET STRING (32), -- SHA256 hash as KCV of Blob Key contained in BUBlob
+blobEncData OCTET STRING -- Encrypted Data of BUBlob
+}
+BackupBlobRequest ::= SEQUENCE {
+buBlob BackupBlob
 }
 END -- End

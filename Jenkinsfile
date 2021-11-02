@@ -1,3 +1,9 @@
+// (C) Copyright IBM Deutschland GmbH 2021
+// (C) Copyright IBM Corp. 2021
+// SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 pipeline {
     agent {
         node {
@@ -25,17 +31,21 @@ pipeline {
             when {
                 anyOf {
                     branch 'master'
+                    branch 'release/*'
                 }
             }
             steps {
-                gradleCreateRelease()
+                gradleCreateReleaseEpa()
             }
         }
         
         stage('Check Container Build') {
             when {
                 not {
-                    branch 'master'
+                    anyOf {
+                        branch 'master'
+                        branch 'release/*'
+                    }
                 }
             }
             steps {
@@ -57,18 +67,23 @@ pipeline {
             when {
                 anyOf {
                     branch 'master'
+                    branch 'release/*'
                 }
             }
             steps {
                 loadNexusConfiguration {
 	                withCredentials(
 	                    [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
-	                ){                   
-	                    buildAndPushContainer(
-	                    	DOCKER_OPTS:"--build-arg NEXUS_USERNAME='${env.NEXUS_USERNAME}' --build-arg NEXUS_PASSWORD='${env.NEXUS_PASSWORD}' --build-arg GITHUB_USERNAME='${env.GITHUB_USERNAME})' --build-arg GITHUB_OAUTH_TOKEN='${env.GITHUB_OAUTH_TOKEN}'",
-	                        DOCKER_BUILDCONTEXT:'firmware',
-	                        DOCKER_FILE:'firmware/docker/Dockerfile'
-	                    )
+	                ){  
+                        script {
+                            def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
+                                 
+                            buildAndPushContainer(
+                                DOCKER_OPTS:"--build-arg NEXUS_USERNAME='${env.NEXUS_USERNAME}' --build-arg NEXUS_PASSWORD='${env.NEXUS_PASSWORD}' --build-arg GITHUB_USERNAME='${env.GITHUB_USERNAME}' --build-arg GITHUB_OAUTH_TOKEN='${env.GITHUB_OAUTH_TOKEN}' --build-arg RELEASE_VERSION='${releaseVersion}'",
+                                DOCKER_BUILDCONTEXT:'firmware',
+                                DOCKER_FILE:'firmware/docker/Dockerfile'
+                            )
+                        }
 	                }
 	            }
             }
@@ -78,6 +93,7 @@ pipeline {
             when {
                 anyOf {
                     branch 'master'
+                    branch 'release/*'
                 }
             }
             steps {
@@ -89,10 +105,17 @@ pipeline {
             when {
                 anyOf {
                     branch 'master'
+                    branch 'release/*'
                 }
             }
             steps {
-                triggerDeployment('dev')
+                script {
+                    if (env.BRANCH_NAME == 'master') {
+                        triggerDeployment('targetEnvironment': 'dev2')
+                    } else if (env.BRANCH_NAME.startsWith('release/1.0.')) {
+                        triggerDeployment('targetEnvironment': 'dev')
+                    }
+                }
             }
         }
     }

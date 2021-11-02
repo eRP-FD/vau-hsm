@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 ########################
 # target configuration #
 ########################
@@ -15,3 +21,5 @@ add_library(${TARGET_NAME} SHARED ERP_Audit.c
 configure_target(${TARGET_NAME})
 
 deploy_target_as_firmware(${TARGET_NAME})
+
+########################################################################################################################

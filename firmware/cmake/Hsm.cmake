@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # CMake script that offers an API for interacting with an HSM.
 #
 # Most API functions require the following parameters:
@@ -231,18 +237,18 @@ endfunction()
 function (hsm_launch_simulator SIMULATOR RESULT_OUT ERROR_OUT)
     set(SIMULATOR_STDOUT "simulator_stdout.txt")
     set(SIMULATOR_STDERR "simulator_stderr.txt")
-	
-	if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-	    set(COMMAND bash -c "${HSM_SIMULATOR} -h -o &")
-	elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
-	    set(COMMAND powershell Start-Process '${HSM_SIMULATOR}' -ArgumentList "'-h -o'")
-	else()
-	    set(${ERROR_OUT} "Simulator can be launched only on Linux or "
-		                 "Windows. `${CMAKE_HOST_SYSTEM_NAME}` is unsupported."
-			PARENT_SCOPE)
+    
+    if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
+        set(COMMAND bash -c "${HSM_SIMULATOR} -h -o &")
+    elseif(CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+        set(COMMAND powershell Start-Process '${HSM_SIMULATOR}' -ArgumentList "'-h -o'")
+    else()
+        set(${ERROR_OUT} "Simulator can be launched only on Linux or "
+                         "Windows. `${CMAKE_HOST_SYSTEM_NAME}` is unsupported."
+            PARENT_SCOPE)
         set(${RESULT_OUT} 0 PARENT_SCOPE)
         return()
-	endif()
+    endif()
 
     execute_process(COMMAND ${COMMAND}
                     RESULT_VARIABLE RESULT_LOCAL

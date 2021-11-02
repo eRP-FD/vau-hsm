@@ -10,23 +10,27 @@ The script needs Nexus credentials in order to feed them to Conan for when retri
 
 A private SSH key (whose public part is registered in your GitHub account) is also necessary for the cloning of the relevant repositories.
 
-Building with Windows and WSL 2
---------------------------------
-Follow instructions for the WSL 2 kernel update and then installing a WSL2 linux distribution.   https://docs.docker.com/docker-for-windows/wsl/
-Ubuntu 20.04 LTS is known to work.
-From outside the wsl at a windows command line run:
-	wsl --list --verbose
-	wsl --set-version <distro name from previous list> 2
-If needed mount windows drives with:
-	sudo mkdir /mnt/d
-	sudo mount -t drvfs d: /mnt/d
-Assuming Conan and docker were already setup on the windows system then they should work within the WSL.
-Copy your ssh private key to ~/.ssh/id_rsa
-Go to thwe firmware/docker directory in the vau-hs, repo.
-run ./build --help`
-The actual run could be something like this:
-./build  --image-name vau-hsm-sim  --nexus-username <nnn.nnn> --nexus-password <pwd.pwd>
+Example of running the `build` script:
+```
+./build --image-name vau-hsm-firmware --nexus-username john.doe --nexus-password myPassword --ssh-key /home/user/.ssh/id_rsa
+```
 
-Then, once complete, run:
-	docker run -t vau-hsm-sim
-This will start the sim on port 3001 locally.   Add -p nnnn:3001 to the line above to expose the HSM Sim on a different port nnnn
+After the image has been built successfully, you can run it using `docker run -it <image-name>`. This will start the simulator in a container on port 3001 locally. You need to export this port (append `-p OUTSIDE_PORT:3001` to the `docker run` command) if you want to access the simulator from outside the container.
+
+#### Building the Docker image from Windows with WSL2
+
+Follow the [instructions](https://docs.docker.com/docker-for-windows/wsl) for the WSL2 kernel update and then installing a WSL2 Linux distribution.
+
+From outside the WSL, at a Windows command line, run:
+```    
+wsl --list --verbose
+wsl --set-version <distro name from previous list> 2
+```
+
+If needed, mount Windows drives from within the WSL by running:
+```
+sudo mkdir /mnt/d
+sudo mount -t drvfs d: /mnt/d
+```
+
+Then simply navigate to this directory (`vau-hsm/firmware/docker`) from within WSL and use the `./build` script as you would if you were natively running Linux.

@@ -1,12 +1,20 @@
-#pragma once
-#ifndef __ERP_DEFS_H
-#define __ERP_DEFS_H
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
 
+#ifndef ERP_DEFS_H
+#define ERP_DEFS_H
+
+// ERP-7949 Use named literals for permissions
+#define ERP_SETUP_PERMISSION 2
+#define ERP_WORKING_PERMISSION 1
+#define ERP_UPDATE_PERMISSION 3
 // All of these in bits...
 #define SHA_256_LEN 256
 #define AES_256_LEN 256
 #define AES_128_LEN 128
-#define RND_256_LEN 256
 #define NONCE_LEN 256
 #define MAX_RND_BYTES 320
 
@@ -16,12 +24,22 @@
 #define TPM_NAME_LEN (SHA_256_LEN/8) + 2
 
 // The Blob Domain for which this firmware has been built.
-// TO DO - modify this by compilation option.   Or allow a promotion by a firmware call?
-//    Quick version is to allow setting of this from outside during the build process.
+// This can be modified by compilation option during the build process.
+// Intended values are "SIML" - Simulator
+// "REFZ" - reference, RU And TU.
+// "PROD" - production, PU.
+// This is intended to make it really easy to identify in which domain a blob has been generated.
+// The blob domain will be visible in plain in the blob structure.
 
 #ifndef BLOB_DOMAIN
 #define BLOB_DOMAIN "SIML"
 #endif
+
+// Sometimes we cannot avoid using a big buffer when there is no way to know how big a buffer needs to be.
+//    Where we use this in the code, we need to chceck the results for an overflow error.
+// The Utimaco Methods that require this will return a buffer overflow error, so writeover past the
+//    end of the buffer will not happen.
+#define ERP_BIG_BUFFER 2000
 
 // The maximum number of simultaneously loaded blob generation keys in the HSM
 #define MAX_LOADED_BLOB_GENERATIONS 200

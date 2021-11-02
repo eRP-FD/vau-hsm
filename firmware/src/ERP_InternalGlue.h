@@ -1,17 +1,11 @@
 /**************************************************************************************************
- * $File Identification                    $
- * $Filename          : ERP_int.h          $
- * $Module version    : FF.FF.01.01        $
- * $Module name       : ERP                $
- * $Release Date      : DD.MM.YYYY         $
- *
- * Author             : Chris Cracknell
- *
- * Description        : Declaration of internal functions
- *						This module implements the IBM eRezept custom HSM firmware
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
  **************************************************************************************************/
-#ifndef __ERP_INTERNAL_GLUE_H
-#define __ERP_INTERNAL_GLUE_H
+
+#ifndef ERP_INTERNAL_GLUE_H
+#define ERP_INTERNAL_GLUE_H
 
 #include <cryptoserversdk/eca.h>
 #include <cryptoserversdk/db.h>

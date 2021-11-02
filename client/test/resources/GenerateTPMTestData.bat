@@ -24,7 +24,7 @@ call inittpm.bat
  REM
  REM Check the certificate under 0x01c0000a
  REM If you do this then you have to manually edit EKCertECC.crt to correct size.
-  You only need to do this the first time on a new TPM.
+  You only need TODO this the first time on a new TPM.
 REM %TPM_EXE_PATH%nvread -ha 01c0000a -cert -of EKCertECC.crt
  REM
  REM Now load and check the EK against the certificate and this time leave it loaded

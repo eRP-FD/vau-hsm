@@ -1,40 +1,73 @@
-FROM conanio/gcc9:1.35.2 AS prerequisites
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
 
 ########################################################################################################################
 
+FROM conanio/gcc9:1.40.3 AS prerequisites
+
 USER root
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+ARG NEXUS_SRV=nexus.epa-dev.net/repository/
+ARG NEXUS_TI_PATH=erp-contrib/ti_compiler_suites/
+ARG NEXUS_TI_PKG=ti_cgt_c6000_7.4.24_linux_installer_x86.bin
+ARG RELEASE_VERSION
+ARG GITHUB_USERNAME
+ARG GITHUB_OAUTH_TOKEN
+ENV GITHUB_USERNAME=${GITHUB_USERNAME:-''}
+ENV GITHUB_OAUTH_TOKEN=${GITHUB_OAUTH_TOKEN:-''}
 
 # install prerequisites
 #
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends gcc-multilib \
-                                               openssh-client && \
-    rm -rf /var/cache/apt/* \
-           /var/lib/apt/*
-
-# setup Conan and add the Nexus Conan repository
-#
-RUN conan profile new default --detect && \
-    conan profile update settings.build_type=Release default && \
-    conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal
-
-# these are the Nexus credentials used by Conan
-#
-ARG NEXUS_USERNAME
-ARG NEXUS_PASSWORD
-
-# log into Conan repository using the Nexus credentials
-#
-RUN conan user $NEXUS_USERNAME -r erp -p $NEXUS_PASSWORD
+RUN DEBIAN_FRONTEND=noninteractive                            \
+    apt-get update -y &&                                      \
+    apt-get install -y --no-install-recommends gcc-multilib   \
+                                               openssh-client \
+                                               curl           \
+                                               git            \
+                                               openssh-client \
+                                               libc6-i386     \
+                                               lib32stdc++6   \
+                                               lib32gcc1      \
+                                               lib32z1        \
+                                               xutils-dev     \
+    &&                                                        \
+    apt-get clean all &&                                      \
+    apt-get autoclean -y &&                                   \
+    apt-get autoremove -y &&                                  \
+    rm -rf /var/lib/apt/*                                     \
+           /var/cache/apt/*
 
 # use HTTPS checkout due to issues with SSH key formatting when passed through as a build arg
 #
-ARG GITHUB_USERNAME
-ARG GITHUB_OAUTH_TOKEN
-ENV GITHUB_USERNAME=${GITHUB_USERNAME:-''} \
-    GITHUB_OAUTH_TOKEN=${GITHUB_OAUTH_TOKEN:-''}
-RUN git config --global url.https://${GITHUB_USERNAME:-}:${GITHUB_OAUTH_TOKEN:-}@github.ibmgcloud.net/.insteadOf git@github.ibmgcloud.net:
+RUN git config --global                                                                                 \
+               url.https://${GITHUB_USERNAME:-}:${GITHUB_OAUTH_TOKEN:-}@github.ibmgcloud.net/.insteadOf \
+               git@github.ibmgcloud.net:
+
+# download TI toolchain
+#
+RUN curl -fSsL -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD}        \
+         https://${NEXUS_SRV}${NEXUS_TI_PATH}${NEXUS_TI_PKG} \
+         -o /opt/ti.bin
+
+# install TI toolchain
+#
+RUN chmod +x /opt/ti.bin &&                    \
+    cd /opt &&                                 \
+    /opt/ti.bin --mode unattended              \
+                --unattendedmodeui none        \
+                --installdir /opt/c6000_7.4.24 \
+                --debugtrace debug.log
+
+# setup Conan and add the Nexus Conan repository
+#
+RUN conan config init --force &&                                                    \
+    conan profile new default --detect --force &&                                   \
+    conan profile update settings.build_type=Release default &&                     \
+    conan profile update settings.compiler.libcxx=libstdc++11 default &&            \
+    conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal && \
+    conan user $NEXUS_USERNAME -r erp -p $NEXUS_PASSWORD
 
 ########################################################################################################################
 
@@ -48,16 +81,71 @@ COPY . .
 # configure & build
 #
 WORKDIR /build
-RUN cmake -S /source -DCMAKE_BUILD_TYPE=Debug
+RUN cmake -S /source -DCMAKE_BUILD_TYPE=Release
 RUN cmake --build .
 
 # clean up
 #
-RUN rm -rf $HOME/.conan \
+RUN rm -rf $HOME/.conan     \
            $HOME/.gitconfig \
-           $HOME/.local \
-           $HOME/.ssh \
+           $HOME/.local     \
+           $HOME/.ssh       \
            /source
+
+########################################################################################################################
+
+FROM prerequisites as tibuild
+
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+ARG NEXUS_SRV=nexus.epa-dev.net/repository/
+ARG NEXUS_RELEASE_PATH=erp-raw-releases/com/ibm/erp/hwmake50/
+ARG RELEASE_VERSION
+ARG NEXUS_RELEASE_PKG=erp-${RELEASE_VERSION}
+
+# download cryptoserversdk
+#
+WORKDIR /opt
+RUN git clone git@github.ibmgcloud.net:eRp/cryptoserversdk.git && \
+    chmod +x /opt/cryptoserversdk/bin/admin/Linux-x86_64/csadm
+
+# bring the sources
+#
+WORKDIR /firmware
+COPY . .
+RUN ln -s HWMake hwmake
+
+# configure & build
+#
+WORKDIR /firmware/HWMake
+RUN cp makefile_ti_docker makefile
+RUN ./make_clean.sh
+RUN ./make.sh
+
+# upload build artefacts
+#
+RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+         --upload-file ../HWMake50/ERP.out         \
+         https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}.out
+
+# perform testing signing
+#
+RUN /opt/cryptoserversdk/bin/admin/Linux-x86_64/csadm Model=cs5                                       \
+                                                      MMCSignKey=IBM_eRP_RU_RSAAltMdlSig.key#password \
+                                                      MakeMTC=../HWMake50/ERP.out
+
+# upload signed artefacts
+#
+RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+         --upload-file ../HWMake50/ERP.mtc         \
+         https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}-ru.mtc
+ 
+# clean up
+#
+RUN rm -rf $HOME/.conan     \
+           $HOME/.gitconfig \
+           $HOME/.local     \
+           $HOME/.ssh
 
 ########################################################################################################################
 
@@ -65,10 +153,11 @@ FROM ubuntu:20.04 AS run
 
 # install dependencies
 #
-RUN DEBIAN_FRONTEND=noninteractive \
-    apt-get update -y && \
-    apt-get install -y --no-install-recommends gcc-multilib && \
-    rm -rf /var/cache/apt/* \
+RUN DEBIAN_FRONTEND=noninteractive                          \
+    apt-get update -y &&                                    \
+    apt-get install -y --no-install-recommends gcc-multilib \
+    &&                                                      \
+    rm -rf /var/cache/apt/*                                 \
            /var/lib/apt/*
 
 # make a clean run directory

@@ -1,7 +1,14 @@
-#ifndef __ERP_ASN_UTILS_H
-#define __ERP_ASN_UTILS_H
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
+#ifndef ERP_ASN_UTILS_H
+#define ERP_ASN_UTILS_H
 
 #include <cryptoserversdk/asn1.h>
+
 #include "ERP_Blob.h"
 
 // Header file for IBM ERP HSM Firmware Module ASN support Utils.
@@ -16,17 +23,23 @@ extern unsigned int decodeASNList(int l_cmd, const unsigned char * p_cmd, ASN1_I
 extern unsigned int setASNIntegerItem(ASN1_ITEM * pItem, unsigned int value);
 
 // pOut must point to an integer variable.
-extern unsigned int getASN1Integer(ASN1_ITEM* pItem, unsigned int * pOut);
+extern unsigned int getASN1Integer(ASN1_ITEM* pItem, unsigned int* pOut);
+// pOut must point to an integer variable.
+// Out value is left as value from the ASN Data, i.e. 0 or FF
+extern unsigned int getASN1Boolean(ASN1_ITEM* pItem, unsigned int* pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASM1_ITEM array to return the NONCE Data. 
+//   into the ASN1_ITEM array to return the NONCE Data. 
 extern unsigned int getASN1NONCE(ASN1_ITEM* pItems, unsigned char ** pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASM1_ITEM array to return the OCTET STRING Data. 
+//   into the ASN1_ITEM array to return the OCTET STRING Data. 
 // Length is returned in pOutLen.
 extern unsigned int getASN1OCTETSTRING(ASN1_ITEM* pItems, unsigned int * pOutLen, unsigned char** pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASM1_ITEM array to return the SealedBlob structure. 
-extern unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** pOut);
+//   into the ASN1_ITEM array to return the SealedBlob structure. 
+extern unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t** ppOut);
+// This method does not allocate memory for the output buffer, but provides a pointer
+//   into the ASN1_ITEM array to return the SealedBlob structure. 
+extern unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut);
 
 // Creates a new ASN1_ITEM containing the blob key.
 // The returned ASN1_ITEM must be deleted using deleteASN1ItemList.
@@ -57,6 +70,19 @@ extern unsigned int parseSingleBlobInput(
     int l_cmd,
     unsigned char* p_cmd,
     // All Parameters from here are output:
+    SealedBlob_t** ppOutBlob);
+
+// Utility method to parse an ASN input to extract a Migrate Blob input argument.
+// To avoid lots of copying and reallocating, the pointers returned by this method are all
+//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   finished with the output pointers.
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+//   buffers and must be freed by the caller. 
+extern unsigned int parseMigrateBlobInput(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    unsigned int* pNewGeneration,
     SealedBlob_t** ppOutBlob);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
@@ -181,6 +207,13 @@ extern unsigned int parseTwoBlobInputRequest(
     SealedBlob_t** ppBlob1,
     SealedBlob_t** ppBlob2);
 
+// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller. 
+extern unsigned int parseBackupBlobInputRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    BackupBlob_t** ppBackupBlob);
+
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
 //   pointing into the original data buffer so do not delete the input buffer until you are 
 //   finished with the output pointers.
@@ -226,8 +259,6 @@ extern unsigned int buildOutputBuffer(T_CMDS_HANDLE* p_hdl, ASN1_ITEM* itemList,
 // The result is automatically packed into an HSM response using cds_alloc_answ
 // input: Commands handle for the command
 // input: the integer value
-// Output: the length of the data created.
-// Output: The data buffer for the command response
 extern unsigned int makeSingleIntOutput(
     T_CMDS_HANDLE* p_hdl,
     unsigned int input);
@@ -236,8 +267,6 @@ extern unsigned int makeSingleIntOutput(
 // The result is automatically packed into an HSM response using cds_alloc_answ
 // input: Commands handle for the command
 // input: the integer value
-// Output: the length of the data created.
-// Output: The data buffer for the command response
 extern unsigned int makeSingleSealedBlobOutput(
     T_CMDS_HANDLE* p_hdl,
     SealedBlob_t * input);
@@ -246,8 +275,6 @@ extern unsigned int makeSingleSealedBlobOutput(
 // The result is automatically packed into an HSM response using cds_alloc_answ
 // input: Commands handle for the command
 // input: the various Data fields for the NONCE And Blob
-// Output: the length of the data created.
-// Output: The data buffer for the command response
 extern unsigned int makeNONCEAndBlobOutput(
     T_CMDS_HANDLE* p_hdl,
     NONCEBlob_t * aNONCEBlob,
@@ -257,8 +284,6 @@ extern unsigned int makeNONCEAndBlobOutput(
 // The result is automatically packed into an HSM response using cds_alloc_answ
 // input: Commands handle for the command
 // input: the various Data fields for the AK Challenge response
-// Output: the length of the data created.
-// Output: The data buffer for the command response
 extern unsigned int makeAKChallengeOutput(
     T_CMDS_HANDLE * p_hdl,
     SealedBlob_t  * pSealedChallengeBlob,
@@ -304,6 +329,18 @@ extern unsigned int makePublicKeyOutput(
     unsigned int keyLen,
     unsigned char* pKeyData);
 
+// Utility method to parse a BasicConstraints octet string, usually from an x509 Certificate.
+// input:   inputLength and pInputData of the basic constraints octet string value to be parsed.
+// output:  boolean isCA - 0 == FALSE, (!0) == true
+// output:  path length constraint.   0 if no constraint is present.
+// return:  error status.
+unsigned int parseBasicConstraints(
+    size_t inputLength,
+    unsigned char* pInputData,
+    unsigned int* pBIsCA,
+    unsigned int* pPathLengthConstraint
+);
+
 // Utility method to extract an EC public key from an x509 certificate.
 // The output pointers are to the correct places in the original data so do not delete them
 //    separately.
@@ -314,6 +351,8 @@ extern unsigned int makePublicKeyOutput(
 // output:   The EC Subject Public key in x509 format
 // output:   The EC Subject Public key in HSM-useable 0x41 byte format
 // output:   The Subject Public Key curve OID.
+// output:   Is the certificate a CA?   !0 == TRUE, 0 == FALSE
+// return:  error status.
 unsigned int parsex509ECCertificate(
     size_t certLength,
     unsigned char* pCertData,
@@ -326,10 +365,12 @@ unsigned int parsex509ECCertificate(
     size_t* pECPointLength,
     unsigned char** ppECPointData,
     size_t* pCurveIDLen, // OID of curve.
-    unsigned char** ppCurveID
+    unsigned char** ppCurveID,
+    unsigned int * pbIsCA
 );
 
 // Utility method to check an admissions x590 extension against allowed value for the keypair
+// return:  error status.
 unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPair);
 
 // This method will parse and verify the candidate CSR and then replace the contained public key
@@ -338,6 +379,7 @@ unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPai
 //    the public ky and the validity of the signature do not matter.
 // Admission Extensions will be checkd for VAUSIG and ECIES keypairs
 // A new buffer will be allocated for the modified CSR which must be freed by the caller.
+// return:  error status.
 unsigned int x509ECCSRReplacePublicKeyAndSign(
     T_CMDS_HANDLE* p_hdl,
     size_t candidateCSRLength, unsigned char* pCandidateCSRData,
@@ -349,9 +391,18 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
 // input: curveID object id length and value
 // input: X and Y Coordinates for oublic key
 // Output: The public key data buffer - must be deleted by caller.
-extern unsigned int makeAsn1PublicKey(
+// return:  error status.
+unsigned int makeAsn1PublicKey(
     size_t curveIDLen, unsigned char* pCurveID,
     unsigned char* pXCoord, unsigned char* pYCoord,
     size_t* pOutLen, unsigned char** ppPubOut);
+
+// Utility Method to build an ASN Output containing a BackupBlob.
+// The result is automatically packed into an HSM response using cds_alloc_answ
+// input: Commands handle for the command
+// input: the BackupBlob to be encoded.
+extern unsigned int makeBackupBlobOutput(
+    T_CMDS_HANDLE* p_hdl,
+    BackupBlob_t* pBackupBlob);
 
 #endif

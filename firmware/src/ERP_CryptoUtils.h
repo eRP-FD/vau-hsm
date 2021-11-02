@@ -1,10 +1,18 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ *
+ * Description: Header file for cryptographic utility methods.
+ **************************************************************************************************/
+
 #ifndef ERP_CRYPTO_UTILS_H
 #define ERP_CRYPTO_UTILS_H
 
-// Header file for cryptographic utility methods used by IBM eRezept VAU-HSM custom firmware
-#include "ERP_Blob.h"
-
 #include <cryptoserversdk/cmds.h>
+#include <cryptoserversdk/eca.h>
+
+#include "ERP_Blob.h"
 
 extern MDL_CONST unsigned char NIST_P256_ANSI_OID[];
 extern MDL_CONST size_t NIST_P256_ANSI_OID_LEN;
@@ -20,22 +28,25 @@ extern MDL_CONST unsigned char ID_ERP_VAU_ANSI_OID[];
 extern MDL_CONST size_t ID_ERP_VAU_ANSI_OID_LEN;
 extern MDL_CONST unsigned char ID_EREZEPT_ANSI_OID[];
 extern MDL_CONST size_t ID_EREZEPT_ANSI_OID_LEN;
+extern MDL_CONST unsigned char ID_BASIC_CONSTRAINTS_OID[];
+extern MDL_CONST size_t ID_BASIC_CONSTRAINTS_OID_LEN;
+extern MDL_CONST size_t BASIC_CONSTRAINTS_LEN;
 
-// TO DO implement checks
 // Utility method to return >0 if the curve OBJECT IDENTIFIER in item is one that we support.
 extern int isSupportedCurveID(ASN1_ITEM* pItem);
 
 extern char HexChar(unsigned char nibble);
 extern int _Bin2Hex(unsigned char* binIn, unsigned int inLen, char* hexOut, unsigned int bufLen);
 
-// Writes a big endian long integer to a buffer - works on any endian machine.
+// Writes a big endian long (32 bit) integer to a buffer - works on any endian machine.
 int writeBELongInt(unsigned char* buffer, unsigned long input);
+// Reads a big endian long (32 bit) integer to a buffer - works on any endian machine.
+int readBELongInt(unsigned char* buffer, unsigned long * output);
 
 extern unsigned int _DoHMAC(
     T_CMDS_HANDLE* p_hdl,
     unsigned char* pKDK,
-    unsigned char* InputData,
-    size_t InputLength,
+    unsigned char* InputData,    size_t InputLength,
     unsigned char* pOut,
     size_t * pOutputLength); //in: size of buffer, out: size written.
 
@@ -187,7 +198,7 @@ unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
     unsigned int KeyBits, // input: The size (in bits) of the desired key.
     unsigned char* pOutputData, size_t* pOutputLength); // Buffer and Length for output from KDF.
 
-// Calucaltes a signature over the signable datausing the private key of the keypair.
+// Calculates a signature over the signable datausing the private key of the keypair.
 // The compressed raw format for the signature (defined by Utimaco)is R and the S concatenated.
 // after a successful call, the caller must delete *ppRawSigData when finished with it.
 unsigned int signECDSAWithRawSigSHA256Signature(T_CMDS_HANDLE* p_hdl,
@@ -210,4 +221,10 @@ unsigned int x509ECDSASign(T_CMDS_HANDLE *p_hdl,
 // This function does not do error checking on its' input - it is assumed that the caller did that.
 unsigned int varyNONCE(const char * variation, unsigned char * nonceDataIn, unsigned char * variedNONCEOut);
 
+// This function treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first 
+//   four bytes as a big endian integer in pChecksum.
+// If pKeyData or pChecksum are NULL then an E_ERP_INTERNAL_BUFFER_ERROR is returned.
+// This method may also return the error codes of the Utimaco AES module.
+// The return value is an error or E_ERP_SUCCESS
+unsigned int GenerateAES256CheckSum(unsigned char*pKeyData, unsigned long* pCheckSum);
 #endif

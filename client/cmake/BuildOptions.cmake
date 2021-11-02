@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # private function that returns
 # the compilation options specific for Linux
 #
@@ -12,7 +18,6 @@ function (_private_get_linux_compile_options RESULT)
                   -Winit-self
                   -Wshadow
                   -Wswitch-default
-                  -Wno-variadic-macros
                   $<$<CONFIG:Debug>:-g>
                   $<$<CONFIG:Debug>:-ggdb>
                   $<$<CONFIG:Debug>:-O0>

@@ -1,17 +1,14 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
 
-#include <cryptoserversdk/load_store.h>
 #include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
-
 #include <cryptoserversdk/os_mem.h>
-#include <cryptoserversdk/os_str.h>
-#include <cryptoserversdk/os_log.h>
-#include <cryptoserversdk/os_task.h>
-#include <cryptoserversdk/os_crypt.h>
-
 #include <cryptoserversdk/asn1.h>
 #include <cryptoserversdk/cmds.h>
-#include <cryptoserversdk/util.h>
 #include <cryptoserversdk/aes.h>
 #include <cryptoserversdk/eca.h>
 #include <cryptoserversdk/ecdsa.h>
@@ -35,6 +32,14 @@ MDL_CONST unsigned char ID_ERP_VAU_ANSI_OID[] = { 0x2A, 0x82, 0x14, 0x00, 0x4C, 
 MDL_CONST size_t ID_ERP_VAU_ANSI_OID_LEN = sizeof(ID_ERP_VAU_ANSI_OID);
 MDL_CONST unsigned char ID_EREZEPT_ANSI_OID[] = { 0x2A, 0x82, 0x14, 0x00, 0x4C, 0x04, 0x82, 0x02 }; // 1.2.276.0.76.4.258
 MDL_CONST size_t ID_EREZEPT_ANSI_OID_LEN = sizeof(ID_EREZEPT_ANSI_OID);
+MDL_CONST unsigned char ID_BASIC_CONSTRAINTS_OID[] = { 0x55, 0x1D, 0x13 }; // (2 5 29 19)
+MDL_CONST size_t ID_BASIC_CONSTRAINTS_OID_LEN = sizeof(ID_BASIC_CONSTRAINTS_OID);
+MDL_CONST size_t BASIC_CONSTRAINTS_LEN = 5; // Number of bytes in basic constraints octet string.
+
+unsigned int AES_BLOCK(AES_KEY* p_key_buff,
+    size_t blockSize,
+    unsigned char* p_data_in,
+    unsigned char* p_data_out);
 
 char HexChar(unsigned char nibble)
 {
@@ -101,6 +106,50 @@ extern int isSupportedCurveID(ASN1_ITEM* pItem)
         }
     }
     return retVal;
+}
+
+// This functions treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first 
+//   four bytes as a big endian integer in pChecksum.
+// If pKeyData or pChecksum are NULL then an E_ERP_INTERNAL_BUFFER_ERROR is returned.
+// This method may also return the error codes of the Utimaco AES module.
+// The return value is an error or E_ERP_SUCCESS
+unsigned int GenerateAES256CheckSum(unsigned char* pKeyData, unsigned long* pCheckSum)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    if ((pKeyData == NULL) || (pCheckSum == NULL))
+    {
+        err = E_ERP_INTERNAL_BUFFER_ERROR;
+    } else 
+    {
+        *pCheckSum = 0;   // Don't leave it uninitialised.
+    }
+    // 32 bytes of zero data used as plain text for KCV
+    unsigned char zeroData[] = { 
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+    // An array to hold the raw encrypted block.
+    unsigned char encZero[32] = {
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+    AES_KEY* pEncKey = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        pEncKey = aes_pkey(AES_256_LEN/8, pKeyData, AES_ENC, NULL);
+        if (pEncKey == NULL)
+        {
+            err = E_ERP_AES_KEY_ERROR;
+            INDEX_ERR(err, 0x11);
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = AES_BLOCK(pEncKey, AES_256_LEN / 8, &(zeroData[0]), &(encZero[0]));
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = readBELongInt(&(encZero[0]), pCheckSum);
+    }
+    return err;
 }
 
 extern unsigned int _DoHMAC(
@@ -248,9 +297,9 @@ unsigned int getECKeyPairBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob, ERP
             err = E_ERP_FAILED_ECC_KEYPAIR_GENERATION;
         }
     }
-    // TO DO - try to interrogate length of required buffer.
-    unsigned int outLen = 2000;
-    unsigned char outData[2000] = "";
+    // There is no way to interrogate the length of the required buffer, so just use a large one and treat an overflow as an error,
+    unsigned int outLen = ERP_BIG_BUFFER;
+    unsigned char outData[ERP_BIG_BUFFER] = "";
     if (err == E_ERP_SUCCESS)
     {
         err = ecdsa_key_encode(privKeyLen, privKeyData,
@@ -947,18 +996,14 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
         { // Bad length
             err = E_ERP_BAD_TPMT_PUBLIC_FORMAT;
         }
-        // TO DO check if there are any sensible checks we can do to the policy?
+        // TODO:   ERP-6201 check if there are any sensible checks we can do to the policy?
         offset += 0x22;
     }
     if (err == E_ERP_SUCCESS)
     {
         // TPMU_PUBLIC_PARMS - TPMS_ECC_PARMS - don't accept RSA
-//        if (attestPub->type == TPM_ALG_RSA) {
-//            b9 = (attestPub->parameters.rsaDetail.scheme.scheme != TPM_ALG_RSASSA);
-//            b10 = (attestPub->parameters.rsaDetail.scheme.details.rsassa.hashAlg != TPM_ALG_SHA256);
-//            b11 = (attestPub->parameters.rsaDetail.keyBits != 2048);
-//            b12 = (attestPub->parameters.rsaDetail.exponent != 0);
-//        }
+        // The values below are taken with permission from the source code of the IBM Attestation 
+        // Server demo code written by Ken Goldman of IBM.   #L https://sourceforge.net/projects/ibmtpm20acs/
 //        if (attestPub->type == TPM_ALG_ECC) {
 //            b9 = attestPub->parameters.eccDetail.scheme.details.ecdsa.hashAlg != TPM_ALG_SHA256;
 //            b10 = attestPub->parameters.eccDetail.scheme.scheme != TPM_ALG_ECDSA;
@@ -1141,7 +1186,7 @@ unsigned int verifyTPMQuote(T_CMDS_HANDLE* p_hdl,
     }
     if (err == E_ERP_SUCCESS)
     {
-        // TO DO - workout how and if we can use the qualified name for anything.
+        // TODO:   ERP-6201 - workout how and if we can use the qualified name for anything.
         *ppQualifiedSignerName = &(pQuoteData[offset]);
         offset += TPM_NAME_LEN;
     }
@@ -1282,7 +1327,7 @@ unsigned int parseTPMT_Signature(size_t sigLength, unsigned char* pSig, unsigned
     }
     return err;
 }
-// Writes a big endian long integer to a buffer - works on any endian machine.
+// Writes a big endian long (32 bit) integer to a buffer - works on any endian machine.
 int writeBELongInt(unsigned char* buffer, unsigned long input)
 {
     // Yes, this could be more efficiently coded.
@@ -1290,6 +1335,17 @@ int writeBELongInt(unsigned char* buffer, unsigned long input)
     buffer[2] = (unsigned char)(input >>= 8);
     buffer[1] = (unsigned char)(input >>= 8);
     buffer[0] = (unsigned char)(input >>= 8);
+    return 0;
+}
+
+// Reads a big endian long (32 bit) integer to a buffer - works on any endian machine.
+int readBELongInt(unsigned char* buffer, unsigned long* output)
+{
+    // Yes, this could be more efficiently coded.
+    *output = buffer[3];
+    *output += buffer[2] * 0x100;
+    *output += buffer[1] * 0x10000;
+    *output += buffer[0] * 0x1000000;
     return 0;
 }
 
@@ -1456,6 +1512,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
     unsigned char* pEKECPointData = NULL;
     size_t EKCurveIDLen = 0;
     unsigned char* pEKCurveID = NULL;
+    unsigned int pBIsCA = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -1464,7 +1521,8 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
             &EKSignatureLength, &pEKSignatureData,
             &EKx509ECKeyLength, &pEKx509ECKeyData,
             &EKECPointLength, &pEKECPointData,
-            &EKCurveIDLen, &pEKCurveID);
+            &EKCurveIDLen, &pEKCurveID,
+            &pBIsCA);
     }
     // Get Ephemeral public key X and Y affine
     // Format of pubKeyData is 0x04 - 0x20 byte X, 0x20 byte Y

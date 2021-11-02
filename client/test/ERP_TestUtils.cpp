@@ -1,6 +1,11 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_TestUtils.h"
 
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
 
 #include <gtest/gtest.h>
@@ -15,16 +20,22 @@ namespace
     constexpr const size_t ERPBlobHeader = sizeof(ERPBlob) - MAX_BUFFER;
 }
 
+// Utility Method for byte arrays initialised from strings.
+std::vector<std::uint8_t> asciiToBuffer(std::string_view in )
+{
+    return std::vector<uint8_t>(in.cbegin(),in.cend());
+}
+
 std::unique_ptr<ERPBlob> getEmptyBlob(unsigned int Gen)
 {
     auto pBlob = std::make_unique<ERPBlob>();
     *(pBlob.get()) = { Gen, 0, {0} };
-    std::memset(pBlob->BlobData, 0, sizeof(pBlob->BlobData));
+    std::memset(&(pBlob->BlobData[0]), 0, sizeof(pBlob->BlobData));
     return pBlob;
 }
 // Utility method to read a file form the resources directory, allocates a pointer to a buffer to it and return that pointer 
 // for the caller to own and be responsible for deletion.
-std::vector<char> readERPResourceFile(const std::string& filename, bool bMustExist)
+std::vector<std::uint8_t> readERPResourceFile(const std::string& filename, bool bMustExist)
 {
     const std::string fullFileName = testDataDir + filename;
     std::ifstream readFile = std::ifstream(fullFileName, std::ios::in | std::ios::binary);;
@@ -37,16 +48,14 @@ std::vector<char> readERPResourceFile(const std::string& filename, bool bMustExi
         }
     }
 
-    auto eos = std::istreambuf_iterator<char>();
-    auto retVal = std::vector<char>(std::istreambuf_iterator<char>(readFile), eos);
-
+    auto retVal = std::vector<std::uint8_t>(std::istreambuf_iterator<char>(readFile), std::istreambuf_iterator<char>());
     return retVal;
 }
 
 // Caller must delete returned object.
 ERPBlob* readBlobResourceFile(const std::string& filename, bool bMustExist)
 {
-    std::vector<char> data = readERPResourceFile(filename,bMustExist);
+    std::vector<uint8_t> data = readERPResourceFile(filename,bMustExist);
     if (bMustExist)
     {
         EXPECT_LE(data.size(), MAX_BUFFER);
@@ -59,20 +68,21 @@ ERPBlob* readBlobResourceFile(const std::string& filename, bool bMustExist)
     EXPECT_NE(nullptr, retVal);
     if (retVal != nullptr)
     {
-        std::copy(data.begin(), data.end(), (char*)retVal);
+        std::copy(data.begin(), data.end(), reinterpret_cast<char*>(retVal)); // NOLINT
         retVal->BlobLength = data.size() - ERPBlobHeader;
     }
     return retVal;
 }
 
-unsigned int writeERPResourceFile(const std::string& filename, const std::vector<char>& data) 
+unsigned int writeERPResourceFile(const std::string& filename, const std::vector<uint8_t>& data) 
 {
     unsigned int err = ERP_ERR_NOERROR;
 
     const std::string fullFileName = testDataDir + filename;
     std::ofstream writeFile = std::ofstream(fullFileName, std::ios::out | std::ios::binary);;
     EXPECT_TRUE(writeFile.is_open());
-    std::copy(data.begin(), data.end(), std::ostreambuf_iterator<char>(writeFile));
+    // The uint8 to int8 conversion has to be done somewhere - this is it.
+    writeFile.write(reinterpret_cast<const char*>(data.data()),data.size() * sizeof(data.front())); // NOLINT
     writeFile.close();
 
     return err;
@@ -87,20 +97,21 @@ unsigned int writeBlobResourceFile(const std::string& filename, const ERPBlob *p
     const std::string fullFileName = testDataDir + filename;
     std::ofstream writeFile = std::ofstream(fullFileName, std::ios::out | std::ios::binary);;
     EXPECT_TRUE(writeFile.is_open());
-    unsigned char* blobBegin = (unsigned char*)pBlob;
-    std::copy(blobBegin,blobBegin+blobSize, std::ostreambuf_iterator<char>(writeFile));
+    // The uint8 to int8 conversion has to be done somewhere - this is it.
+    const char* blobBegin =reinterpret_cast<const char*>(pBlob); // NOLINT
+    writeFile.write(blobBegin,blobSize);
     writeFile.close();
 
     return err;
 }
 
-void printHex(const std::string& message, const std::vector<char>& data)
+void printHex(const std::string& message, const std::vector<uint8_t>& data)
 {
     std::cerr << message << ": ";
     for (std::size_t i = 0; i < data.size(); ++i)
     {
-        unsigned int a = reinterpret_cast<const uint8_t&>(data.at(i));
-        if ((i > 0) && ((i % 16) == 0))
+        unsigned int a = data.at(i);
+        if ((i > 0) && ((i % NIBBLE_SIZE) == 0))
         {
             std::cerr << std::endl;
         }
@@ -123,7 +134,7 @@ unsigned int deriveOrRetrieveDerivationKey(HSMSession sesh,
          err = teststep_GenerateDerivationKey(
                 sesh, generation, pOutBlob);
          // Save the Derivation Key for use in other tests.
-         if (err == 0)
+         if (err == ERP_ERR_SUCCESS)
          {
              err = writeBlobResourceFile(filename, pOutBlob);
          }
@@ -140,7 +151,7 @@ unsigned int deriveOrRetrieveDerivationKey(HSMSession sesh,
 
 unsigned int teststep_DumpHSMMemory(HSMSession sesh)
 {
-    unsigned int             err = 0;
+    unsigned int             err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting DumpHSMMemory command ...\n");
 
@@ -154,7 +165,7 @@ unsigned int teststep_DumpHSMMemory(HSMSession sesh)
 
 unsigned int teststep_GenerateBlobKey(HSMSession sesh, unsigned int gen)
 {
-    unsigned int             err = 0;
+    unsigned int             err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting GenerateBlobKey command ...\n");
     // zero will ask for next new generation.
@@ -169,7 +180,7 @@ unsigned int teststep_GenerateBlobKey(HSMSession sesh, unsigned int gen)
 
 unsigned int teststep_ListLoadedBlobKeys(HSMSession sesh)
 {
-    unsigned int             err = 0;
+    unsigned int             err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting ListLoadedBlobKeys command ...\n");
 
@@ -189,7 +200,7 @@ unsigned int teststep_ListLoadedBlobKeys(HSMSession sesh)
 
 unsigned int teststep_DeleteBlobKey(HSMSession sesh, unsigned int gen)
 {
-    int             err = 0;
+    int             err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting DeleteBlobKey command ...\n");
     // zero will ask for next new generation.
@@ -204,7 +215,7 @@ unsigned int teststep_DeleteBlobKey(HSMSession sesh, unsigned int gen)
 
 unsigned int teststep_GenerateNONCE(HSMSession sesh, unsigned int gen)
 {
-    int             err = 0;
+    int             err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting GenerateNONCE command ...\n");
     // zero will ask for next new generation.
@@ -217,9 +228,9 @@ unsigned int teststep_GenerateNONCE(HSMSession sesh, unsigned int gen)
     return err;
 }
 
-unsigned int teststep_TrustTPMMfr(HSMSession sesh, unsigned int generation, ERPBlob* pOutBlob, const std::vector<char>& certFile)
+unsigned int teststep_TrustTPMMfr(HSMSession sesh, unsigned int generation, ERPBlob* pOutBlob, const std::vector<uint8_t>& certFile)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     TrustTPMMfrInput in = { 0, 0,{0} };
     in.desiredGeneration = generation;
     in.certLength = certFile.size();
@@ -251,7 +262,7 @@ unsigned int teststep_EnrollTPMEK(
     size_t EKCertLen,
     unsigned char* pEKCertData)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     EnrollTPMEKInput in = { 0,{0,0,""},0,"" };
 
     in.desiredGeneration = generation;
@@ -292,7 +303,7 @@ unsigned int teststep_GetAKChallenge(
     size_t* pSecretLength,
     unsigned char* pSecretData) // MAX_BUFFER
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     AKChallengeInput in = { 0,{0},{0,0,{0}},0,{0} };
 
     in.desiredGeneration = desiredGeneration;
@@ -315,9 +326,9 @@ unsigned int teststep_GetAKChallenge(
             &(output.ChallengeBlob.BlobData[0]),
             output.ChallengeBlob.BlobLength);
         (*pEncCredentialLength) = output.encCredentialLength;
-        memcpy(pEncCredentialData, output.encCredentialData, output.encCredentialLength);
+        memcpy(pEncCredentialData, &(output.encCredentialData[0]), output.encCredentialLength);
         (*pSecretLength) = output.secretLength;
-        memcpy(pSecretData, output.secretData, output.secretLength);
+        memcpy(pSecretData, &(output.secretData[0]), output.secretLength);
     }
     else {
         err = output.returnCode;
@@ -337,7 +348,7 @@ unsigned int teststep_EnrollAK(
     unsigned char* decCredData,
     ERPBlob* pOutBlob)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     EnrollTPMAKInput in = { 0,{'\0'},{0,0,{'\0'}},0,{'\0'},0,{'\0'}, {0,0,{'\0'}} };
 
     in.desiredGeneration = desiredGeneration;
@@ -380,7 +391,7 @@ unsigned int teststep_TrustQuote(
     unsigned char* sigData,
     ERPBlob* pOutBlob)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     EnrollEnclaveInput in = { 0,{'\0'},{0,0,{'\0'}},{0,0,{'\0'}},0,{'\0'},0,{'\0'} };
 
     in.desiredGeneration = desiredGeneration;
@@ -423,7 +434,7 @@ unsigned int teststep_getTEEToken(
     unsigned char* sigData,
     ERPBlob* pOutBlob)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     TEETokenRequestInput in = { {'\0'},{0,0,{'\0'}},{0,0,{'\0'}},{0,0,{'\0'}},0,{'\0'} ,0,{'\0'} };
 
     memcpy(&(in.AKName[0]), pAKName, TPM_NAME_LEN);
@@ -456,7 +467,7 @@ unsigned int teststep_getTEEToken(
 
 unsigned int teststep_GenerateDerivationKey(HSMSession sesh, unsigned int desiredGeneration, ERPBlob* pOutBlob)
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
 
     fprintf(stderr,"\nExecuting GenerateDerivationKey command ...\n");
     // zero will ask for next new generation.
@@ -490,7 +501,7 @@ unsigned int teststep_deriveTaskPersistenceKey(
     unsigned char* usedDerivationData, // MAX_BUFFER
     unsigned char* derivedKey) // AES_256_LEN
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     DeriveKeyInput in = { {'\0'} ,{0,0,{'\0'}},{0,0,{'\0'}},0,0,{'\0'} };
 
     in.derivationDataLength = derivationDataLength;
@@ -508,8 +519,8 @@ unsigned int teststep_deriveTaskPersistenceKey(
     if (output.returnCode == 0)
     {
         (*pUsedDerivationDataLength) = output.derivationDataLength;
-        memcpy(usedDerivationData, output.derivationData, output.derivationDataLength);
-        memcpy(derivedKey, output.derivedKey, AES_256_LEN);
+        memcpy(&(usedDerivationData[0]), &(output.derivationData[0]), output.derivationDataLength);
+        memcpy(&(derivedKey[0]), &(output.derivedKey[0]), AES_256_LEN);
     }
     else {
         err = output.returnCode;
@@ -530,7 +541,7 @@ unsigned int teststep_deriveAuditKey(
     unsigned char* usedDerivationData, // MAX_BUFFER
     unsigned char* derivedKey) // AES_256_LEN
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     DeriveKeyInput in = { {'\0'} ,{0,0,{'\0'}},{0,0,{'\0'}},0,0,{'\0'} };
 
     in.derivationDataLength = derivationDataLength;
@@ -539,17 +550,17 @@ unsigned int teststep_deriveAuditKey(
     in.TEEToken = *pTEEToken;
     in.derivationKey = *pDerivationKey;
     in.initialDerivation = isInitial;
-    fprintf(stderr,"\nExecuting DeriveTaskKey command...\n");
+    printf("\nExecuting DeriveAuditKey command...\n");
     // zero will ask for next new generation.
     DeriveKeyOutput output = ERP_DeriveAuditKey(sesh, in);
 
-    fprintf(stderr,"Returned from deriveTaskKey Command - Return Value: 0x%08x\n", output.returnCode);
+    printf("Returned from deriveAuditKey Command - Return Value: 0x%08x\n", output.returnCode);
 
     if (output.returnCode == 0)
     {
         (*pUsedDerivationDataLength) = output.derivationDataLength;
-        memcpy(usedDerivationData, output.derivationData, output.derivationDataLength);
-        memcpy(derivedKey, output.derivedKey, AES_256_LEN);
+        memcpy(&(usedDerivationData[0]), &(output.derivationData[0]), output.derivationDataLength);
+        memcpy(&(derivedKey[0]), &(output.derivedKey[0]), AES_256_LEN);
     }
     else {
         err = output.returnCode;
@@ -570,7 +581,7 @@ unsigned int teststep_deriveCommsKey(
     unsigned char* usedDerivationData, // MAX_BUFFER
     unsigned char* derivedKey) // AES_256_LEN
 {
-    unsigned int err = 0;
+    unsigned int err = ERP_ERR_NOERROR;
     DeriveKeyInput in = { {'\0'} ,{0,0,{'\0'}},{0,0,{'\0'}},0,0,{'\0'} };
 
     in.derivationDataLength = derivationDataLength;
@@ -579,17 +590,17 @@ unsigned int teststep_deriveCommsKey(
     in.TEEToken = *pTEEToken;
     in.derivationKey = *pDerivationKey;
     in.initialDerivation = isInitial;
-    fprintf(stderr,"\nExecuting DeriveTaskKey command...\n");
+    printf("\nExecuting DeriveCommsKey command...\n");
     // zero will ask for next new generation.
     DeriveKeyOutput output = ERP_DeriveCommsKey(sesh, in);
 
-    fprintf(stderr,"Returned from deriveTaskKey Command - Return Value: 0x%08x\n", output.returnCode);
+    printf("Returned from DeriveCommsKey Command - Return Value: 0x%08x\n", output.returnCode);
 
     if (output.returnCode == 0)
     {
         (*pUsedDerivationDataLength) = output.derivationDataLength;
-        memcpy(usedDerivationData, output.derivationData, output.derivationDataLength);
-        memcpy(derivedKey, output.derivedKey, AES_256_LEN);
+        memcpy(&(usedDerivationData[0]), &(output.derivationData[0]), output.derivationDataLength);
+        memcpy(&(derivedKey[0]), &(output.derivedKey[0]), AES_256_LEN);
     }
     else {
         err = output.returnCode;
@@ -599,7 +610,9 @@ unsigned int teststep_deriveCommsKey(
 
 void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZeroOk)
 {
-    DirectIOInput rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x01, 0x00} };
+    // the nolint comments are for the clang-tody readability - magic numbers checks which ado not
+    //   result in an improvement. 
+    DirectIOInput rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x01, 0x00} }; // NOLINT
     DirectIOOutput rawOutput = ERP_DirectIO(sesh, rawInput);
     if (bZeroOk)
     {
@@ -608,37 +621,37 @@ void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZero
     else {
         EXPECT_EQ(ERP_ERR_PARAM, rawOutput.returnCode);
     }
-    rawInput = { SFCCode,5,{0x30, 0x01, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,5,{0x30, 0x01, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DATASIZE, rawOutput.returnCode);
-    rawInput = { SFCCode,5,{0x30, 0x06, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,5,{0x30, 0x06, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DATASIZE, rawOutput.returnCode);
-    rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x00, 0x00} };
+    rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x00, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DECODE_ERR, rawOutput.returnCode);
-    rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x02, 0x00} };
+    rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x02, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DATASIZE, rawOutput.returnCode);
-    rawInput = { SFCCode,6,{0x30, 0x03, 0x02, 0x01, 0x00, 0x00} };
+    rawInput = { SFCCode,6,{0x30, 0x03, 0x02, 0x01, 0x00, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(ERP_ERR_PARAM_LEN, rawOutput.returnCode);
-    rawInput = { SFCCode,6,{0x30, 0x04, 0x02, 0x01, 0x00, 0xFF} };
+    rawInput = { SFCCode,6,{0x30, 0x04, 0x02, 0x01, 0x00, 0xFF} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DATASIZE, rawOutput.returnCode);
-    rawInput = { SFCCode,5,{0x30, 0x03, 0x04, 0x01, 0x00} };
+    rawInput = { SFCCode,5,{0x30, 0x03, 0x04, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(ERP_ERR_ASN1_CONTENT_ERROR, rawOutput.returnCode);
-    rawInput = { SFCCode,8,{0x30, 0x06, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,8,{0x30, 0x06, 0x02, 0x01, 0x00, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(ERP_ERR_ASN1_CONTENT_ERROR, rawOutput.returnCode);
-    rawInput = { SFCCode,4,{0x30, 0x03, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,4,{0x30, 0x03, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(E_ASN1_DATASIZE, rawOutput.returnCode);
-    rawInput = { SFCCode,6,{0x30, 0x03, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,6,{0x30, 0x03, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(ERP_ERR_PARAM_LEN, rawOutput.returnCode);
-    rawInput = { SFCCode,MAX_BUFFER,{0x30, 0x03, 0x02, 0x01, 0x00} };
+    rawInput = { SFCCode,MAX_BUFFER,{0x30, 0x03, 0x02, 0x01, 0x00} }; // NOLINT
     rawOutput = ERP_DirectIO(sesh, rawInput);
     EXPECT_EQ(ERP_ERR_PARAM_LEN, rawOutput.returnCode);
 }
@@ -650,14 +663,34 @@ void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZero
 extern unsigned int varyNONCE(const char* variation, unsigned char* nonceDataIn, unsigned char* variedNONCEOut)
 {
     int err = ERP_ERR_NOERROR;
-    size_t outputLength = NONCE_LEN;
+    auto varVector = asciiToBuffer(variation);
+    unsigned int outputLength = NONCE_LEN;
     unsigned char* pOut = HMAC(EVP_sha256(),
         nonceDataIn, NONCE_LEN,
-        (const unsigned char *)variation, strlen(variation),
-        variedNONCEOut, (unsigned int *)&outputLength);
+        varVector.data(), varVector.size()-1,
+        variedNONCEOut, &outputLength);
     if (pOut == NULL)
     {
         err = ERP_ERR_FILE_IO;
     }
     return err;
+}
+
+extern unsigned int teststep_GenerateHashKey(HSMSession sesh, unsigned int Generation, SingleBlobOutput* pHashBlobOut)
+{
+    UIntInput in = { Generation };
+    *pHashBlobOut = ERP_GenerateHashKey(sesh, in);
+    return pHashBlobOut->returnCode;
+}
+
+extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob * hashBlob, AES256KeyOutput* pKeyOut)
+{
+    TwoBlobGetKeyInput get = { {0,0,{0}}, {0,0,{0}} };
+    get.Key = *hashBlob;
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken.get());
+    get.TEEToken = *teeToken;
+    *pKeyOut = ERP_UnwrapHashKey(sesh, get);
+    return pKeyOut->returnCode;
 }

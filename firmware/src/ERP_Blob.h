@@ -1,8 +1,16 @@
-#ifndef __ERP_BLOB_H
-#define __ERP_BLOB_H
-// Header file for IBM ERP HSM Firmware Module Blob support Utils.
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ *
+ * Description: Header file for Blob support Utils.
+ **************************************************************************************************/
+
+#ifndef ERP_BLOB_H
+#define ERP_BLOB_H
 
 #include <cryptoserversdk/cmds.h>
+
 #include "ERP_Defs.h"
 
 //----------------------------------------------------------------
@@ -15,8 +23,19 @@
 #pragma warning (push)
 #pragma warning (disable : 4200)
 #elif __GNUC__
-// TO DO Add gcc disable warning here.
 #endif
+
+// Blob Strutural constants
+#define BLOB_IV_LEN 12
+#define BLOB_COUNTER_LEN 16
+#define BLOB_AD_HASH_LEN 16
+#define BLOB_DOMAIN_LEN 5
+#define BLOB_AD_LEN sizeof(unsigned int) + BLOB_DOMAIN_LEN
+
+// Master Backup Key strutural constants.
+#define MBK_NAME_LEN 8
+#define MBK_KCV_LEN 16
+
 // Note there is NO Blob Generation 0 - it is used to conventionally represent the latest Generation present.
 
 typedef struct {
@@ -55,6 +74,20 @@ int createNewBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int *pGeneration);
 //   Returns an error otherwise.
 int deleteBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int Generation);
 
+// Individual Blob Key Backup and Restore
+typedef struct {
+    // Start of AES-GCM AD.
+    unsigned int Generation;
+    unsigned char MBKName[MBK_NAME_LEN];    // Utimaco 8 byte name of Master Backup Key used to generate Blob.
+    unsigned char MBKKCV[MBK_KCV_LEN];      // MDC2 hash as KCV for Master backup Key used to creat BUBlob.
+    unsigned char BlobKeyKCV[SHA_256_LEN/8];  // SHA256 hash as KCV of Blob Key contained in BUBlob
+    unsigned char Domain[BLOB_DOMAIN_LEN]; // null terminated "SIML", "DVLP", "REFZ", "TEST" or "PROD".
+    // End of AES-GCM AD.
+    size_t encDataLength;                   // Length of follwoing encrypted Data of BUBlob.
+    // encData will be: < AES GCM 96 bits ICV | encoded Data | AES GCM 128 bits Authorisation Tag>
+    unsigned char encData[];                // Intentional Open Ended Array.   Encrypted Data of BUBlob
+} BackupBlob_t;
+
 //----------------------------------------------------------------
 // Blob Declarations and Definitions
 //----------------------------------------------------------------
@@ -77,12 +110,6 @@ typedef enum ERPBlobType {
     , TEE_Token = 11  // A time limited Token allowing access to the VAU HSM functions.
 } ERPBlobType_t;
 
-// These tags are XORed with the Real encrypted data before returning it to the client.
-#define BLOB_IV_LEN 12
-#define BLOB_COUNTER_LEN 16
-#define BLOB_AD_HASH_LEN 16
-#define BLOB_DOMAIN_LEN 5
-#define BLOB_AD_LEN sizeof(unsigned int) + BLOB_DOMAIN_LEN
 
 typedef struct {
     // This is generated from the encoded data and is reproduced here as a convenience.
@@ -171,7 +198,6 @@ typedef struct {
 #ifdef _MSC_VER
 #pragma warning (pop)
 #elif __GNUC__
-// TO DO Add gcc re-enable warning here.
 #endif
 
 // Helper method to fill fields common to all Blobs:
@@ -191,6 +217,7 @@ extern unsigned int SealBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t* pInBlob, unsigne
 // The memory for the ClearBlob is allocated by this method and must be freed by os_mem_del_set
 // Use UnsealBlobAndCheckType whenever the blob has a single allowed type, otherwise 
 //   the caller must check the blob type manually after this call has returned.
+// The Generation of the sealed blob must match a blob key present in the HSM.
 unsigned int UnsealBlob(T_CMDS_HANDLE* p_hdl, SealedBlob_t* pInBlob, ClearBlob_t** ppOutBlob);
 
 // Unseals a sealed blob using the generation contained in the Blob.
@@ -214,4 +241,23 @@ extern unsigned int getHashKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob
 // The memory for the Blob is allocated by this method and must be freed by os_mem_del_set.
 unsigned int getDerivationKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob);
 
+// Allocates and fills a BackupBlob_t with a backup of the blob key with the input generation.
+// The caller must free the returned BackupBlob_t.
+// The current AES 256 Master Backup Key in the HSM is used to create the backup.
+// Information about the MBK used is stored in the Backup´Blob.
+// Metadata in clear is only provided as information.   The same values are stored in the encrypted
+//   data which is AES_GCM encoded to protect against manipulation.
+// In the event of failure, *ppBackupBlob will be returned == NULL and there will be no memory to free.
+unsigned int backupBlobGeneration(T_CMDS_HANDLE* p_hdl, unsigned int Generation, BackupBlob_t** ppBackupBlob);
+
+// Restore a Blob Key Generation from a backup blob.
+// There may not be a blob key already present for that generation.
+// The current AES 256 MBK in the HSM must match that used to create the BackupBlob_t
+// The Generation, key and MBK values in clear will be checked against those in the encrypted Data.
+// Ownership of the input BackupBlob_t remains with the caller.
+unsigned int restoreBlobGeneration(T_CMDS_HANDLE* p_hdl, BackupBlob_t* pBackupBlob);
+
+// Calculate an SHA256 hash if the contents of a clear blob and write them to the command output 
+//   buffer as an OCTET String. 
+unsigned int hashAndReturnBlobContents(T_CMDS_HANDLE* p_hdl, ClearBlob_t* input);
 #endif

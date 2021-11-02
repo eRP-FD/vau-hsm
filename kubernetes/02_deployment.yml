@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -24,3 +30,5 @@ spec:
           ports:
             - containerPort: 3001
               name: sdk-port
+
+########################################################################################################################

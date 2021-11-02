@@ -10,7 +10,7 @@ d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm Model=cs5 MMCSignKey=IBM_eRP_RU_RS
         OK
         building MTC ...
         OK
-		
+        
 // Then set MMCSIGNKEY in pathdefs to point to this file.
 
 d:\work\IBM\dev\vau-hsm\firmware\HWMake>csadm dev=3021@localhost GetState

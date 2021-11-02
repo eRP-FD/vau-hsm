@@ -1,17 +1,14 @@
 /**************************************************************************************************
- * $File Identification                   $
- * $Filename          : ERP_ext.h         $
- * $Module version    : FF.FF.01.01       $
- * $Module name       : ERP               $
- * $Release Date      : DD.MM.YYYY        $
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
  *
- * Author             : Chris Cracknell
- *
- * Description        : Declaration of extern Functions (called by the host application)
- *						This module implements the IBM eRezept custom HSM firmware
+ * Description: Implementation of extern Functions (called by the host application).
+ *              This module implements the IBM eRezept custom HSM firmware.
  **************************************************************************************************/
-#ifndef __ERP_EXTERNAL_API_H
-#define __ERP_EXTERNAL_API_H
+
+#ifndef ERP_EXTERNAL_API_H
+#define ERP_EXTERNAL_API_H
 
 #include <cryptoserversdk/db.h>
 
@@ -22,96 +19,124 @@
   * @{
   */
 
+// Externally callable FWAPI Command
 // Method to carry out a dump of currently allocated HSM Heap.
 // Output will be logged by smos printed in the simulator.
 // In Production the method will return E_ERP_DEV_FUNCTION_ONLY
+// Return: Success or Error code.
 extern int ERP_DumpHSMMemory(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new Blob Trust Key with a new Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is incremented by one and used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           not match any existing Blob Key Generation present in the HSM.
 // Output: none
+// Return: Success or Error code.
 extern int ERP_GenerateBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
-// Command to gdelete a Blob Trust Key with a given Generation
+// Externally callable FWAPI Command
+// Command to delete a Blob Trust Key with a given Generation
 // Input: unsigned int Undesired Generation - the input value must
 //        match an existing Blob Key Generation present in the HSM.
 // Output: none
+// Return: Success or Error code.
 extern int ERP_DeleteBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to list the currently loaded Blob Trust Keys
 // Input: none
 // Output: List of <Generation,SHA256 Hashes of Key Values>
+// Return: Success or Error code.
 extern int ERP_ListBlobKeys(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new Hash Key Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: Hash Key Blob
+// Return: Success or Error code.
 extern int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new Derivation Key Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: Derivation Key Blob
+// Return: Success or Error code.
 extern int ERP_GenerateDerivationKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new ECIES KeyPair for ECIES key exchange with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: ECIES KeyPair Blob
+// Return: Success or Error code.
 extern int ERP_GenerateECIESKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Generate CSR for an ECIES Keypair
 // Input: ECIES KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature 
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
 extern int ERP_GenerateECIESCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new EC Signature KeyPair for VAU Signing operations
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
-//           not match any existing Blob Key Generations present in the HSM.
+//           match an existing Blob Key Generation present in the HSM.
 // Output: ECIES KeyPair Blob
+// Return: Success or Error code.
 extern int ERP_GenerateVAUSIGKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Generate CSR for a VAUSIG Keypair
 // Input: VAUSIG KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature 
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
 extern int ERP_GenerateVAUSIGCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new NONCE Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
 //           not match ay existing Blob Key Generations present in the HSM.
-// Output: Hash Key Blob
+// Output: NONCE Blob
+// Return: Success or Error code.
 extern int ERP_GenerateNONCE(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Not present Command - will return E_ERP_OBSOLETE_FUNCTION
+// Return: Success or Error code.
 extern int ERP_NotUsed(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to add a trusted TPM Manufacturer Root CA certificate.
 // Input: ASN1.DER encoded x509r3 Certificate for the TPM Manufacturer Root CA.
 // Output: Trusted TPM Manufacturer Root Certificate Blob 
-extern int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 11
+// Return: Success or Error code.
+extern int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 11
 
+// Externally callable FWAPI Command
 // Enroll a TPM Endorsement Key.
 // Input: TPM Manufacturer Root Blob
 // Input: ASN1.DER encoded x509r3 certificate for the Endorsement Key
 // Input: NONCE Blob
 // Input: Signature with EKPriv over (EKPub | NONCE)
 // Output: Trusted EK Blob
-extern int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 12
+// Return: Success or Error code.
+extern int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 12
 
+// Externally callable FWAPI Command
 // get an Attestation Key credential Chalenge to be signed by the TPM.
 // Input: Known Endoresement Key Blob
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
@@ -119,8 +144,10 @@ extern int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
 // Output: TPM2 Secret
 // Output: TPM2 Credential
 // Output: Credential Challenge Blob
-extern int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 13
+// Return: Success or Error code.
+extern int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 13
 
+// Externally callable FWAPI Command
 // Enroll an Attestation Key using the results of a TPM decryption of the credential challenge.
 // Input: Known Endoresement Key Blob
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
@@ -128,8 +155,10 @@ extern int ERP_GetAKChallenge(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
 // Input: Decrypted Credential
 // Input: Credential Challenge Blob
 // Output: Trusted AK Blob
-extern int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 14
+// Return: Success or Error code.
+extern int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 14
 
+// Externally callable FWAPI Command
 // Enroll a VAU Software stack quote.
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
 // Input: Trusted AK Blob
@@ -138,8 +167,10 @@ extern int ERP_EnrollTPMAK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
 //        The quote data will include a NONCE-derived value of HMAC(HSM NONCE,"ERP_ENROLLMENT")
 // Input: TPM Signature of quote data and NONCE.
 // Output: Trusted Quote Blob
-extern int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 15
+// Return: Success or Error code.
+extern int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 15
 
+// Externally callable FWAPI Command
 // Get a time limited Token to use the HSM as a VAU
 // Input: TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
 // Input: Trusted AK Blob
@@ -149,8 +180,10 @@ extern int ERP_EnrollEnclave(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
 //        The quote data will include a NONCE-derived value of HMAC(HSM NONCE,"ERP_ATTESTATION")
 // Input: TPM Signature over the quoted data using NONCE and AK
 // Output: TEE Token Blob
-extern int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 16
+// Return: Success or Error code.
+extern int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 16
 
+// Externally callable FWAPI Command
 // Derive a TASK Persistence symmetric key.
 // Input: currently valid TEE Token
 // Input: Input Derivation Data
@@ -160,41 +193,108 @@ extern int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
 // Input: Derivation Key Blob
 // Output: Symmetric derived key.
 // Output: Used Derivation data - data actually used for the derivation, including any extra added by HSM.
-extern int ERP_DeriveTaskKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 17
-// As ERP_deriveTaskKey, but for Audit persistence keys.
-extern int ERP_DeriveAuditKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 18
-// As ERP_deriveTaskKey, but for Communications persistence keys.
-extern int ERP_DeriveCommsKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);		// SFC = 19
+// Return: Success or Error code.
+extern int ERP_DeriveTaskKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 17
 
+// Externally callable FWAPI Command
+// As ERP_deriveTaskKey, but for Audit persistence keys.
+// Return: Success or Error code.
+extern int ERP_DeriveAuditKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 18
+
+// Externally callable FWAPI Command
+// As ERP_deriveTaskKey, but for Communications persistence keys.
+// Return: Success or Error code.
+extern int ERP_DeriveCommsKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 19
+
+// Externally callable FWAPI Command
 // Extract AES 256 Hash key
 // Input: currently valid TEE Token
 // Input: Hash Key Blob
 // Output: Symmetric AES256 hash key.
+// Return: Success or Error code.
 extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Command to generate a new Hash Key with an existing Generation
 // Input: int - number of bytes of RND requested
 // Output: The RND Data
+// Return: Success or Error code.
 extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // return public key for keypair.
 // input: TEE Token
 // input: ECIES KeyPair Blob
 // output: ASN1.DER encoded public key from the blob.
+// Return: Success or Error code.
 extern int ERP_GetECPublicKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Do ECIES Key Derivation for VAU Protocol
 // input: TEE Token
 // input: ECIES KeyPair Blob
 // input: Client ECIES Public key
 // output: AES128 vau protocol key.
+// Return: Success or Error code.
 extern int ERP_DoECIES128(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
 // Extract VAUSIG private key for VAU Signatures
 // input: TEE Token
 // input: ECSIG KeyPair Blob
 // input: Data to be signed
 // output: Signature
+// Return: Success or Error code.
 extern int ERP_GetVAUSIGPrivateKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Export a single Blob Generation using the AES256 MBK.
+// Requires: 20000000 - Administrator permission.
+// Blob Generation must exist in the HSM
+// input: Blob Generation
+// output: BUBlob Structure
+extern int ERP_ExportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Import a single Blob Generation using the AES256 MBK.
+// Requires: 20000000 - Administrator permission.
+// The MBK loaded in the HSM must match that in the BUBlob
+// The GEneration inthe BUBlob must not already be present in the HSM, neither with the same key value, nor a different one.
+// input: BUBlob Structure
+// output: None.
+extern int ERP_ImportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Create a new Blob containing the contents of an existing blob but reencoded with a different Generation.
+// The intention here is to allow preservation of blob contents when the blob generation of the original blob is to be deleted.   The
+//   intention is that only special cases will require this treatment, e.g. Security reasons mandate hard retiral of some keys
+// There is a guarantee that the new blob and the old blob will return the same Check Value in calls to GetBlobContentHash()
+// Requires: 00000200 ERP Setup or 00002000 ERP Update Permission
+// The Generation of the blob must be present in the HSM.
+// input:  newBlobGeneration               an integer Blob Generation for the new Blob.   This must be present in the HSM.
+// input:  blobIn                          The blob that is to be migrated.   The Blob generation for this blob must be present in the HSM.
+// output: new migrated blob.
+extern int ERP_MigrateBlob(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// For Setup or Update users: Calculate and return the SHA256 hash of the contents of a blob.
+// Requires: 00000200 ERP Setup or 00002000 ERP Update Permission
+// Working users should use GetBlobContentHashWithToken
+// The Generation of the blob must be present in the HSM.
+// The intention here is to allow identification of a key that may be stored in multiple blobs with different generations.
+// The only guarantee is that multiple calls to this method with blobs containing the same contents will return the same hash.
+// "The same contents" implies that the blobs were related through use of ERP_MigrateBlob.
+// input: Blob to be hashed.
+// output: hash
+extern int ERP_GetBlobContentHash(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// For Working users with a TEE Token: Calculate and return the SHA256 hash of the contents of a blob.
+// Requires: 00000020 ERP Working permission with a valid TEE Token.
+// Setup or Update users should use ERP_GetBlobContentHash
+// The Generation of the blob must be present in the HSM.
+// The intention here is to allow identification of a derivation key that may be stored in multiple blobs with different generations.
+// The only guarantee is that multiple calls to this method with blobs containing the same contents will return the same hash.
+// "The same contents" implies that the blobs were related through use of ERP_MigrateBlob.
+// input: Derivation key Blob.
+// input: ECSIG KeyPair Blob
+// input: Data to be signed
+// output: Signature
+extern int ERP_GetBlobContentHashWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 #endif

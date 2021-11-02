@@ -24,5 +24,8 @@ client/src/**/asn1_*
 # temporary build system for real HSM hardware
 #
 firmware/obj
-firmware/hwmake/cryptoserversdk
+firmware/HWMake/cryptoserversdk
 firmware/hwmake50
+firmware/HWMake/PUBuild
+firmware/HWMake/RUTUBuild
+

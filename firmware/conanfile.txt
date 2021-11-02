@@ -1,10 +1,22 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 [generators]
 cmake
 
+########################################################################################################################
+
 [requires]
 cryptoserversdk/2.0
+
+########################################################################################################################
 
 [imports]
 bin, * -> simulator/bin @ root_package=cryptoserversdk
 devices, * -> simulator/devices @ root_package=cryptoserversdk
 keys, * -> simulator/keys @ root_package=cryptoserversdk
+
+########################################################################################################################

@@ -1,29 +1,31 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
+
 #include "ERP_Client.h"
-#include "ERP_SFC.h"
 #include "ERP_Error.h"
-#include "ERP_TestUtils.h"
 #include "ERP_TestParams.h"
+#include "ERP_TestUtils.h"
+
 #include <gtest/gtest.h>
 
-#include <vector>
-#include <fstream>
 #include <memory>
-#include <cstddef>
+#include <vector>
 
 class ErpVAUSIGTestFixture : public ::testing::Test {
 public:
     static HSMSession m_logonSession;
     static const std::string devIP;
 
-    ErpVAUSIGTestFixture() {
-        // initialization code here
-    }
+    ErpVAUSIGTestFixture() = default;
 
-    void connect() {
+    void static connect() {
         // code here will execute just before the test ensues 
-        m_logonSession = ERP_Connect(devIP.c_str(), 5000, 1800000);
+        m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
-    void logonSetup() {
+    void static logonSetup() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -42,7 +44,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void logonWorking() {
+    void static logonWorking() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -60,7 +62,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void logoff()
+    void static logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
         {
@@ -92,7 +94,7 @@ const std::string ErpVAUSIGTestFixture::devIP = SINGLE_SIM_HSM;
 
 TEST_F(ErpVAUSIGTestFixture, GenerateVAUSIGKeypair)
 {
-    unsigned int Gen = 0x42;
+    unsigned int Gen = THE_ANSWER;
     UIntInput in = { Gen };
     SingleBlobOutput out = ERP_GenerateVAUSIGKeyPair(ErpVAUSIGTestFixture::m_logonSession, in);
     // If we want to use this blob in later test runs then we need to copy it to the saved directory
@@ -111,7 +113,7 @@ TEST_F(ErpVAUSIGTestFixture, GetVAUSIGPublicKey)
     PublicKeyOutput keyOut = ERP_GetECPublicKey(ErpVAUSIGTestFixture::m_logonSession, get);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
     writeERPResourceFile("VAUSIGPublicKey.bin",
-        std::vector<char>(keyOut.keyData, keyOut.keyData + keyOut.keyLength));
+        std::vector<std::uint8_t>(&(keyOut.keyData[0]), &(keyOut.keyData[0]) + keyOut.keyLength));
 }
 
 TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
@@ -129,8 +131,8 @@ TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
     PrivateKeyOutput keyOut = ERP_GetVAUSIGPrivateKey(ErpVAUSIGTestFixture::m_logonSession, vauSIG);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
-    // TO DO - set up check of expected output.
-    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 
+    // Check of expected output.
+    const unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 
         0x01, 0x06, 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07, 0x04, 0x7a, 0x30, 0x78,
         0x02, 0x01, 0x01, 0x04, 0x20, 0x52, 0xbb, 0xa0, 0x49, 0xee, 0x4f, 0x9a, 0x4d, 0xcc, 0xc5, 0x30,
         0xd4, 0x17, 0x01, 0x69, 0x09, 0x86, 0x76, 0x81, 0x47, 0x99, 0x78, 0x3d, 0xaf, 0xb0, 0x15, 0x49,
@@ -160,12 +162,12 @@ TEST_F(ErpVAUSIGTestFixture, generateVAUSIGCSR)
     x509CSROutput keyOut = ERP_GenerateVAUSIGCSR(ErpVAUSIGTestFixture::m_logonSession, vauCSR);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
-    // TO DO - set up check of expected output.
+    // TODO(chris) - set up check of expected output.
 //    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
 //        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
 //    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
 //    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TO DO check CSR Signature?
+    // TODO(chris) check CSR Signature?
     writeERPResourceFile("generatedVAUSIG.csr",
-        std::vector<char>(keyOut.CSRData, keyOut.CSRData + keyOut.CSRDataLength));
+        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }

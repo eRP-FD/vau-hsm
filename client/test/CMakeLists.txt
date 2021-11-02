@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # define the name of a new test target
 #
 set(TARGET_NAME "hsmclient-test")
@@ -9,10 +15,14 @@ set(SOURCE_FILES "ERP_AttestTests.cpp"
                  "ERP_Tests.cpp"
                  "ERP_TestsBase.cpp"
                  "ERP_PermissionsTests.cpp"
+                 "ERP_InvalidDataTests.cpp"
                  "ERP_TestUtils.cpp"
+                 "ERP_BasicInputTests.cpp"
                  "ERP_VAUSIGTests.cpp"
                  "ERP_HashKeyTests.cpp"
                  "ERP_RUAttestationTests.cpp"
+                 "ERP_SingleBlobKeyBackupTests.cpp"
+                 "ERP_BlobMigrationAndIdentityTests.cpp"
                  "ERP_TestParams.cpp" )
 
 # also list the targets under test (that the test target depends on)

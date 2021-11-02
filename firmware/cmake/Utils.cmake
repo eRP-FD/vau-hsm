@@ -1,3 +1,9 @@
+# (C) Copyright IBM Deutschland GmbH 2021
+# (C) Copyright IBM Corp. 2021
+# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+
+########################################################################################################################
+
 # function that verifies (and aborts unless) a given parameter is defined as a CMake variable
 #
 function (utils_require_parameter_definition PARAMETER_NAME)

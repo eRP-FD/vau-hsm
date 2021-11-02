@@ -1,8 +1,12 @@
+/**************************************************************************************************
+ * (C) Copyright IBM Deutschland GmbH 2021
+ * (C) Copyright IBM Corp. 2021
+ * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
 #define no_init_all 
 
-#include <cryptoserversdk/load_store.h>
 #include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
 #include <cryptoserversdk/os_mem.h>
@@ -11,7 +15,6 @@
 
 #include "ERP_ASNUtils.h"
 #include "ERP_MDLError.h"
-#include "ERP_InternalGlue.h"
 #include "ERP_CryptoUtils.h"
 
 // Utility method to set initial NULL values of ASN1_ITEMS arrays
@@ -205,7 +208,7 @@ unsigned int setASNIntegerItem(ASN1_ITEM* item, unsigned int value)
     return err;
 }
 
-unsigned int getASN1Integer(ASN1_ITEM* pItem,unsigned int *pOut)
+unsigned int getASN1Integer(ASN1_ITEM* pItem, unsigned int* pOut)
 {
     if (pItem->tag != ASN_INTEGER)
     {
@@ -224,6 +227,8 @@ unsigned int getASN1Integer(ASN1_ITEM* pItem,unsigned int *pOut)
     return 0;
 }
 
+// pOut must point to an integer variable.
+// Out value is left as value from the ASN Data, i.e. 0 or FF
 unsigned int getASN1Boolean(ASN1_ITEM* pItem, unsigned int* pOut)
 {
     if (pItem->tag != ASN_BOOLEAN)
@@ -278,7 +283,7 @@ unsigned int getASN1NONCE(ASN1_ITEM* pItems, unsigned char** pOut)
 }
 
 // This method does allocate memory for the output buffer, which must be deleted by the caller. 
-unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** pOut)
+unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** ppOut)
 {
     unsigned int err = E_ERP_SUCCESS;
     if ((pItems[0].tag != ASN_SEQUENCE) ||
@@ -303,7 +308,7 @@ unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** pOut)
     }
     // Nasty compiler byte alignment issue means that simply casting the p_data pointer and assigning to the *pOut
     //   changes the value of the pointer to the enarest 32 bit boundary.
-    // To fix this we need to creeate a new buffer for the output blob (Creation wil align it on a boundary) and
+    // To fix this we need to create a new buffer for the output blob (Creation will align it on a boundary) and
     //   copy the data of the sealed Blob into it.
     // A side effect of this is that the blobs must be deleted by the caller.
     unsigned char* outBuff = NULL;
@@ -318,14 +323,111 @@ unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** pOut)
     }
     if (err == E_ERP_SUCCESS)
     {
-        *pOut = (SealedBlob_t *)outBuff;
-        if (pItems[2].len != ((*pOut)->EncodedDataLength + sizeof(SealedBlob_t)))
+        *ppOut = (SealedBlob_t *)outBuff;
+        if (pItems[2].len != ((*ppOut)->EncodedDataLength + sizeof(SealedBlob_t)))
         {
             err = E_ERP_ASN1_CONTENT_ERROR;
             INDEX_ERR(err, 0x08);
         }
     }
     
+    return err;
+}
+
+// This method does allocate memory for the output buffer, which must be deleted by the caller. 
+unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    if ((pItems[0].tag != ASN_SEQUENCE) ||
+        (pItems[1].tag != ASN_INTEGER) ||
+        (pItems[2].tag != ASN_OCTET_STRING) ||
+        (pItems[3].tag != ASN_OCTET_STRING) ||
+        (pItems[4].tag != ASN_OCTET_STRING) ||
+        (pItems[5].tag != ASN_OCTET_STRING) ||
+        (pItems[6].tag != ASN_OCTET_STRING) )
+    {
+        err = E_ERP_ASN1_CONTENT_ERROR;
+        INDEX_ERR(err, 0x13);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Size of Backup Blob is extended by size of encrypted Data in Items [5]
+        *ppOut = os_mem_new_tag(sizeof (BackupBlob_t) + pItems[6].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, *ppOut, 0x40);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1Integer(&pItems[1], &((*ppOut)->Generation));
+    }
+    unsigned char* pCopy = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        size_t domainLen = 0;
+        err = getASN1OCTETSTRING(&pItems[2], &domainLen, &pCopy);
+        if ((err == E_ERP_SUCCESS) && (domainLen != BLOB_DOMAIN_LEN))
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x17);
+        }
+        if (err == E_ERP_SUCCESS)
+        {
+            os_mem_cpy(&((*ppOut)->Domain[0]), pCopy, domainLen);
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        size_t mbkNameLen = 0;
+        err = getASN1OCTETSTRING(&pItems[3], &mbkNameLen, &pCopy);
+        if ((err == E_ERP_SUCCESS) && (mbkNameLen != MBK_NAME_LEN))
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x14);
+        }
+        if (err == E_ERP_SUCCESS)
+        {
+            os_mem_cpy(&((*ppOut)->MBKName[0]), pCopy, mbkNameLen);
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        size_t mbkKCVLen = 0;
+        err = getASN1OCTETSTRING(&pItems[4], &mbkKCVLen, &pCopy);
+        if ((err == E_ERP_SUCCESS) && (mbkKCVLen != MBK_KCV_LEN))
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x15);
+        }
+        if (err == E_ERP_SUCCESS)
+        {
+            os_mem_cpy(&((*ppOut)->MBKKCV[0]), pCopy, mbkKCVLen);
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        size_t blobKeyKCVLen = 0;
+        err = getASN1OCTETSTRING(&pItems[5], &blobKeyKCVLen, &pCopy);
+        if ((err == E_ERP_SUCCESS) && (blobKeyKCVLen != SHA_256_LEN/8))
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x16);
+        }
+        if (err == E_ERP_SUCCESS)
+        {
+            os_mem_cpy(&((*ppOut)->BlobKeyKCV[0]), pCopy, blobKeyKCVLen);
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        size_t encDataLen = 0;
+        err = getASN1OCTETSTRING(&pItems[6], &encDataLen, &pCopy);
+        if (err == E_ERP_SUCCESS)
+        {
+            os_mem_cpy(&((*ppOut)->encData[0]), pCopy, encDataLen);
+            (*ppOut)->encDataLength = encDataLen;
+        }
+    }
+
     return err;
 }
 
@@ -442,6 +544,41 @@ unsigned int parseSingleBlobInput(
     if (err == E_ERP_SUCCESS)
     {
         err = getASN1SealedBlob(&Items[1], ppOutBlob);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
+// Utility method to parse an ASN input to extract a Migrate Blob input argument.
+// To avoid lots of copying and reallocating, the pointers returned by this method are all
+//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   finished with the output pointers.
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+//   buffers and must be freed by the caller. 
+unsigned int parseMigrateBlobInput(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    unsigned int* pNewGeneration,
+    SealedBlob_t** ppOutBlob)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 5;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 2);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the requested integer
+        err = getASN1Integer(&Items[1], pNewGeneration);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1SealedBlob(&Items[2], ppOutBlob);
     }
 
     // Subsidiary structures in Itemlist from der_decode point into the original buffer 
@@ -1547,6 +1684,83 @@ extern unsigned int makePublicKeyOutput(
     return makeSimpleOctetStringOutput(p_hdl, keyLen, pKeyData);
 }
 
+// Utility method to parse a BasicConstraints octet string, usually from an x509 Certificate.
+// input:   inputLength and pInputData of the basic constraints octet string value to be parsed.
+// output:  boolean isCA - 0 == FALSE, (!0) == true
+// output:  path length constraint.   0 if no constraint is present.
+// return:  error status.
+unsigned int parseBasicConstraints(
+    size_t inputLength,
+    unsigned char* pInputData,
+    unsigned int* pBIsCA,
+    unsigned int* pPathLengthConstraint
+)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 0;
+    ASN1_ITEM* Items = NULL;
+
+    // First call will tell us how big our table structure needs to be.
+    err = asn1_decode(pInputData, // input Data
+        (unsigned int)inputLength, // Length of input Data
+        0,    // Flags
+        NULL,
+        &TableLength);
+
+    if (err != E_ERP_SUCCESS)
+    {
+        INDEX_ERR(err, 0x0d);
+    }
+
+    // TableLength will be variable.
+    if (err == E_ERP_SUCCESS)
+    {
+        Items = os_mem_new_tag(sizeof(ASN1_ITEM) * TableLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items, 0x16);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = asn1_decode(pInputData, // input Data
+            (unsigned int)inputLength, // Length of input Data
+            ASN_RAW_OFFSET,    // Flags
+            Items,
+            &TableLength);
+        if (err != E_ERP_SUCCESS)
+        {
+            INDEX_ERR(err, 0x0e);
+        }
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        if ((Items[0].tag != ASN_SEQUENCE) ||
+            ((Items[0].nitems != 1) && (Items[0].nitems != 2)) || // May or may not have a path length constraint
+            (Items[1].tag != ASN_BOOLEAN) )
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x12);
+        }
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1Boolean(&(Items[1]), pBIsCA);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        if (Items[0].nitems == 2)
+        {
+            err = getASN1Integer(&(Items[2]), pPathLengthConstraint);
+        }
+        else {
+            *pPathLengthConstraint = 0;
+        }
+    }
+    return err;
+}
+
 // Utility method to extract an EC public key from an x509 certificate.
 // The output pointers are to the correct places in the original data so do not delete them
 //    separately.
@@ -1557,6 +1771,7 @@ extern unsigned int makePublicKeyOutput(
 // output:   The EC Subject Public key in x509 format
 // output:   The EC Subject Public key in HSM-useable 0x41 byte format
 // output:   The Subject Public Key curve OID.
+// output:   Is the certificate a CA?   !0 == TRUE, 0 == FALSE
 unsigned int parsex509ECCertificate(
     size_t certLength,
     unsigned char* pCertData,
@@ -1569,7 +1784,8 @@ unsigned int parsex509ECCertificate(
     size_t* pECPointLength,
     unsigned char** ppECPointData,
     size_t * pCurveIDLen, // OID of curve.
-    unsigned char **ppCurveID
+    unsigned char **ppCurveID,
+    unsigned int * pbIsCA
 ) 
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -1688,6 +1904,41 @@ unsigned int parsex509ECCertificate(
         }
         *ppECPointData = (pPublicKey + 4)->p_data+1;
         *pECPointLength = (pPublicKey + 4)->len-1;
+    }
+
+    // Now find basic constraints and identify the isCA value.
+    ASN1_ITEM* pIsCANode = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Find location of start of Signature.
+        err = asn1_find_object((unsigned char*)&(ID_BASIC_CONSTRAINTS_OID[0]), ID_BASIC_CONSTRAINTS_OID_LEN, &(Items[1]), &pIsCANode);
+        if (err == E_ASN1_NOT_FOUND)
+        {
+            // There are no basic constraints in this certificate.
+            *pbIsCA = 0;
+            err = E_ERP_SUCCESS;
+        }
+        else {
+            // The data following the tag is:
+            //   BOOLEAN isCritical - optional
+            //   OCTET_STRING containing an ASN Sequence of:
+            //     BOOLEAN isCA
+            //     integer pathLengthConstraint.   Optional.
+            if (pIsCANode->tag == ASN_BOOLEAN)
+            { // We are not interested in the isCritical value because it is not used consistently in thge Certs that we deal with.
+                pIsCANode++;
+            }
+            if ((pIsCANode->tag == ASN_OCTET_STRING) &&
+                (pIsCANode->nitems == 0))
+            {
+                // We don't actually use the isCritical or path length constraint here and it may or may not be present.
+                unsigned int pathLengthConstraint = 0;
+                err = parseBasicConstraints(pIsCANode->len, pIsCANode->p_data, pbIsCA, &pathLengthConstraint);
+            }
+            else {
+                err = E_ERP_CERT_BAD_BASIC_CONSTRAINTS;
+                INDEX_ERR(err, 0x01);
+            }
+        }
     }
 
     ASN1_ITEM* pSignatureAlg = NULL;
@@ -2221,3 +2472,130 @@ extern unsigned int makeAsn1PublicKey(
     return err;
 }
 
+// Utility Method to build an ASN Output containing a BackupBlob.
+// The result is automatically packed into an HSM response using cds_alloc_answ
+// input: Commands handle for the command
+// input: the BackupBlob to be encoded.
+extern unsigned int makeBackupBlobOutput(
+    T_CMDS_HANDLE* p_hdl,
+    BackupBlob_t* pBackupBlob)
+{
+    //   BackupBlob :: = BackupBlob ::= SEQUENCE {
+    //                  generation INTEGER,
+    //                  domain OCTET STRING(5), -- assigns the blob generation to a domain, one of "DVLP", "TEST", "PROD"
+    //                  mbkName OCTET STRING(8), --Utimaco 8 byte name of Master Backup Key used to generate Blob.
+    //                  mbkKCV OCTET STRING(16), --MDC2 hash as KCV for Master backup Key used to creat BUBlob.
+    //                  blobKeyKCV OCTET STRING(32), --SHA256 hash as KCV of Blob Key contained in BUBlob
+    //                  blobEncData OCTET STRING -- Encrypted Data of BUBlob }
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 7;
+
+    ASN1_ITEM* Items = os_mem_new_tag(sizeof(ASN1_ITEM) * TableLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+    CHECK_NOT_NULL(err, Items, 0x3b);
+    if (err == E_ERP_SUCCESS)
+    {
+        err = initASN1Items(Items, TableLength);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        Items[0].tag = ASN_SEQUENCE;
+        Items[0].p_data = NULL;
+        Items[0].len = 0;
+        Items[0].nitems = 6;
+    }
+    if (err == E_ERP_SUCCESS)
+    { // Set up the return value with the actual generation used.
+        err = setASNIntegerItem(&Items[1], pBackupBlob->Generation);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        Items[2].tag = ASN_OCTET_STRING;
+        Items[2].len = BLOB_DOMAIN_LEN;
+        Items[2].nitems = 0;
+        Items[2].p_data = os_mem_new_tag(Items[2].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items[2].p_data, 0x3c)
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        memcpy(Items[2].p_data, pBackupBlob->Domain, BLOB_DOMAIN_LEN);
+        Items[3].tag = ASN_OCTET_STRING;
+        Items[3].len = MBK_NAME_LEN;
+        Items[3].nitems = 0;
+        Items[3].p_data = os_mem_new_tag(Items[3].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items[3].p_data, 0x3d)
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        memcpy(Items[3].p_data, pBackupBlob->MBKName, MBK_NAME_LEN);
+        Items[4].tag = ASN_OCTET_STRING;
+        Items[4].len = MBK_KCV_LEN;
+        Items[4].nitems = 0;
+        Items[4].p_data = os_mem_new_tag(Items[4].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items[4].p_data, 0x3d)
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        memcpy(Items[4].p_data, pBackupBlob->MBKKCV, MBK_KCV_LEN);
+        Items[5].tag = ASN_OCTET_STRING;
+        Items[5].len = SHA_256_LEN/8;
+        Items[5].nitems = 0;
+        Items[5].p_data = os_mem_new_tag(Items[5].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items[5].p_data, 0x3e)
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        memcpy(Items[5].p_data, pBackupBlob->BlobKeyKCV, SHA_256_LEN/8);
+        Items[6].tag = ASN_OCTET_STRING;
+        Items[6].len = pBackupBlob->encDataLength;
+        Items[6].nitems = 0;
+        Items[6].p_data = os_mem_new_tag(Items[6].len, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        CHECK_NOT_NULL(err, Items[6].p_data, 0x3f)
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        os_mem_cpy(Items[6].p_data, pBackupBlob->encData, pBackupBlob->encDataLength);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = buildOutputBuffer(p_hdl,
+            Items, // input Items
+            TableLength);
+    }
+
+    if (Items != NULL)
+    {
+        deleteASNItemList(Items, TableLength);
+    }
+    return err;
+}
+
+// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller. 
+extern unsigned int parseBackupBlobInputRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    BackupBlob_t** ppBackupBlob)
+{
+    //   BackupBlob :: = BackupBlob ::= SEQUENCE {
+   //                  generation INTEGER,
+    //                  domain OCTET STRING(5), -- assigns the blob generation to a domain, one of "DVLP", "TEST", "PROD"
+    //                  mbkName OCTET STRING(8), --Utimaco 8 byte name of Master Backup Key used to generate Blob.
+    //                  mbkKCV OCTET STRING(16), --MDC2 hash as KCV for Master backup Key used to creat BUBlob.
+    //                  blobKeyKCV OCTET STRING(32), --SHA256 hash as KCV of Blob Key contained in BUBlob
+    //                  blobEncData OCTET STRING -- Encrypted Data of BUBlob }
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 8;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 1);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1BackupBlob(&Items[1], ppBackupBlob);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    //   and should not be deleted here.   i.e. we have taken a copy of what we want to keep.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
