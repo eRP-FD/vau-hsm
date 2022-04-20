@@ -105,8 +105,8 @@ TEST_F(ErpVAUSIGTestFixture, GenerateVAUSIGKeypair)
 TEST_F(ErpVAUSIGTestFixture, GetVAUSIGPublicKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     SingleBlobInput get = { {0,0,{0}} };
     get.BlobIn = *savedKeyPairBlob;
@@ -119,8 +119,8 @@ TEST_F(ErpVAUSIGTestFixture, GetVAUSIGPublicKey)
 TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     TwoBlobGetKeyInput vauSIG = { {0,0,{0}}, {0,0,{0}} };
     vauSIG.Key = *savedKeyPairBlob;
@@ -149,8 +149,8 @@ TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
 TEST_F(ErpVAUSIGTestFixture, generateVAUSIGCSR)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     GetVAUCSRInput vauCSR = { {0,0,{0}} ,0, {0} };
     vauCSR.KeyPair = *savedKeyPairBlob;

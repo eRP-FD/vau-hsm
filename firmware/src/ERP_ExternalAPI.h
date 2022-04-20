@@ -222,8 +222,8 @@ extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
 extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
+// ERP-9411 - allowed for ERP_SETUP, ERP_WORKING or ERP_UPDATE userpermissions. 
 // return public key for keypair.
-// input: TEE Token
 // input: ECIES KeyPair Blob
 // output: ASN1.DER encoded public key from the blob.
 // Return: Success or Error code.

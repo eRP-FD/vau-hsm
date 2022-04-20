@@ -104,7 +104,7 @@ TEST_F(ErpECIESTestFixture, GetECIESPublicKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob = 
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     SingleBlobInput get = { {0,0,{0}} };
     get.BlobIn = *savedKeyPairBlob;
@@ -118,7 +118,7 @@ TEST_F(ErpECIESTestFixture, doVAUECIES)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob = 
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     DoVAUECIESInput vauECIES = { {0,0,{0}}, {0,0,{0}},0, {0} };
     vauECIES.ECIESKeyPair = *savedKeyPairBlob;
@@ -142,7 +142,7 @@ TEST_F(ErpECIESTestFixture, generateECIESCSR)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     GetVAUCSRInput eciesCSR = { {0,0,{0}} ,0, {0} };
     eciesCSR.KeyPair = *savedKeyPairBlob;

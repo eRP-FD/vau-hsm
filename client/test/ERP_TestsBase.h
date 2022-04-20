@@ -62,4 +62,5 @@ public:
     static std::vector<std::uint8_t> savedAttestationQuoteSignature;
     static std::vector<std::uint8_t> savedDecCred;
 };
-#endif
+
+#endif // ERP_TEST_BASE_H

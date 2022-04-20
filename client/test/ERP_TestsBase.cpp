@@ -102,7 +102,7 @@ void ErpBaseTestsFixture::SetUpTestSuite()
     savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
     savedAttestationNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AttestationQuoteNONCESaved.blob"));
     savedTrustedQuote = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedQuoteSaved.blob"));
-    savedVAUSIGKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved.blob"));
+    savedVAUSIGKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
     clientPub = readERPResourceFile("saved/clientECIESPub.bin");
     savedAKName = readERPResourceFile("saved/h80000002.bin");
     savedAKPub = readERPResourceFile("saved/AKPub.bin");
@@ -112,15 +112,15 @@ void ErpBaseTestsFixture::SetUpTestSuite()
     savedAttestationQuoteSignature = readERPResourceFile("saved/AttestationQuoteSigSaved.bin");
     savedDecCred = readERPResourceFile("saved/credDecHSMSaved.bin");
 
-    ASSERT_NE(nullptr, savedTrustedRoot.get());
-    ASSERT_NE(nullptr, savedTrustedEK.get());
-    ASSERT_NE(nullptr, savedTrustedAK.get());
-    ASSERT_NE(nullptr, savedECIESKeyPairBlob.get());
-    ASSERT_NE(nullptr, teeToken.get());
-    ASSERT_NE(nullptr, savedEnrollmentNONCE.get());
-    ASSERT_NE(nullptr, savedAttestationNONCE.get());
-    ASSERT_NE(nullptr, savedTrustedQuote.get());
-    ASSERT_NE(nullptr, savedVAUSIGKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedTrustedRoot);
+    ASSERT_NE(nullptr, savedTrustedEK);
+    ASSERT_NE(nullptr, savedTrustedAK);
+    ASSERT_NE(nullptr, savedECIESKeyPairBlob);
+    ASSERT_NE(nullptr, teeToken);
+    ASSERT_NE(nullptr, savedEnrollmentNONCE);
+    ASSERT_NE(nullptr, savedAttestationNONCE);
+    ASSERT_NE(nullptr, savedTrustedQuote);
+    ASSERT_NE(nullptr, savedVAUSIGKeyPairBlob);
 
     ASSERT_NE(clientPub.empty(), true);
     ASSERT_NE(savedAKName.empty(), true);
@@ -169,4 +169,3 @@ void ErpBaseTestsFixture::logon(const std::vector<ErpBaseTestsFixture::users> &s
         ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
     }
 }
-

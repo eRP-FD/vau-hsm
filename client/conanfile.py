@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+###################################################################################################
+
 # (C) Copyright IBM Deutschland GmbH 2021
 # (C) Copyright IBM Corp. 2021
 # SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
@@ -28,6 +31,9 @@ class HsmClientPackage(ConanFile):
 
     _cmake = None
 
+    _test_build_requires = ['gtest/1.11.0',
+                            'openssl/1.1.1k']
+
     # Conan properties, used by the Conan SDK
 
     name = 'hsmclient'
@@ -53,34 +59,21 @@ class HsmClientPackage(ConanFile):
                        'gtest:shared': True,
                        'csxapi:shared': True}
 
-    settings = {'os': ["Linux", "Windows"],
-                'compiler': ["gcc", "Visual Studio"],
-                'build_type': ["Debug", "Release", "RelWithDebInfo"],
-                'arch': ["x86", "x86_64"]}
+    settings = {'os': ['Linux', 'Windows'],
+                'compiler': ['gcc', 'Visual Studio'],
+                'build_type': ['Debug', 'Release', 'RelWithDebInfo'],
+                'arch': ['x86', 'x86_64']}
 
     generators = ['cmake']
 
-    exports_sources = "*"
+    exports_sources = ['CMakeLists.txt',
+                       'cmake/*',
+                       'src/*',
+                       'test/*']
 
-    build_requires = [
-        "asn1c/0.9.29",
-        "openssl/1.1.1k"
-        ]
+    build_requires = ['asn1c/0.9.29']
 
-    requires = [
-        "csxapi/1.0"
-    ]
-
-    _test_build_requires=['gtest/1.11.0']
-
-    def set_version(self):
-        if not self.version:
-            git = tools.Git()
-            self.version = "%s" % (git.run("describe --exclude \"v-*\" --match \"v*\"")[1:])
-
-    def requirements(self):
-        if self.options.with_tests:
-            self.build_requires += self._test_build_requires
+    requires = ['csxapi/1.0']
 
     def _get_cmake(self):
         if self._cmake:
@@ -97,7 +90,7 @@ class HsmClientPackage(ConanFile):
         #
         if self.options.verbose:
             if not tools.os_info.is_windows:
-                raise ConanException('verbose option works only on Windows due to csxapi')
+                raise ConanException('Option "verbose" only works on Windows due to csxapi')
 
             self._cmake.definitions[self._verbose_cmake_argument] = 1
 
@@ -105,6 +98,15 @@ class HsmClientPackage(ConanFile):
         #
         self._cmake.configure()
         return self._cmake
+
+    def set_version(self):
+        if not self.version:
+            git = tools.Git()
+            self.version = git.run('describe --all --exclude "v-*" --match "v*"')[6:]
+
+    def requirements(self):
+        if self.options.with_tests:
+            self.build_requires += self._test_build_requires
 
     def build(self):
         # build the source code
@@ -127,8 +129,7 @@ class HsmClientPackage(ConanFile):
         self.cpp_info.libs = tools.collect_libs(self)
 
     def imports(self):
-        self.copy("*.dll", "bin", "bin")
-        self.copy("*.so*", "lib", "lib", root_package="csxapi")
-
+        self.copy('*.dll', 'bin', 'bin')
+        self.copy('*.so*', 'lib', 'lib', root_package='csxapi')
 
 ###################################################################################################

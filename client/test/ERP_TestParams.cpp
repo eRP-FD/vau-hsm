@@ -20,6 +20,7 @@ bool isSingleSimulatedHSMConfigured()
 {
     return true;
 }
+
 // return true here to enable tests for a cluster of simulated HSMs.   The IP and other parameters must be set in 
 // createClusteredSimHSMParameterSetFactory()
 // The hsm simulator setup for this can be found in firmware/HA/erp-hsm-ha.yaml
@@ -52,50 +53,60 @@ bool isClusteredHardwareHSMConfigured()
     return false;
 }
 
-HSMSession parametrisedLogon(HSMSession sesh, bool bUsePassword, std::string workUsername,std::string keySpec, std::string password)
+HSMSession parametrisedLogon(HSMSession sesh,
+                             bool bUsePassword,
+                             const std::string& workUsername,
+                             const std::string& keySpec,
+                             const std::string& password)
 {
-    HSMSession retVal = sesh;
+    HSMSession retVal{};
     if (bUsePassword)
     {
         retVal = ERP_LogonPassword(sesh, workUsername.c_str(), password.c_str());
     }
-    else {
+    else
+    {
         retVal = ERP_LogonKeySpec(sesh, workUsername.c_str(), keySpec.c_str(), password.c_str());
     }
+
     EXPECT_EQ(ERP_ERR_NOERROR, retVal.errorCode);
     EXPECT_EQ(HSMLoggedIn, retVal.status);
 
     return retVal;
 }
 
-HSMSession parametrisedLogoff(const HSMSession & sesh)
+HSMSession parametrisedLogoff(const HSMSession& sesh)
 {
     HSMSession retVal = ERP_Logoff(sesh);
-    EXPECT_EQ(HSMAnonymousOpen,retVal.status);
+    EXPECT_EQ(HSMAnonymousOpen, retVal.status);
+
     return retVal;
 }
 
 // This utility method is designed to be a thread entry point to talk to the session 
 //   passed in and do a minimal set of functions repeated a few times then exit.
-std::thread::id threadedSessionTest(HSMParameterSet parameters)
+std::thread::id threadedSessionTest(const HSMParameterSet& parameters)
 {
-    static const int testloops = 10;
+    static const int testLoops = 10;
 
     HSMSession thisSesh = parameters.SessionFactory();
  
     thisSesh = parameters.workingLogon(thisSesh);
     // Cannot use ASSERT_EQ because it doesn't work in subsidiary functions
-    EXPECT_EQ(HSMLoggedIn,thisSesh.status);
+    EXPECT_EQ(HSMLoggedIn, thisSesh.status);
     EXPECT_EQ(ERP_ERR_NOERROR, thisSesh.errorCode);
 
-    for (int i = 0; i < testloops; i++)
-    { // Just a few non-data dependent tests-
-        std::cerr << "ThreadedSessionTest Thread ID: " <<
-            std::this_thread::get_id() << " Starting Loop Iteration: " << i << std::endl;
+    for (int i = 0; i < testLoops; i++)
+    {
+        // Just a few non-data dependent tests
+        std::cerr << "ThreadedSessionTest Thread ID: "
+                  << std::this_thread::get_id()
+                  << " Starting Loop Iteration: "
+                  << i << std::endl;
         
         EmptyOutput output = ERP_DumpHSMMemory(thisSesh);
         EXPECT_EQ(ERP_ERR_NOERROR, output.returnCode);
-//        EXPECT_EQ(ERP_ERR_NOERROR, teststep_ListLoadedBlobKeys(thisSesh));
+
         // Use the STRIP_ERR_INDEX here to make sure it does not break the error code
         EXPECT_EQ(ERP_ERR_NOERROR, STRIP_ERR_INDEX(teststep_GenerateNONCE(thisSesh, 0)));
         static const UIntInput desiredBytes = { 32 };
@@ -103,175 +114,176 @@ std::thread::id threadedSessionTest(HSMParameterSet parameters)
         EXPECT_EQ(ERP_ERR_NOERROR, rndOut.returnCode);
         EXPECT_EQ(32, rndOut.RNDDataLen);
     }
+
     ERP_Disconnect(thisSesh);
     return std::this_thread::get_id();
 }
 
 HSMParameterSetFactory createSingleSimHSMParameterSetFactory()
 {
-    return []()->HSMParameterSet
+    return []()
     {
-        HSMParameterSet parameters;
+        HSMParameterSet parameters{};
 
-        parameters.ConfigName = std::string("SingleSimulatedHSM");
+        parameters.ConfigName = "SingleSimulatedHSM";
         parameters.TestEnabled = isSingleSimulatedHSMConfigured();
-        parameters.TestDataDirectory = std::string("resources");
-        parameters.StaticBlobDataDirectory = std::string("saved");
+        parameters.TestDataDirectory = "resources";
+        parameters.StaticBlobDataDirectory = "saved";
 
-        parameters.SessionFactory = []()->HSMSession {
+        parameters.SessionFactory = []()
+        {
             return ERP_Connect(SINGLE_SIM_HSM, TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
         };
 
-        parameters.SessionTestFactory = []()->HSMSessionTest {
-            return [](HSMParameterSet& parameterSet)->std::shared_ptr<std::thread> {
-                std::shared_ptr<std::thread> pThread = std::make_shared<std::thread>(threadedSessionTest, parameterSet);
-                return pThread;
+        parameters.SessionTestFactory = []()
+        {
+            return [](const auto& parameterSet)
+            {
+                return std::thread{threadedSessionTest, parameterSet};
             };
         };
-        parameters.workingLogon = [](const HSMSession& sesh)->HSMSession {
+
+        parameters.workingLogon = [](const HSMSession& sesh)
+        {
             // user with permissions 00000020
             return parametrisedLogon(sesh, false, "ERP_KWRK", "resources/ERP_KWRK_keyfile.key", "RUTU");
         };
-        parameters.setupLogon = [](const HSMSession& sesh)->HSMSession {
+
+        parameters.setupLogon = [](const HSMSession& sesh)
+        {
             // user with permissions 00000200
             return parametrisedLogon(sesh, true, "ERP_SETUP", "", "password");
         };
-        parameters.logoff = [](const HSMSession& sesh)->HSMSession {
+
+        parameters.logoff = [](const auto& sesh)
+        {
             return parametrisedLogoff(sesh);
         };
+
         return parameters;
     };
 }
 
 HSMParameterSetFactory createClusterSimHSMParameterSetFactory()
 {
-    return []()->HSMParameterSet
+    return []()
     {
-        HSMParameterSet parameters;
+        HSMParameterSet parameters{};
 
-        parameters.ConfigName = std::string("ClusteredSimulatedHSM");
+        parameters.ConfigName = "ClusteredSimulatedHSM";
         parameters.TestEnabled = isClusteredSimulatedHSMConfigured();
-        parameters.TestDataDirectory = std::string("resources");
-        parameters.StaticBlobDataDirectory = std::string("saved");
+        parameters.TestDataDirectory = "resources";
+        parameters.StaticBlobDataDirectory = "saved";
 
-        parameters.SessionFactory = []()->HSMSession {
-            // code here will execute just before the test ensues 
+        parameters.SessionFactory = []()
+        {
+            // code here will execute just before the test ensues
             const char* devArray[] = CLUSTER_HSM; // 10 is maximum
+
             int NDevices = 0;
-            while ((devArray[NDevices] != NULL) && (NDevices < MAX_CLUSTER_HSMS))
+            while (devArray[NDevices] != nullptr && NDevices < MAX_CLUSTER_HSMS)
             {
                 NDevices++;
             }
-            EXPECT_LT(NDevices, MAX_CLUSTER_HSMS);
-            devArray[NDevices] = NULL;
 
-            return ERP_ClusterConnect(&(devArray[0]), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS, TEST_RECONNECT_INTERVAL_MS);
+            EXPECT_LT(NDevices, MAX_CLUSTER_HSMS);
+            devArray[NDevices] = nullptr;
+
+            return ERP_ClusterConnect(&(devArray[0]),
+                                      TEST_CONNECT_TIMEOUT_MS,
+                                      TEST_READ_TIMEOUT_MS,
+                                      TEST_RECONNECT_INTERVAL_MS);
         };
 
-        parameters.SessionTestFactory = []()->HSMSessionTest {
-            return [](HSMParameterSet& parameterSet)->std::shared_ptr<std::thread> {
-                std::shared_ptr<std::thread> pThread = std::make_shared<std::thread>(threadedSessionTest, parameterSet);
-                return pThread;
+        parameters.SessionTestFactory = []()
+        {
+            return [](const auto& parameterSet)
+            {
+                return std::thread{threadedSessionTest, parameterSet};
             };
         };
-        parameters.workingLogon = [](HSMSession& sesh)->HSMSession {
+
+        parameters.workingLogon = [](const auto& sesh)
+        {
             // user with permissions 00000020
-            return parametrisedLogon(sesh, false, "ERP_KWRK", "resources/ERP_KWRK_keyfile.key", "RUTU");
+            return parametrisedLogon(sesh,
+                                     false,
+                                     "ERP_KWRK",
+                                     "resources/ERP_KWRK_keyfile.key",
+                                     "RUTU");
         };
-        parameters.setupLogon = [](HSMSession& sesh)->HSMSession {
+
+        parameters.setupLogon = [](const auto& sesh)
+        {
             // user with permissions 00000200
             return parametrisedLogon(sesh, true, "ERP_SETUP", "", "password");
         };
-        parameters.logoff = [](HSMSession& sesh)->HSMSession {
+
+        parameters.logoff = [](const auto& sesh)
+        {
             return parametrisedLogoff(sesh);
         };
+
         return parameters;
     };
 }
+
 HSMParameterSetFactory createFailoverPairSimHSMParameterSetFactory()
 {
-    return []()->HSMParameterSet
+    return []()
     {
-        HSMParameterSet parameters;
+        HSMParameterSet parameters{};
 
-        parameters.ConfigName = std::string("FailoverPairOfSimulatedHSMs");
+        parameters.ConfigName = "FailoverPairOfSimulatedHSMs";
         parameters.TestEnabled = isFailoverPairSimulatedHSMConfigured();
-        parameters.TestDataDirectory = std::string("resources");
-        parameters.StaticBlobDataDirectory = std::string("saved");
+        parameters.TestDataDirectory = "resources";
+        parameters.StaticBlobDataDirectory = "saved";
 
-        parameters.SessionFactory = []()->HSMSession {
-            // code here will execute just before the test ensues 
+        parameters.SessionFactory = []()
+        {
+            // code here will execute just before the test ensues
             const char* devArray[] = FAILOVER_PAIR_HSM; // 10 is maximum
+
             int NDevices = 0;
-            while ((devArray[NDevices] != NULL) && (NDevices < MAX_CLUSTER_HSMS))
+            while (devArray[NDevices] != nullptr && NDevices < MAX_CLUSTER_HSMS)
             {
                 NDevices++;
             }
-            EXPECT_LT(NDevices, 10);
-            devArray[NDevices] = NULL;
 
-            return ERP_ClusterConnect(&(devArray[0]), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS, TEST_RECONNECT_INTERVAL_MS);
+            EXPECT_LT(NDevices, 10);
+            devArray[NDevices] = nullptr;
+
+            return ERP_ClusterConnect(&(devArray[0]),
+                                      TEST_CONNECT_TIMEOUT_MS,
+                                      TEST_READ_TIMEOUT_MS,
+                                      TEST_RECONNECT_INTERVAL_MS);
         };
 
-        parameters.SessionTestFactory = []()->HSMSessionTest {
-            return [](HSMParameterSet& parameterSet)->std::shared_ptr<std::thread> {
-                std::shared_ptr<std::thread> pThread = std::make_shared<std::thread>(threadedSessionTest, parameterSet);
-                return pThread;
+        parameters.SessionTestFactory = []()
+        {
+            return [](const auto& parameterSet)
+            {
+                return std::thread{threadedSessionTest, parameterSet};
             };
         };
-        parameters.workingLogon = [](HSMSession& sesh)->HSMSession {
+
+        parameters.workingLogon = [](const auto& sesh)
+        {
             // user with permissions 00000020
             return parametrisedLogon(sesh, false, "ERP_KWRK", "resources/ERP_KWRK_keyfile.key", "RUTU");
         };
-        parameters.setupLogon = [](HSMSession& sesh)->HSMSession {
+
+        parameters.setupLogon = [](const auto& sesh)
+        {
             // user with permissions 00000200
             return parametrisedLogon(sesh, true, "ERP_SETUP", "", "password");
         };
-        parameters.logoff = [](HSMSession& sesh)->HSMSession {
+
+        parameters.logoff = [](const auto& sesh)
+        {
             return parametrisedLogoff(sesh);
         };
-        return parameters;
-    };
-}
 
-HSMParameterSetFactory createSingleHWHSMParameterSetFactory()
-{
-    if (isSingleHardwareHSMConfigured())
-    {
-        return []()
-        {
-            // TODO(chris).   This parameterised test setup is not ready yet.
-            HSMParameterSet parameters;
-            parameters.TestEnabled = false;
-            return parameters;
-        };
-    }
-
-    return []()
-    {
-        HSMParameterSet parameters;
-        parameters.TestEnabled = false;
-        return parameters;
-    };
-}
-
-HSMParameterSetFactory createClusterHWHSMParameterSetFactory() 
-{
-    if (isClusteredHardwareHSMConfigured())
-    {
-        return []()
-        {
-            // TODO(chris).   This parameterised test setup is not ready yet.
-            HSMParameterSet parameters;
-            parameters.TestEnabled = false;
-            return parameters;
-        };
-    }
-
-    return []()
-    {
-        HSMParameterSet parameters;
-        parameters.TestEnabled = false;
         return parameters;
     };
 }

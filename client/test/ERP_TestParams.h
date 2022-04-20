@@ -30,7 +30,7 @@ class HSMParameterSet;
 // This is a test that will start a new thread, connect a session in it and
 //   do some minimal HSM calls then disconnect the session
 // The thread returned should not be destroyed until the thread has termianted - chaeck with join().
-using HSMSessionTest = std::function<std::shared_ptr<std::thread>(HSMParameterSet &)>;
+using HSMSessionTest = std::function<std::thread(HSMParameterSet &)>;
 using HSMSessionTestFactory = std::function<HSMSessionTest()>;
 using HSMLoggerOn = std::function<HSMSession(HSMSession &)>;
 using HSMLoggerOff = std::function<HSMSession(HSMSession &)>;
@@ -52,7 +52,5 @@ using HSMParameterSetFactory = std::function<HSMParameterSet()>;
 HSMParameterSetFactory createSingleSimHSMParameterSetFactory();
 HSMParameterSetFactory createClusterSimHSMParameterSetFactory();
 HSMParameterSetFactory createFailoverPairSimHSMParameterSetFactory();
-HSMParameterSetFactory createSingleHWHSMParameterSetFactory();
-HSMParameterSetFactory createClusterHWHSMParameterSetFactory();
 
 #endif // ERP_TEST_PARAMS_H

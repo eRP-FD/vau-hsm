@@ -8,8 +8,8 @@ apiVersion: v1
 kind: Service
 metadata:
   labels:
-    app: vau-hsm-simulator-1
-  name: vau-hsm-simulator-1
+    app: vau-hsm-simulator-2
+  name: vau-hsm-simulator-2
   namespace: %NAMESPACE%
 spec:
   ports:
@@ -17,7 +17,7 @@ spec:
       protocol: TCP
       targetPort: 3001
   selector:
-    app: vau-hsm-simulator-1
+    app: vau-hsm-simulator-2
   type: ClusterIP
 
 ########################################################################################################################

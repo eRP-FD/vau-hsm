@@ -431,7 +431,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
     // 15. Compare the two keys
     // TODO(chris).
     // Save the last TEEToken for anyone else who wants to use it.
-    ErpAttestationTestFixture::m_SavedTEEToken = *(pTEEToken.get());
+    ErpAttestationTestFixture::m_SavedTEEToken = *pTEEToken;
     EXPECT_EQ(ERP_ERR_NOERROR, err);
 }
 
@@ -485,4 +485,127 @@ TEST_F(ErpAttestationTestFixture, UpdateUserTest)
     logonWorking();
     EXPECT_EQ(ERP_ERR_PERMISSION_DENIED, teststep_GenerateDerivationKey(
         ErpAttestationTestFixture::m_logonSession, Gen, pDerivationKeyBlob.get()));
+}
+
+// Test of the utility method to parse a TPM quote and return the PCR information.
+TEST_F(ErpAttestationTestFixture, ParseTPMQuoteTest)
+{
+    // 9. get Quote from TPM. - done in previous test.
+    auto enrollQuote = readERPResourceFile("saved/EnrollmentQuoteSaved.bin");
+    ASSERT_EQ(enrollQuote.size(), TPM_QUOTE_LENGTH);
+    TPMQuoteInput input;
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    auto retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(retVal.returnCode, ERP_ERR_NOERROR);
+    uint8_t expectedPCRSet[TPM_PCRSET_LENGTH] = { 0x0F,0x00,0x00 };  //NOLINT  (readability-magic-numbers)
+    ASSERT_EQ(0, memcmp(&(expectedPCRSet[0]), &(retVal.PCRSETFlags[0]), TPM_PCRSET_LENGTH));
+    uint8_t expectedPCRDigest[TPM_PCR_DIGESTHASH_LENGTH] = {
+        0x38, 0x72, 0x3a, 0x2e, 0x5e, 0x8a, 0x17, 0xaa, 0x79, 0x50, 0xdc, 0x00, 0x82, 0x09, 0x94, 0x4e, //NOLINT  (readability-magic-numbers)
+        0x89, 0x8f, 0x69, 0xa7, 0xbd, 0x10, 0xa2, 0x3c, 0x83, 0x9d, 0x34, 0x1e, 0x93, 0x5f, 0xd5, 0xca }; //NOLINT  (readability-magic-numbers)
+    ASSERT_EQ(0, memcmp(&(expectedPCRDigest[0]), &(retVal.PCRHash[0]), TPM_PCR_DIGESTHASH_LENGTH));
+    uint8_t expectedQualifiedSignerName[TPM_NAME_LEN] = {
+       0x00, 0x0B,  //NOLINT  (readability-magic-numbers)
+       0xA9, 0x17, 0x18, 0xA7, 0xF6, 0x6E, 0xE2, 0xC3, 0x00, 0x9D, 0x06, 0x61, 0xFB, 0xE3, 0xA4, 0xFB,  //NOLINT  (readability-magic-numbers)
+       0x19, 0xCA, 0x1D, 0xE8, 0x51, 0x92, 0xAC, 0xC6, 0xE4, 0x75, 0x8B, 0x3A, 0xC5, 0xDF, 0x09, 0xE0  }; //NOLINT  (readability-magic-numbers)
+    ASSERT_EQ(0, memcmp(&(expectedQualifiedSignerName[0]), &(retVal.qualifiedSignerName[0]), TPM_NAME_LEN));
+    uint8_t expectedQualifyingInformation[NONCE_LEN] = { 
+        0xB6, 0x61, 0x0D, 0x0A, 0x5B, 0x19, 0xBE, 0x0E, 0x7B, 0x59, 0x22, 0xD0, 0x7C, 0xCC, 0x8D, 0x88,  //NOLINT  (readability-magic-numbers)
+        0xE3, 0xB4, 0x09, 0x61, 0x0C, 0xE9, 0xF8, 0xAE, 0x89, 0x41, 0x0E, 0x36, 0x8B, 0xC0, 0x78, 0x68 }; //NOLINT  (readability-magic-numbers)
+    ASSERT_EQ(0, memcmp(&(expectedQualifyingInformation[0]), &(retVal.qualifyingInformation[0]), NONCE_LEN));
+    // Some Bad Data - start with thoe good and poke bad bytes into it.
+    std::vector zeroVector = { 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 }; //NOLINT  (readability-magic-numbers)
+    unsigned int offset = 0;
+    // All zero.
+    memset(&(input.QuoteData[0]), 0, TPM_QUOTE_LENGTH);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HEADER, retVal.returnCode);
+    // First Byte
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 1);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HEADER, retVal.returnCode);
+    // "TCG" in Header
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset + 1]), zeroVector.data(), 3);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HEADER, retVal.returnCode);
+    offset += 6; //NOLINT  (readability-magic-numbers)
+    // QualifyingName length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 2);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    // QualifyingName length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 1] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    offset += 2; //NOLINT  (readability-magic-numbers)
+    // Qualifying Name Algorithm
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 2);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_TPM_NAME_ALGORITHM, retVal.returnCode);
+    // Qualifying Name Algorithm
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 1] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_TPM_NAME_ALGORITHM, retVal.returnCode);
+    offset += TPM_NAME_LEN;
+    // QualifyingData length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 2);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HASH_FORMAT, retVal.returnCode);
+    // QualifyingData length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 1] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HASH_FORMAT, retVal.returnCode);
+    offset += 2; //NOLINT  (readability-magic-numbers)
+    offset += NONCE_LEN;
+    offset += 25; // Clock, VErsion, et.c. //NOLINT  (readability-magic-numbers)
+    // PCR Digest Count
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 4);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    // PCR Digest Count
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 3] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    offset += 4; //NOLINT  (readability-magic-numbers)
+    // PCR Hash Algorithm
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 2);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HASH_FORMAT, retVal.returnCode);
+    // PCR Hash Algorithm
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 1] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_HASH_FORMAT, retVal.returnCode);
+    offset += 2;
+    // PCR Selection Array Size
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    offset++;
+    // PCR Flags - no checks on content.
+    offset += 3;
+    // PCR Digest length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    memcpy(&(input.QuoteData[offset]), zeroVector.data(), 2);
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    // PCR Digest length
+    memcpy(&(input.QuoteData[0]), enrollQuote.data(), TPM_QUOTE_LENGTH);
+    input.QuoteData[offset + 1] = THE_ANSWER;
+    retVal = ERP_ParseTPMQuote(input);
+    ASSERT_EQ(ERP_ERR_BAD_QUOTE_FORMAT, retVal.returnCode);
+    offset += 2; //NOLINT  (readability-magic-numbers)
+    offset += TPM_PCR_DIGESTHASH_LENGTH;
+    ASSERT_EQ(offset, (unsigned int) TPM_QUOTE_LENGTH);
 }

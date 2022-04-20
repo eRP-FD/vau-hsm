@@ -15,7 +15,6 @@
 
 #include <gtest/gtest.h>
 
-
 #include <cstddef>
 #include <memory>
 #include <vector>
@@ -41,67 +40,31 @@ public:
     // Used for dynamic and transient blobs.
     static const unsigned int workingGeneration = 6;
 
-    ErpRUAttestationTestFixture() =default;
-
-    void static connect() {
+    void static connect()
+    {
         // code here will execute just before the test ensues 
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
-    void static logonSetup() {
-        bool doLogon = true;
-        if (doLogon)
-        {
-            // user ERP_SETUP with "password" and permissions 00000200
-            const static std::string setupUsername = "ERP_SETUP";
-            const static std::string password = "password";
 
-            // to log in a smart card user, set the key spec instead of the password:
-            /*
-               const unsigned char prv_key_spec[] = ":cs2:auto:USB0";
-               const unsigned char *password = NULL;
-             */
+    void static logonSetup()
+    {
+        // user ERP_SETUP with "password" and permissions 00000200
+        const static std::string setupUsername = "ERP_SETUP";
+        const static std::string password = "password";
 
-             // For now, log in both tyes of user.
-            m_logonSession = ERP_LogonPassword(m_logonSession, setupUsername.c_str(), password.c_str());
-            ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
-        }
+        // For now, log in both tyes of user.
+        m_logonSession = ERP_LogonPassword(m_logonSession, setupUsername.c_str(), password.c_str());
+        ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
     }
     void static logonWorking() {
-        bool doLogon = true;
-        if (doLogon)
-        {
-            // user ERP_WORK with "password" and permissions 00000020
-            const static std::string workUsername = "ERP_WORK";
-            const static std::string password = "password";
+        // user ERP_WORK with "password" and permissions 00000020
+        const static std::string workUsername = "ERP_WORK";
+        const static std::string password = "password";
 
-            // to log in a smart card user, set the key spec instead of the password:
-            /*
-               const unsigned char prv_key_spec[] = ":cs2:auto:USB0";
-               const unsigned char *password = NULL;
-             */
-
-            m_logonSession = ERP_LogonPassword(m_logonSession, workUsername.c_str(), password.c_str());
-            ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
-        }
+        m_logonSession = ERP_LogonPassword(m_logonSession, workUsername.c_str(), password.c_str());
+        ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
     }
-    void static logonUpdate() {
-        bool doLogon = true;
-        if (doLogon)
-        {
-            // user ERP_WORK with "password" and permissions 00000020
-            const static std::string workUsername = "ERP_UPDT";
-            const static std::string password = "password";
 
-            // to log in a smart card user, set the key spec instead of the password:
-            /*
-               const unsigned char prv_key_spec[] = ":cs2:auto:USB0";
-               const unsigned char *password = NULL;
-             */
-
-            m_logonSession = ERP_LogonPassword(m_logonSession, workUsername.c_str(), password.c_str());
-            ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
-        }
-    }
     void static logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
@@ -117,7 +80,8 @@ public:
         EXPECT_TRUE((err == ERP_ERR_NOERROR) || (err == ERP_ERR_BAD_BLOB_GENERATION));
     }
 
-    void SetUp() override {
+    void SetUp() override
+    {
         // code here will execute just before the test ensues 
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
@@ -131,7 +95,8 @@ public:
         forceCreateBlobGeneration(workingGeneration); // = 6;
     }
 
-    void TearDown() override {
+    void TearDown() override
+    {
         // code here will be called just after the test completes
         // ok to through exceptions from here if need be
         logoff();
@@ -142,9 +107,8 @@ public:
     }
 };
 
-HSMSession ErpRUAttestationTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR ,0 };
-// 3001 is local simulator, 3021 is whatever you have mapped the 
-//const std::string erpRUAttestationTestFixture::devIP = "3001@localhost";
+HSMSession ErpRUAttestationTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
+
 const std::string ErpRUAttestationTestFixture::devIP = HARDWARE_HSM;
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
@@ -269,7 +233,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
 // Answer to the challenge.
 TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
 {
-    unsigned int err = ERP_ERR_NOERROR;
+    auto err = ERP_ERR_NOERROR;
     // 7. Enroll AK
     // Use blob and decyrpted credential from a previous test run
     std::unique_ptr<ERPBlob> savedAKChallengeBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/AKChallengeSaved.blob"));
@@ -278,20 +242,17 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
     auto savedAKPub = readERPResourceFile("rusaved/AKPub.bin");
     auto savedAKName = readERPResourceFile("rusaved/h80000002.bin");
     auto pTrustedAK = getEmptyBlob();
-    if (err == ERP_ERR_SUCCESS)
-    {
-        err = teststep_EnrollAK(
-            ErpRUAttestationTestFixture::m_logonSession,
-            enrollmentGeneration,
-            savedTrustedEKBlob.get(),
-            savedAKChallengeBlob.get(),
-            savedAKName.data(),
-            savedAKPub.size() - 2,
-            savedAKPub.data() + 2,
-            savedDecCred.size(),
-            savedDecCred.data(),
-            pTrustedAK.get());
-    }
+
+    err = teststep_EnrollAK(ErpRUAttestationTestFixture::m_logonSession,
+                            enrollmentGeneration,
+                            savedTrustedEKBlob.get(),
+                            savedAKChallengeBlob.get(),
+                            savedAKName.data(),
+                            savedAKPub.size() - 2,
+                            savedAKPub.data() + 2,
+                            savedDecCred.size(),
+                            savedDecCred.data(),
+                            pTrustedAK.get());
 
     if (err == ERP_ERR_NOERROR)
     {
@@ -413,11 +374,10 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-        if (pReadBlob != nullptr)
-        {
-            delete pReadBlob;
-        }
+
+        delete pReadBlob;
     }
+
     if (err == ERP_ERR_NOERROR)
     {
         static const char* filename = "rusaved/eciesKeyPairSaved.blob";
@@ -433,14 +393,13 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-        if (pReadBlob != nullptr)
-        {
-            delete pReadBlob;
-        }
+
+        delete pReadBlob;
     }
+
     if (err == ERP_ERR_NOERROR)
     {
-        static const char* filename = "rusaved/vausigKeyPairSaved.blob";
+        static const char* filename = "rusaved/VAUSIGKeyPairSaved_UT.blob";
         ERPBlob* pReadBlob = readBlobResourceFile(filename,false);
 
         if (pReadBlob == nullptr)
@@ -453,17 +412,16 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-        if (pReadBlob != nullptr)
-        {
-            delete pReadBlob;
-        }
+
+        delete pReadBlob;
     }
 
     EXPECT_EQ(ERP_ERR_NOERROR, err);
 }
+
 TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
 {
-    unsigned int err = ERP_ERR_NOERROR;
+    auto err = ERP_ERR_NOERROR;
 
     std::unique_ptr<ERPBlob> savedTEEToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/staticTEETokenSaved.blob"));
     std::unique_ptr<ERPBlob> savedTaskDerivationKey = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/taskDerivationKeySaved.blob"));
@@ -473,21 +431,19 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
     unsigned char usedDerivationData[MAX_BUFFER];
     size_t usedDerivationDataLength = 0;
     unsigned char initialDerivedKey[AES_256_LEN];
-    if (err == ERP_ERR_SUCCESS)
-    {
-        err = teststep_deriveTaskPersistenceKey(
-            ErpRUAttestationTestFixture::m_logonSession,
-            savedAKName.data(), // SHA_1_LEN...
-            savedTEEToken.get(),
-            savedTaskDerivationKey.get(),
-            derivationData.size(),
-            derivationData.data(),
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
-            // Output
-            &usedDerivationDataLength,
-            &(usedDerivationData[0]), // MAX_BUFFER
-            &(initialDerivedKey[0])); // AES_256_LEN
-    }
+
+    err = teststep_deriveTaskPersistenceKey(ErpRUAttestationTestFixture::m_logonSession,
+                                            savedAKName.data(), // SHA_1_LEN...
+                                            savedTEEToken.get(),
+                                            savedTaskDerivationKey.get(),
+                                            derivationData.size(),
+                                            derivationData.data(),
+                                            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
+                                            // Output
+                                            &usedDerivationDataLength,
+                                            &(usedDerivationData[0]), // MAX_BUFFER
+                                            &(initialDerivedKey[0])); // AES_256_LEN
+
     // 14. Derive Task persistence key again for a non-initial derivation
     unsigned char subsequentDerivedKey[AES_256_LEN];
     for (int m = 0; m < SMALL_LOOP; m++)
@@ -514,8 +470,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
 TEST_F(ErpRUAttestationTestFixture, DISABLED_getVAUSIGPrivateKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/vausigKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/VAUSIGKeyPairSaved_UT.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     TwoBlobGetKeyInput vauSIG = { {0,0,{0}}, {0,0,{0}} };
     vauSIG.Key = *savedKeyPairBlob;
@@ -545,11 +501,10 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_getVAUSIGPrivateKey)
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_generateVAUSIGCSR)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/vausigKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    std::unique_ptr<ERPBlob> savedKeyPairBlob{readBlobResourceFile("rusaved/VAUSIGKeyPairSaved_UT.blob")};
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
-    GetVAUCSRInput vauCSR = { {0,0,{0}} ,0, {0} };
+    GetVAUCSRInput vauCSR{};
     vauCSR.KeyPair = *savedKeyPairBlob;
     // At the moment these candidate CSRs are from the ePA TU authn.
     auto candidateCSR = readERPResourceFile("candidateVAUSIG.csr");
@@ -559,23 +514,16 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_generateVAUSIGCSR)
     x509CSROutput keyOut = ERP_GenerateVAUSIGCSR(m_logonSession, vauCSR);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
-    // TODO(chris) - set up check of expected output.
-//    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-//        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
-//    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
-//    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TODO(chris) check CSR Signature?
     writeERPResourceFile("rusaved/generatedVAUSIG.csr",
-        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
+                         std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }
 
 // Cannot work without test data matching our ECIES KeyPair.
 // This is really a DISABLED and FAIL
 TEST_F(ErpRUAttestationTestFixture, DISABLED_doVAUECIES)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/eciesKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    std::unique_ptr<ERPBlob> savedKeyPairBlob{readBlobResourceFile("rusaved/eciesKeyPairSaved.blob")};
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
     DoVAUECIESInput vauECIES = { {0,0,{0}}, {0,0,{0}},0, {0} };
     vauECIES.ECIESKeyPair = *savedKeyPairBlob;
@@ -590,8 +538,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_doVAUECIES)
     vauECIES.clientPublicKeyLength = clientPub.size();
     AES128KeyOutput keyOut = ERP_DoVAUECIES128(m_logonSession, vauECIES);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-    const unsigned char expectedKey[] = { 0xda, 0x7c, 0x96, 0x48, 0xf7, 0xab, 0xa4, 0x6d
-        , 0x6f, 0x7b, 0x98, 0x5e, 0xf8, 0xa9, 0x4b, 0x02 };
+    const unsigned char expectedKey[] = { 0xda, 0x7c, 0x96, 0x48, 0xf7, 0xab, 0xa4, 0x6d,
+                                          0x6f, 0x7b, 0x98, 0x5e, 0xf8, 0xa9, 0x4b, 0x02 };
     ASSERT_TRUE(0 == memcmp(&(keyOut.AESKey[0]), &(expectedKey[0]), 16));
 }
 
@@ -599,53 +547,41 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_generateECIESCSR)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/eciesKeyPairSaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
-    GetVAUCSRInput eciesCSR = { {0,0,{0}} ,0, {0} };
+    GetVAUCSRInput eciesCSR{};
     eciesCSR.KeyPair = *savedKeyPairBlob;
     // At the moment these candidate CSRs are from the ePA TU authn.
     auto candidateCSR = readERPResourceFile("candidateECIES.csr");
     ASSERT_GT(candidateCSR.size(), 0);
     eciesCSR.candidateCSRLength = candidateCSR.size();
     memcpy(&(eciesCSR.candidateCSR[0]), candidateCSR.data(), candidateCSR.size());
-    x509CSROutput keyOut = { 0,0,{0} };
+    x509CSROutput keyOut{};
     for (int i = 0; i < MEDIUM_LOOP; i++)
     {
         keyOut = ERP_GenerateECIESCSR(m_logonSession, eciesCSR);
         ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
     }
 
-    // TODO(chris) - set up check of expected output.
-//    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-//        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
-//    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
-//    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TODO(chris) check CSR Signature?
     writeERPResourceFile("rusaved/generatedECIES.csr",
-        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
+                         std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_UnwrapHashKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/hashKeySaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
 
-    TwoBlobGetKeyInput get = { {0,0,{0}}, {0,0,{0}} };
+    TwoBlobGetKeyInput get{};
     get.Key = *savedKeyPairBlob;
     // Take the TEEToken from a previous test run:
     auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/staticTEETokenSaved.blob"));
-    ASSERT_NE(nullptr, teeToken.get());
+    ASSERT_NE(nullptr, teeToken);
     get.TEEToken = *teeToken;
     AES256KeyOutput keyOut = ERP_UnwrapHashKey(m_logonSession, get);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-/**
-unsigned char expectedKey[] = {
-        0xa7, 0xab, 0xd1, 0x94, 0xe5, 0x0b, 0x14, 0x0c, 0x9b, 0xe7, 0xfe, 0xe7, 0xbb, 0x39, 0x07, 0xd9
-        ,0xbe, 0xd8, 0xda, 0xdc, 0x2f, 0xc8, 0x3f, 0x9c, 0xaa, 0x41, 0x05, 0xa8, 0xc1, 0x1a, 0xc2, 0xf8
-    };
-    ASSERT_TRUE(0 == memcmp(&(keyOut.Key[0]), &(expectedKey[0]), 32));
-**/
+
     writeERPResourceFile("rusaved/ERPHashKey.bin",
-        std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
+                         std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
 }

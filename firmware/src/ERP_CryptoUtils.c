@@ -1188,14 +1188,14 @@ unsigned int verifyTPMQuote(T_CMDS_HANDLE* p_hdl,
     {
         // TODO:   ERP-6201 - workout how and if we can use the qualified name for anything.
         *ppQualifiedSignerName = &(pQuoteData[offset]);
-        offset += TPM_NAME_LEN;
+        offset += TPM_NAME_LEN; // This actually jumps us past the initial 0x00 0x20 of the following NONCE information.
     }
     //    Qualifying Data(NONCE) - comes from me.
     //        00 20 35 6F 9C 3A 24 8D 82 A9 76 9D 27 EF 6F 08 A3 C5 4D FE 40 82 FC C9 C1 04 71 80 F3 6B 40 F3 97 B2
     if (err == E_ERP_SUCCESS)
     {
         *ppNONCE = &(pQuoteData[offset]);
-        offset += NONCE_LEN / 8;
+        offset += NONCE_LEN / 8;   // The Initial 2 bytes were already bypassed by the previous step.
     }
     //    TPMS_CLOCK_INFO
     //        00 00 00 00 01 F1 4D 6B // uint64 clock.

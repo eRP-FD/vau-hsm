@@ -105,7 +105,7 @@ TEST_F(ErpHashKeyTestFixture, UnwrapHashKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/HashKeySaved.blob"));
-    ASSERT_NE(nullptr, savedKeyPairBlob.get());
+    ASSERT_NE(nullptr, savedKeyPairBlob);
     AES256KeyOutput keyOut = { 0,{0} };
     teststep_UnwrapHashKey(ErpHashKeyTestFixture::m_logonSession, savedKeyPairBlob.get(),&keyOut);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);

@@ -400,11 +400,18 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
     unsigned int err = E_ERP_SUCCESS;
     unsigned int now = 0;
     unsigned int ms = 0;
+    // ERP-8927 - "Lets do the Time Slip agaaaainnnn..."   This is a tolerance built into time checking 
+    //   to deal with imperfect clock synchronisation between the HSM which issued a blob and the HSM currently
+    //   checking it.   Units are seconds.   Current HSM NTP setup should correct after 500ms slippage so 
+    //   1 second is the theoretical maximum difference not allowing for non-zero NTP polling intervals.
+    // Empirical observations showed up to 600ms before corrections.   So, 2 seconds should be enough.
+    static const int TIME_SLIP = 2; // two second time slip.
     // Don't actually care about milliseconds.
     err = util_get_time(&now, &ms);
     if (err == E_ERP_SUCCESS)
     {
-        if (aBlob->IssueTime > now)
+        // ERP-8927 - Take 2: allow slippage to account for imperfect HSM Clock Sync in hardware HSM clusters.
+        if (aBlob->IssueTime> (now + TIME_SLIP))
         {
             err = E_ERP_BAD_BLOB_TIME;
         }
@@ -438,13 +445,13 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
             Validity = 1800; // 30 minutes.
             break;
         }
-        // TODO:   ERP-6199   !!!  THIS Must definitely be removed for final version!!!!
+        // ERP-6199   !!!  THIS Must definitely be enabled for final version!!!!
         // Leaving the blob expiry disabled enables replay attacks - we use 
         //   this for testing, but it must be removed for final versions and 
         //   the removal needs to be confirmed by test cases.
 // Force this for now:
 #ifndef DISABLE_BLOB_EXPIRY
-        if ((Validity != 0) && ((now - aBlob->IssueTime) > Validity))
+        if ((Validity != 0) && ((now - aBlob->IssueTime) > (Validity + TIME_SLIP)))
         {
             err = E_ERP_BLOB_EXPIRED;
         }

@@ -236,7 +236,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGenerateECCSRInputTests) // DISABLED until 
   GetVAUCSRInput eciesCSR_sealedBlobs = eciesCSR;
   SealedBlobManipulator sealedBlobManipulator(eciesCSR_sealedBlobs.KeyPair);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     eciesCSR_sealedBlobs.KeyPair = manipulation.blob;
@@ -288,10 +288,10 @@ TEST_F(ErpBasicInputTestsFixture, ERPEnrollTPMEKInputTests) // DISABLED until Gi
   ASSERT_EQ(ERP_ERR_NOERROR, err);
 
   /* now tests invalid sealed blobs */
-  ERPBlob trustedRoot = *ErpBasicInputTestsFixture::savedTrustedRoot.get();
+  ERPBlob trustedRoot = *ErpBasicInputTestsFixture::savedTrustedRoot;
   SealedBlobManipulator sealedBlobManipulator(trustedRoot);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     trustedRoot = manipulation.blob;
@@ -338,7 +338,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   std::copy(pAKName.begin(), pAKName.end(), std::back_inserter(AKname));
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = generationSaved;
-  in.KnownEKBlob = *savedTrustedEK.get();
+  in.KnownEKBlob = *savedTrustedEK;
   in.AKPubLength = pAKPub.size()-2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
@@ -350,7 +350,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   AKChallengeInput in_sealedBlobTest = in;
   SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.KnownEKBlob);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.KnownEKBlob = manipulation.blob;
@@ -377,7 +377,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   std::copy(pAKName.begin(), pAKName.end(), std::back_inserter(AKname));
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = 0;
-  in.KnownEKBlob = *savedTrustedEK.get();
+  in.KnownEKBlob = *savedTrustedEK;
   in.AKPubLength = pAKPub.size()-2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
@@ -391,7 +391,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   std::copy(pAKName.begin(), pAKName.end(), std::back_inserter(AKname));
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = generationSaved + 999; // NOLINT
-  in.KnownEKBlob = *savedTrustedEK.get();
+  in.KnownEKBlob = *savedTrustedEK;
   in.AKPubLength = pAKPub.size()-2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
@@ -405,7 +405,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   AKname[0] += 1;
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = generationSaved;
-  in.KnownEKBlob = *savedTrustedEK.get();
+  in.KnownEKBlob = *savedTrustedEK;
   in.AKPubLength = pAKPub.size()-2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
@@ -418,7 +418,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   AKname[3] += 1;
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = generationSaved;
-  in.KnownEKBlob = *savedTrustedEK.get();
+  in.KnownEKBlob = *savedTrustedEK;
   in.AKPubLength = pAKPub.size()-2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
@@ -432,8 +432,8 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetAKChallengeInputTests) // DISABLED until
   AKname[33] = 0x00; // NOLINT
   in = { 0,{0},{0,0,{0}},0,{0} };
   in.desiredGeneration = generationSaved;
-  in.KnownEKBlob = *savedTrustedEK.get();
-  in.AKPubLength = pAKPub.size()-2;
+  in.KnownEKBlob = *savedTrustedEK;
+  in.AKPubLength = pAKPub.size() - 2;
   std::memcpy(&(in.AKName[0]), AKname.data(), TPM_NAME_LEN);
   std::memcpy(&(in.AKPubData[0]), pAKPub.data()+2, in.AKPubLength);
   output = ERP_GetAKChallenge(ErpBasicInputTestsFixture::m_logonSession, in);
@@ -458,9 +458,9 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
   memcpy(&(in.QuoteData[0]), savedAttestationQuote.data(), savedAttestationQuote.size());
   in.QuoteSignatureLength = savedAttestationQuoteSignature.size();
   memcpy(&(in.QuoteSignature[0]), savedAttestationQuoteSignature.data(), savedAttestationQuoteSignature.size());
-  in.KnownAKBlob = *savedTrustedAK.get();
-  in.NONCEBlob = *savedAttestationNONCE.get();
-  in.KnownQuoteBlob = *savedTrustedQuote.get();
+  in.KnownAKBlob = *savedTrustedAK;
+  in.NONCEBlob = *savedAttestationNONCE;
+  in.KnownQuoteBlob = *savedTrustedQuote;
   SingleBlobOutput output = ERP_GetTEEToken(ErpBasicInputTestsFixture::m_logonSession, in);
   EXPECT_EQ(ERP_ERR_NOERROR, output.returnCode);
 
@@ -478,7 +478,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
   TEETokenRequestInput in_sealedBlobTest = in;
   SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.KnownAKBlob);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.KnownAKBlob = manipulation.blob;
@@ -495,7 +495,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
   in_sealedBlobTest = in;
   sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.KnownQuoteBlob);
   manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.KnownQuoteBlob = manipulation.blob;
@@ -512,7 +512,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
   in_sealedBlobTest = in;
   sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.NONCEBlob);
   manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.NONCEBlob = manipulation.blob;
@@ -536,9 +536,9 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
   memcpy(&(in.QuoteData[0]), savedAttestationQuote.data(), savedAttestationQuote.size());
   in.QuoteSignatureLength = savedAttestationQuoteSignature.size();
   memcpy(&(in.QuoteSignature[0]), savedAttestationQuoteSignature.data(), savedAttestationQuoteSignature.size());
-  in.KnownAKBlob = *savedTrustedAK.get();
-  in.NONCEBlob = *savedAttestationNONCE.get();
-  in.KnownQuoteBlob = *savedTrustedQuote.get();
+  in.KnownAKBlob = *savedTrustedAK;
+  in.NONCEBlob = *savedAttestationNONCE;
+  in.KnownQuoteBlob = *savedTrustedQuote;
   output = ERP_GetTEEToken(ErpBasicInputTestsFixture::m_logonSession, in);
   EXPECT_EQ(ERP_ERR_TPM_NAME_MISMATCH, output.returnCode);
 }
@@ -579,7 +579,7 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
       DeriveKeyOutput output = ERP_toTestFunc(ErpBasicInputTestsFixture::m_logonSession, in);
       ASSERT_EQ(ERP_ERR_NOERROR, output.returnCode);
       EXPECT_EQ(output.derivationDataLength, 2 + 32 + in.derivationDataLength); /* check that the used derivation data is correct */
-      savedKeysList.push_back(std::vector<unsigned char>(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN));
+      savedKeysList.emplace_back(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN);
 
       /* valid with initialDerivation false */
       // Too short - Derivation Data must be at least as long as the derivation variation prefix
@@ -594,7 +594,7 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
       ASSERT_EQ(ERP_ERR_DERIVATION_DATA_LENGTH, output.returnCode);
 
       // Ok, Derivation Data must be at least as long as the derivation variation prefix
-      derivationData = { 0x00,0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a }; // NOLINT
+      derivationData = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a }; // NOLINT
       memcpy(&(in.AKName[0]), savedAKName.data(), TPM_NAME_LEN);
       in.derivationDataLength = derivationData.size();
       memcpy(&(in.derivationData), derivationData.data(), in.derivationDataLength);
@@ -604,7 +604,7 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
       output = ERP_toTestFunc(ErpBasicInputTestsFixture::m_logonSession, in);
       ASSERT_EQ(ERP_ERR_NOERROR, output.returnCode);
       EXPECT_EQ(output.derivationDataLength, in.derivationDataLength); /* check that the used derivation data is correct */
-      savedKeysList.push_back(std::vector<unsigned char>(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN));
+      savedKeysList.emplace_back(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN);
 
       /* valid, different derivation Data */
       derivationData.clear();
@@ -621,14 +621,12 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
       output = ERP_toTestFunc(ErpBasicInputTestsFixture::m_logonSession, in);
       ASSERT_EQ(ERP_ERR_NOERROR, output.returnCode);
       EXPECT_EQ(output.derivationDataLength, 2 + 32 + in.derivationDataLength); /* check that the used derivation data is correct */
-      savedKeysList.push_back(std::vector<unsigned char>(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN));
-
+      savedKeysList.emplace_back(&(output.derivedKey[0]), &(output.derivedKey[0]) + AES_256_LEN);
 
       /* empty derivation data (OCTET STRING is checked for 0, expect ERP_ERR_ASN1_CONTENT_ERROR */
       derivationData.clear();
       memcpy(&(in.AKName[0]), savedAKName.data(), TPM_NAME_LEN);
       in.derivationDataLength = derivationData.size();
-//      memcpy(&(in.derivationData), derivationData.data(), in.derivationDataLength);
       in.TEEToken = *teeToken;
       in.derivationKey = *pDerivationKeyBlob;
       in.initialDerivation = 1;
@@ -650,7 +648,7 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
     DeriveKeyInput in_sealedBlobTest = in;
     SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.TEEToken);
     std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-    for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+    for (const auto& manipulation : manipulationOutput)
     {
       SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
       in_sealedBlobTest.TEEToken = manipulation.blob;
@@ -701,7 +699,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetECPublicKeyInputTests) // DISABLED until
   in_sealedBlobTest = get;
   SealedBlobManipulator sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.BlobIn);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.BlobIn = manipulation.blob;
@@ -738,7 +736,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPDoECIES128InputTests) // DISABLED until Git
   DoVAUECIESInput in_sealedBlobTest = in;
   SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.TEEToken);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.TEEToken = manipulation.blob;
@@ -755,7 +753,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPDoECIES128InputTests) // DISABLED until Git
   in_sealedBlobTest = in;
   sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.ECIESKeyPair);
   manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.ECIESKeyPair = manipulation.blob;
@@ -803,7 +801,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetVAUSIGPrivateKeyInputTests) // DISABLED 
   TwoBlobGetKeyInput in_sealedBlobTest = vauSIG;
   SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.TEEToken);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.TEEToken = manipulation.blob;
@@ -820,7 +818,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetVAUSIGPrivateKeyInputTests) // DISABLED 
   in_sealedBlobTest = vauSIG;
   sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.Key);
   manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.Key = manipulation.blob;
@@ -853,7 +851,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPUnwrapHashKeyInputTests) // DISABLED until 
   TwoBlobGetKeyInput in_sealedBlobTest = in;
   SealedBlobManipulator sealedBlobManipulator(in_sealedBlobTest.TEEToken);
   std::vector<SealedBlobManipulator::sealedBlobManipulation_t> manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.TEEToken = manipulation.blob;
@@ -870,7 +868,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPUnwrapHashKeyInputTests) // DISABLED until 
   in_sealedBlobTest = in;
   sealedBlobManipulator = SealedBlobManipulator(in_sealedBlobTest.Key);
   manipulationOutput = sealedBlobManipulator.getManipulations();
-  for(SealedBlobManipulator::sealedBlobManipulation_t manipulation : manipulationOutput)
+  for (const auto& manipulation : manipulationOutput)
   {
     SCOPED_TRACE("SealedBlobManipulator test failed: " + manipulation.TestName);
     in_sealedBlobTest.Key = manipulation.blob;

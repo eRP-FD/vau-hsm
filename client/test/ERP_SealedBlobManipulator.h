@@ -15,17 +15,15 @@
 #include <vector>
 
 #define BLOB_IV_LEN 12
-#define BLOB_COUNTER_LEN 16
 #define BLOB_AD_HASH_LEN 16
 #define BLOB_DOMAIN_LEN 5
-#define BLOB_AD_LEN sizeof(unsigned int) + BLOB_DOMAIN_LEN
 
 #ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable : 4200) // disable warning for zero-sized member
+    #pragma warning(push)
+    #pragma warning(disable : 4200) // disable warning for zero-sized member
 #else 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wpedantic"
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
 
 extern "C" {
@@ -105,7 +103,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
 
     std::memset(sealedDataPtr, 0, sizeof(SealedBlob_t));
 
@@ -122,7 +120,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
 
     sealedDataPtr->BlobID[0]++;
     sealedDataPtr->BlobID[SHA_256_LEN-1]--;
@@ -140,7 +138,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
 
     sealedDataPtr->Generation = 0;
 
@@ -157,7 +155,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
 
     sealedDataPtr->Generation = 9999;
 
@@ -173,7 +171,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
 
     sealedDataPtr->Domain[0]++;
 
@@ -189,8 +187,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     std::memcpy(sealedDataPtr->Domain, domain, sizeof(sealedDataPtr->Domain));
 
     out.expectErr = ERP_ERR_BAD_BLOB_DOMAIN;
@@ -205,8 +202,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->ICV[5]--;
 
     out.expectErr = ERP_ERR_BAD_BLOB_AD;
@@ -221,8 +217,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->AuthTag[5]--;
 
     out.expectErr = ERP_ERR_BAD_BLOB_AD;
@@ -237,8 +232,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->EncodedDataLength++;
 
     /* not clear which error to expect */
@@ -252,8 +246,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->EncodedDataLength--;
 
     out.expectErr = ERP_ERR_ASN1_CONTENT_ERROR;
@@ -266,8 +259,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->EncodedDataLength += 999999999;
 
     /* expect to run out of memory */
@@ -281,8 +273,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->EncodedDataLength = 0;
 
     /* not clear which error to expect */
@@ -298,8 +289,7 @@ private:
     sealedBlobManipulation_t out;
     out.TestName = __FUNCTION__;
     out.blob = m_validBlob;
-    SealedBlob_t *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
-
+    auto *sealedDataPtr = (SealedBlob_t*)out.blob.BlobData;
     sealedDataPtr->EncodedData[5]++;
 
     /* should give an authentication error */
@@ -312,4 +302,4 @@ private:
   ERPBlob m_validBlob;
 };
 
-#endif //ERP_SEALEDBLOBMANIPULATOR_H
+#endif // ERP_SEALED_BLOB_MANIPULATOR_H

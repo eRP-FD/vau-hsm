@@ -510,7 +510,7 @@ int ERP_FirmwareExec(HSMSession sesh,
 //   formal handling of parameters.   i.e. bouncing it with invalid inputs.
 // It may be removed for the final build, or not - it represents no security risk
 //   since the security is provided inside the HSM.
-// For the production build, this will return  E_ERP_DEV_FUNCTION_ONLY.
+// For the production build, this will return  ERP_ERR_DEV_FUNCTION_ONLY.
 ERP_API_FUNC DirectIOOutput ERP_DirectIO(HSMSession sesh,
     DirectIOInput input) // input for the command.
 {
@@ -3077,3 +3077,152 @@ ERP_API_FUNC SHA256Output ERP_GetBlobContentHashWithToken(
     return retVal;
 }
 
+/**
+* Does not require an HSM Session.   This is computationally executed on the client.
+* This method will parse a TPM Quote and return the system-invariant parts of the quote data.
+* The Signature of the quote is NOT checked.
+* The Qualified Signer Name, NONCE, PCR Set and hash are returned.
+* For the meaning of these fields see the TPM2.0 Specification
+*   "Trusted Platform Module Library - Part 2: Structures" for TPM2B_ATTEST
+* Only quotes using SHA256 as the hash are supported.
+**/
+ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
+    TPMQuoteInput input)
+{
+    TPMParsedQuote_t retVal = { ERP_ERR_NOERROR,{0},{0},{0},{0} };
+    // Quote Length is enforced by calling concenvtion.
+
+    size_t offset = 0;
+    // Comments describe sample parsing for a simulated TPM Quote:
+    // ------------------------------------------
+    //    TPM Magic Number
+    //        FF 54 43 47 // TPM_GENERATED_VALUE - Always 0xff"TCG"
+//        80 18 // TPMI_ST_ATTEST - TPMI_ST_ATTEST_QUOTE 0x8018
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0xff) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x54) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 2] != 0x43) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 3] != 0x47) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 4] != 0x80) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 5] != 0x18)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_HEADER;
+        }
+        offset += 6; //NOLINT  (readability-magic-numbers)
+    }
+    //        Signing key qualified name TPM2B_NAME
+    //        00 22 // size 2 bytes
+    //        // TPMU_NAME - 
+    //        00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
+    //        9A 9D 5C 78 E6 F2 9B 6A DB 8D 9F C0 16 4E B3 C4 92 0A 7C C3 FB 74 82 59 E7 06 74 40 FB E4 8E 3C
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x22)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_FORMAT;
+        }
+        offset += 2; //NOLINT  (readability-magic-numbers)
+    }
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x0B)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_TPM_NAME_ALGORITHM;
+        }
+    }
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        memcpy(&(retVal.qualifiedSignerName[0]), &(input.QuoteData[offset]),TPM_NAME_LEN);
+        offset += TPM_NAME_LEN;
+    }
+    //    Qualifying Data(NONCE) - comes from me.
+    //        00 20 35 6F 9C 3A 24 8D 82 A9 76 9D 27 EF 6F 08 A3 C5 4D FE 40 82 FC C9 C1 04 71 80 F3 6B 40 F3 97 B2
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x20)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_HASH_FORMAT;
+        }
+        offset += 2; // Past the length field //NOLINT  (readability-magic-numbers)
+        memcpy(&(retVal.qualifyingInformation[0]), &(input.QuoteData[offset]), NONCE_LEN);
+        offset += NONCE_LEN;   // The Initial 2 bytes were already bypassed by the previous step.
+    }
+    //    TPMS_CLOCK_INFO
+    //        00 00 00 00 01 F1 4D 6B // uint64 clock.
+    //        00 00 00 09 // UINT32 reset count
+    //        00 00 00 00 // unint32 Restart Count
+    //        01 // Safe - TPMI_YES_NO - TRUE = 1
+    //        20 19 10 23 00 16 36 36 // uint64 Firmware Version
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        offset += 8; // Clock - nothing sensible to check here. //NOLINT  (readability-magic-numbers)
+        offset += 4; // Reset Count - nothing sensible to check here. //NOLINT  (readability-magic-numbers)
+        offset += 4; // Restart Count - nothing sensible to check here. //NOLINT  (readability-magic-numbers)
+        offset += 1; // Safe = TRUE?   Is this relevant? //NOLINT  (readability-magic-numbers)
+        offset += 8; // TPM Firmware version, also nothing to check here. //NOLINT  (readability-magic-numbers)
+    }
+    //  TPMS_QUOTE_INFO(
+    //    TPML_PCR_SELECTION
+    //        00 00 00 01 // Count - we only accept one digest.
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 2] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 3] != 0x01)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_FORMAT;
+        }
+        offset += 4; //NOLINT  (readability-magic-numbers)
+    }
+    //        // TPMS_PCR_SELECTION
+    //        00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x0B)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_HASH_FORMAT;
+        }
+        offset += 2; //NOLINT  (readability-magic-numbers)
+    }
+    //        03 // Size of select array
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    { // Selection array is always 3 bytes.
+        if (input.QuoteData[offset] != 0x03) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_FORMAT;
+        }
+        offset += 1; //NOLINT  (readability-magic-numbers)
+    }
+    //        01 00 00 // Bitmap of selected PCRs.    Example is for PCR 0 only.
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        memcpy(&(retVal.PCRSETFlags[0]), &(input.QuoteData[offset]), TPM_PCRSET_LENGTH);
+        offset += 3; //NOLINT  (readability-magic-numbers)
+    }
+    //    Digest of hashes in quote.
+    //        00 20 66 68 7A AD F8 62 BD 77 6C 8F C1 8B 8E 9F 8E 20 08 97 14 85 6E E2 33 B3 90 2A 59 1D 0D 5F 29 25
+    if (retVal.returnCode == ERP_ERR_NOERROR)
+    {
+        if ((input.QuoteData[offset] != 0x00) || //NOLINT  (readability-magic-numbers)
+            (input.QuoteData[offset + 1] != 0x20)) //NOLINT  (readability-magic-numbers)
+        {
+            retVal.returnCode = ERP_ERR_BAD_QUOTE_FORMAT;
+        }
+        offset += 2; //NOLINT  (readability-magic-numbers)
+        memcpy(&(retVal.PCRHash[0]),&(input.QuoteData[offset]),TPM_PCR_DIGESTHASH_LENGTH);
+    }
+    // Alternative example for more PCRs:
+    //        00 00 00 01
+    //        00 0B
+    //        03
+    //        0F 00 00 // Flags of PCRs. <--- Here there are more bits set.   i.e.PCRs 0,1,2,3.
+    //        00 20 38 72 3A 2E 5E 8A 17 AA 79 50 DC 00 82 09 94 4E 89 8F 69 A7 BD 10 A2 3C 83 9D 34 1E 93 5F D5 CA
+
+    return retVal;
+}

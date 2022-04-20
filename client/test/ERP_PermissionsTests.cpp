@@ -618,8 +618,8 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetECPublicKey)
     testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Set1, users::Set2}, ERP_ERR_NOERROR);
-    testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
-    testFn({users::Working}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Update}, ERP_ERR_NOERROR);
+    testFn({users::Working}, ERP_ERR_NOERROR);
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
 }
 

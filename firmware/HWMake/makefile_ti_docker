@@ -13,8 +13,8 @@ NAME = ERP
 
 SRC  = ../src
 DEF  = .
-EXE  = ../hwmake
-MAK  = ../hwmake
+EXE  = ../HWMake
+MAK  = ../HWMake
 
 
 ########################

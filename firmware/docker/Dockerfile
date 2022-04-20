@@ -4,7 +4,7 @@
 
 ########################################################################################################################
 
-FROM conanio/gcc9:1.40.3 AS prerequisites
+FROM conanio/gcc9:1.43.0 AS prerequisites
 
 USER root
 ARG NEXUS_USERNAME
@@ -20,24 +20,31 @@ ENV GITHUB_OAUTH_TOKEN=${GITHUB_OAUTH_TOKEN:-''}
 
 # install prerequisites
 #
-RUN DEBIAN_FRONTEND=noninteractive                            \
-    apt-get update -y &&                                      \
-    apt-get install -y --no-install-recommends gcc-multilib   \
-                                               openssh-client \
-                                               curl           \
-                                               git            \
-                                               openssh-client \
-                                               libc6-i386     \
-                                               lib32stdc++6   \
-                                               lib32gcc1      \
-                                               lib32z1        \
-                                               xutils-dev     \
-    &&                                                        \
-    apt-get clean all &&                                      \
-    apt-get autoclean -y &&                                   \
-    apt-get autoremove -y &&                                  \
-    rm -rf /var/lib/apt/*                                     \
+RUN DEBIAN_FRONTEND=noninteractive                             \
+    apt-get update -y &&                                       \
+    apt-get install -y --no-install-recommends                 \
+                                               ca-certificates \
+                                               gcc-multilib    \
+                                               openssh-client  \
+                                               curl            \
+                                               git             \
+                                               openssh-client  \
+                                               libc6-i386      \
+                                               lib32stdc++6    \
+                                               lib32gcc1       \
+                                               lib32z1         \
+                                               xutils-dev      \
+    &&                                                         \
+    apt-get clean all &&                                       \
+    apt-get autoclean -y &&                                    \
+    apt-get autoremove -y &&                                   \
+    rm -rf /var/lib/apt/*                                      \
            /var/cache/apt/*
+
+# due to conan base image based off of Ubuntu 19, ca-certificates contains an old Let's Encrypt CA
+#
+RUN sed -i '/^mozilla\/DST_Root_CA_X3.crt$/ s/^/!/' /etc/ca-certificates.conf
+RUN update-ca-certificates
 
 # use HTTPS checkout due to issues with SSH key formatting when passed through as a build arg
 #
@@ -102,7 +109,9 @@ ARG NEXUS_SRV=nexus.epa-dev.net/repository/
 ARG NEXUS_RELEASE_PATH=erp-raw-releases/com/ibm/erp/hwmake50/
 ARG RELEASE_VERSION
 ARG NEXUS_RELEASE_PKG=erp-${RELEASE_VERSION}
-
+ARG CFG=rel50
+ARG RU_ERP_MDL_VERSION
+ARG PU_ERP_MDL_VERSION
 # download cryptoserversdk
 #
 WORKDIR /opt
@@ -118,15 +127,22 @@ RUN ln -s HWMake hwmake
 # configure & build
 #
 WORKDIR /firmware/HWMake
-RUN cp makefile_ti_docker makefile
-RUN ./make_clean.sh
+RUN cp makefile_ti_docker makefile && \
+    cp make_ti_docker.sh make.sh && \
+    ./make_clean.sh
+
+#patch make.sh with proper versions from git tag for RU artifact
+RUN echo "BLOB_DOMAIN=REFZ" > .env && \
+    echo "CFG=${CFG}" >> .env && \
+    echo "ERP_MDL_VERSION=${RU_ERP_MDL_VERSION}" >> .env 
+RUN cat ./make.sh
 RUN ./make.sh
 
-# upload build artefacts
+# upload unsigned artefacts
 #
 RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
          --upload-file ../HWMake50/ERP.out         \
-         https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}.out
+         https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}-ru.out
 
 # perform testing signing
 #
@@ -134,12 +150,23 @@ RUN /opt/cryptoserversdk/bin/admin/Linux-x86_64/csadm Model=cs5                 
                                                       MMCSignKey=IBM_eRP_RU_RSAAltMdlSig.key#password \
                                                       MakeMTC=../HWMake50/ERP.out
 
-# upload signed artefacts
+# upload signed test artefacts
 #
 RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
          --upload-file ../HWMake50/ERP.mtc         \
          https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}-ru.mtc
- 
+
+# PU build
+RUN cp make_ti_docker.sh make.sh && \
+    ./make_clean.sh
+RUN echo "BLOB_DOMAIN=PROD" > .env && \
+    echo "CFG=${CFG}" >> .env && \
+    echo "ERP_MDL_VERSION=${PU_ERP_MDL_VERSION}" >> .env 
+RUN ./make.sh
+RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
+         --upload-file ../HWMake50/ERP.out         \
+         https://${NEXUS_SRV}${NEXUS_RELEASE_PATH}${NEXUS_RELEASE_PKG}-pu.out
+
 # clean up
 #
 RUN rm -rf $HOME/.conan     \

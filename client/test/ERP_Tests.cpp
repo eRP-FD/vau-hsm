@@ -17,29 +17,27 @@
 #include <thread>
 #include <vector>
 
-unsigned int teststep_GenerateBlobKey(HSMSession sesh, unsigned int gen);
-unsigned int teststep_DeleteBlobKey(HSMSession sesh, unsigned int gen);
-
 class ErpCommonTestsFixture : public ::testing::TestWithParam<HSMParameterSetFactory> {
 public:
-    HSMSession m_logonSession;
-    static ERPBlob m_SavedTEEToken;
+    HSMSession m_logonSession{};
+    HSMParameterSet parameters{};
 
-    ErpCommonTestsFixture() = default;
-
-    HSMParameterSet parameters;
-
-    void connect(void)
+    void connect()
     {
         HSMSessionFactory factory = parameters.SessionFactory;
         m_logonSession = factory();
     }
-    void logonSetup() {
+
+    void logonSetup()
+    {
         m_logonSession = parameters.setupLogon(m_logonSession);
-     }
-    void logonWorking() {
+    }
+
+    void logonWorking()
+    {
         m_logonSession = parameters.workingLogon(m_logonSession);
     }
+
     void logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
@@ -48,7 +46,9 @@ public:
             ASSERT_EQ(HSMAnonymousOpen, m_logonSession.status);
         }
     }
-    void SetUp() override {
+
+    void SetUp() override
+    {
         // code here will execute just before the test ensues 
         HSMParameterSetFactory factory = GetParam();
         parameters = factory();
@@ -56,28 +56,28 @@ public:
         {
             return;
         }
+
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
         logonWorking();
     } 
 
-    void TearDown() override {
+    void TearDown() override
+    {
         if (!parameters.TestEnabled)
         {
             return;
         }
+
         // code here will be called just after the test completes
         // ok to through exceptions from here if need be
         logoff();
         m_logonSession = ERP_Disconnect(m_logonSession);
 
-        EXPECT_TRUE((m_logonSession.errorCode == ERP_ERR_NOERROR) ||
-            (m_logonSession.errorCode == ERP_ERR_NO_CONNECTION));
+        EXPECT_TRUE(m_logonSession.errorCode == ERP_ERR_NOERROR || m_logonSession.errorCode == ERP_ERR_NO_CONNECTION);
     }
 };
-
-ERPBlob ErpCommonTestsFixture::m_SavedTEEToken = { 0,0,{'\0'} };
 
 TEST_P(ErpCommonTestsFixture, ConnectTests)
 {
@@ -106,7 +106,7 @@ TEST_P(ErpCommonTestsFixture, ConnectionTestMethod)
 }
 TEST_P(ErpCommonTestsFixture, ConnectionTestDirect)
 {
-    unsigned int             err = ERP_ERR_NOERROR;
+    auto err = ERP_ERR_NOERROR;
 
     printf("\nExecuting DumpHSMMemory command ...\n");
 
@@ -413,7 +413,6 @@ TEST_P(ErpCommonTestsFixture, FaultyCertificateTestInvalidASN12)
     /* expect any Utimaco ASN1 Error Code (when decoding) */
     EXPECT_EQ(rawOutput.returnCode & E_ASN1_ALL, E_ASN1_ALL);
 
-
     /* also test this for  Enroll TPMEK */
     auto savedTrustedRoot = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedRootSaved.blob"));
     auto savedTrustedEK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedEKSaved.blob"));
@@ -432,7 +431,6 @@ TEST_P(ErpCommonTestsFixture, FaultyCertificateTestInvalidASN12)
 TEST_P(ErpCommonTestsFixture, MaxSessionsSingleThread) {
     // There is already one session open due to the framework.
     HSMSession session[MAX_HSM_SESSIONS];
-    HSMSessionTestFactory testFactory = parameters.SessionTestFactory;
     int i = 0;
     for (i = 0; i < (MAX_HSM_SESSIONS - 1) ; i++)
     {
@@ -451,18 +449,19 @@ TEST_P(ErpCommonTestsFixture, MaxSessionsSingleThread) {
 }
 
 // Test to check Maximum number of simultaneous sessions
-TEST_P(ErpCommonTestsFixture, MaxSessionsMultithread) {
+TEST_P(ErpCommonTestsFixture, DISABLED_MaxSessionsMultithread) {
     // There is already one session open due to the framework.
-    std::vector<std::shared_ptr<std::thread>> threads = {};
-    HSMSessionTestFactory testFactory = parameters.SessionTestFactory;
+    std::vector<std::thread> threads{};
+    const auto testFactory = parameters.SessionTestFactory();
     for (int i = 0; i < (MAX_HSM_SESSIONS - 1) ; i++)
     {
-        threads.push_back(testFactory()(parameters));
-        std::cerr << "Created SessionTest Thread ID: " << threads.back()->get_id() << std::endl;
+        threads.emplace_back(testFactory(parameters));
+        std::cerr << "Created SessionTest Thread ID: " << threads.back().get_id() << std::endl;
     }
-    for (auto aThread : threads)
+
+    for (auto& thread : threads)
     {
-        (*aThread).join();
+        thread.join();
     }
 }
 
@@ -485,4 +484,3 @@ INSTANTIATE_TEST_SUITE_P(
     ErpCommonTestsFixture,
     testing::Values(createFailoverPairSimHSMParameterSetFactory()),
     [](auto&) {return "FailoverPairOfSimulatedHSMs"; });
-

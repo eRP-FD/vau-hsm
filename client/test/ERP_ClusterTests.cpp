@@ -301,13 +301,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
     auto pDerivationKeyBlob = getEmptyBlob(Gen);
     if (err == ERP_ERR_SUCCESS)
     {
-        if (1) // 1 == TRUE...
-        {
-            err = teststep_GenerateDerivationKey(ErpClusterTestFixture::m_logonSession, Gen, pDerivationKeyBlob.get());
-        }
-        else {
-            // Fill derivationKeyBlob from previously generated data...
-        }
+        err = teststep_GenerateDerivationKey(ErpClusterTestFixture::m_logonSession, Gen, pDerivationKeyBlob.get());
     }
     // Save the Derivation Key for use in other tests.
     if (err == ERP_ERR_SUCCESS)

@@ -24,7 +24,7 @@
 // This is binary length in bytes
 #define SHA_256_LEN 32
 // TPM Name is 2 bytes 0x000B plus SHA256 hash of public key.
-#define TPM_NAME_LEN 34
+#define TPM_NAME_LEN ((SHA_256_LEN) + 2)
 // This is length of NONCE in binary Bytes
 #define NONCE_LEN 32
 #define AES_256_LEN 32
@@ -38,6 +38,11 @@
 
 // Life time of the TEE token in seconds (1800 = 30 minutes * 60 seconds)
 #define TEE_TOKEN_LIFE_TIME 1800
+
+// Constants for TPM Quote Parsing:
+#define TPM_QUOTE_LENGTH 0x91
+#define TPM_PCRSET_LENGTH 3
+#define TPM_PCR_DIGESTHASH_LENGTH 0x20
 
 // A structure to hold the HSM connection and login status.
 //  Generated in the ERP_Connect call.
@@ -305,6 +310,18 @@ typedef struct BUBlobOutput_s{
     ERPBackupBlob BUBlob;       // The Backup Blob returned from the firmware.
 } BUBlobOutput_t;
 
+typedef struct {
+    uint8_t QuoteData[TPM_QUOTE_LENGTH];
+} TPMQuoteInput;
+
+typedef struct TPMParsedQuote_s {
+    unsigned int returnCode;    // Return code from Parse Operation -> 0 == good.
+    uint8_t qualifiedSignerName[TPM_NAME_LEN];
+    uint8_t qualifyingInformation[NONCE_LEN];
+    uint8_t PCRSETFlags[TPM_PCRSET_LENGTH];
+    uint8_t PCRHash[TPM_PCR_DIGESTHASH_LENGTH];
+} TPMParsedQuote_t;
+
 #ifdef __cplusplus
 #define ERP_API_FUNC extern "C"
 #else
@@ -546,7 +563,7 @@ ERP_API_FUNC DeriveKeyOutput ERP_DeriveCommsKey(
  *    a VAUSIG KeyPair for which the private key can be recovered by an attested VAU and used for signatures.
  * The public key will be exposed as certificate via the FD's / VAUCertificate endpoint.
  *
- * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working, erp_update (ERP-9411) or erp setup
  * @param input.KeyPair                           encrypted private public key pair which is provided by independent configuration process.
 
  * @return PublicKeyOutput.returnCode             0 for no error, error code otherwise
@@ -702,4 +719,15 @@ ERP_API_FUNC SHA256Output ERP_GetBlobContentHashWithToken(
     HSMSession sesh,
     TwoBlobGetKeyInput input);
 
+/**
+* Does not require an HSM Session.   This is computationally executed on the client.
+* This method will parse a TPM Quote and return the system-invariant parts of the quote data.
+* The Signature of the quote is NOT checked.
+* The Qualified Signer Name, NONCE, PCR Set and hash are returned.
+* For the meaning of these fields see the TPM2.0 Specification 
+*   "Trusted Platform Module Library - Part 2: Structures" for TPM2B_ATTEST
+* Only quotes using SHA256 as the hash are supported.
+**/
+ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
+    TPMQuoteInput input);
 #endif

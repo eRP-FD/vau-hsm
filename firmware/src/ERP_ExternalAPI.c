@@ -1740,8 +1740,8 @@ extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
 }
 
 // Externally callable FWAPI Command
+// ERP-9411 - allowed for ERP_SETUP, ERP_WORKING or ERP_UPDATE userpermissions. 
 // return public key for keypair.
-// input: TEE Token
 // input: ECIES KeyPair Blob
 // output: ASN1.DER encoded public key from the blob.
 // Return: Success or Error code.
@@ -1750,7 +1750,9 @@ extern int ERP_GetECPublicKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
      unsigned int err = E_ERP_SUCCESS;
     ERP_AuditID_t auditID = ERP_AUDIT_Failed_EC_Get_Public_Key;
     SealedBlob_t* pKeyPairBlob = NULL;
-    if (0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2))
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
     {
         err = E_ERP_PERMISSION_DENIED;
         auditID = ERP_AUDIT_Permission_Failure;
