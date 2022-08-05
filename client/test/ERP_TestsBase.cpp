@@ -14,8 +14,6 @@
 
 const std::string ErpBaseTestsFixture::devIP = SINGLE_SIM_HSM;
 
-HSMSession ErpBaseTestsFixture::m_logonSession = {0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0};
-
 ErpBaseTestsFixture::ErpBaseTestsFixture()
 {
     m_logonSession = {0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0};
@@ -23,7 +21,7 @@ ErpBaseTestsFixture::ErpBaseTestsFixture()
 
 void ErpBaseTestsFixture::connect()
 {
-    // code here will execute just before the test ensues
+    // This method is intended to be invoked for each test just before the test starts
     m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
 }
 
@@ -133,7 +131,7 @@ void ErpBaseTestsFixture::SetUpTestSuite()
 
 void ErpBaseTestsFixture::SetUp()
 {
-    // code here will execute just before the test ensues
+    // This method is intended to be invoked for each test just before the test starts
     connect();
     EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
     logonSetup();

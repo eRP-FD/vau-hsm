@@ -396,7 +396,7 @@ unsigned int CheckAvailableGeneration(T_CMDS_HANDLE* p_hdl, unsigned int Generat
 
 unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
 {
-    // All times in this method are in seconds after Seconds after 2020.01.01 0:00:00.0
+    // All times in this method are in seconds after 2020.01.01 0:00:00.0
     unsigned int err = E_ERP_SUCCESS;
     unsigned int now = 0;
     unsigned int ms = 0;
@@ -411,7 +411,7 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
     if (err == E_ERP_SUCCESS)
     {
         // ERP-8927 - Take 2: allow slippage to account for imperfect HSM Clock Sync in hardware HSM clusters.
-        if (aBlob->IssueTime> (now + TIME_SLIP))
+        if (aBlob->IssueTime > (now + TIME_SLIP))
         {
             err = E_ERP_BAD_BLOB_TIME;
         }
@@ -443,6 +443,9 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
             break;
         case TEE_Token: // = 11  // A time limited Token allowing access tothe VAU HSM functions.
             Validity = 1800; // 30 minutes.
+            break;
+        case Pseudoname_Key: // = 12 // time limited unwrappable AES key.    See PSEUDONAME_BLOB_EXPIRY
+            Validity = PSEUDONAME_BLOB_EXPIRY;
             break;
         }
         // ERP-6199   !!!  THIS Must definitely be enabled for final version!!!!
@@ -749,6 +752,7 @@ unsigned int getAES256KeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob,ERPB
     *ppOutBlob = os_mem_new_tag(sizeof(ClearBlob_t) + sizeof(AES256KeyBlob_t) + 1, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
     (*ppOutBlob)->BlobType = blobType;
     err = fillGeneric(*ppOutBlob);
+    // Psuedoname Expiry is defined and enforced in the UnsealAndCheckBlob method.
     AES256KeyBlob_t* pKeyBlob = NULL;
     {
         (*ppOutBlob)->DataLength = sizeof(AES256KeyBlob_t);
@@ -803,6 +807,15 @@ unsigned int getDerivationKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob)
 unsigned int getHashKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob)
 {
     return getAES256KeyBlob(p_hdl, ppOutBlob, Hash_Key);
+}
+
+// Allocates and fills a Pseudoname Key clear Blob with a new RND value.
+// The time is set to the current HSM time.
+// The blob is given an expiry period of 8 months, but this is enforced in the UnsealAndCheckBlob method.
+// The memory for the Blob is allocted by this method and must be freed by os_mem_del_set.
+unsigned int getPseudonameKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob)
+{
+    return getAES256KeyBlob(p_hdl, ppOutBlob, Pseudoname_Key);
 }
 
 // Utility method to return KCV of a BLob Key.

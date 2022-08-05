@@ -56,9 +56,12 @@ typedef enum ERP_AuditID {
     ERP_AUDIT_Imported_Single_Blob_Generation                       = 43,
     ERP_AUDIT_Failed_Export_Single_Blob_Generation                  = 44,
     ERP_AUDIT_Failed_Import_Single_Blob_Generation                  = 45,
-    ERP_AUDIT_Failed_Get_Blob_Content_Hash                               = 46,
+    ERP_AUDIT_Failed_Get_Blob_Content_Hash                          = 46,
     ERP_AUDIT_Failed_Migrate_Blob                                   = 47,
-    ERP_AUDIT_LastUsedId                                            = 48 // Used for programmatic reasons.
+    ERP_AUDIT_Pseudoname_Key_Generated                              = 48,
+    ERP_AUDIT_Failed_Pseudoname_Key_Generation                      = 49,
+    ERP_AUDIT_Failed_Unwrap_Pseudoname_Key                          = 50,
+    ERP_AUDIT_LastUsedId                                            = 51 // Used for programmatic reasons.
 }ERP_AuditID_t;
 
 // Used for successful setup operations

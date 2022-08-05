@@ -427,6 +427,37 @@ TEST_F(ErpPermissionTestsFixture, PermissionUnwrapHashKey)
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
 }
 
+//ERP_UnwrapPseudonameKey
+TEST_F(ErpPermissionTestsFixture, PermissionUnwrapPseudonameKey)
+{
+    UIntInput in = {
+            generationSaved
+    };
+
+    SingleBlobOutput outK = ERP_GeneratePseudonameKey(m_logonSession, in);
+    ASSERT_EQ(ERP_ERR_NOERROR, outK.returnCode);
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+
+        logon(setOfUsers);
+
+        TwoBlobGetKeyInput twoBlobsIn = {
+                *(teeToken.get()),
+                outK.BlobOut
+        };
+        auto out = ERP_UnwrapPseudonameKey(m_logonSession, twoBlobsIn);
+        EXPECT_EQ(expErr, out.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Update }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working }, ERP_ERR_NOERROR);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+}
 
 //ERP_DeriveTaskKey
 TEST_F(ErpPermissionTestsFixture, PermissionDeriveTaskKey)
@@ -550,6 +581,46 @@ TEST_F(ErpPermissionTestsFixture, PermissionDeriveCommsKey)
     testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Working}, ERP_ERR_NOERROR);
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+//ERP_DeriveChargeItemKey
+TEST_F(ErpPermissionTestsFixture, PermissionDeriveChargeItemKey)
+{
+    auto pDerivationKeyBlob = getEmptyBlob(generationSaved);
+    auto err = teststep_GenerateDerivationKey(m_logonSession, generationSaved, pDerivationKeyBlob.get());
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
+        unsigned char usedDerivationData[MAX_BUFFER];
+        size_t usedDerivationDataLength = 0;
+        unsigned char initialDerivedKey[AES_256_LEN];
+
+        err = teststep_deriveChargeItemKey(
+            m_logonSession,
+            savedAKName.data(), // SHA_1_LEN...
+            ErpBaseTestsFixture::teeToken.get(),
+            pDerivationKeyBlob.get(),
+            derivationData.size(),
+            derivationData.data(),
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
+            // Output
+            &usedDerivationDataLength,
+            &(usedDerivationData[0]), // MAX_BUFFER
+            &(initialDerivedKey[0])); // AES_256_LEN
+
+        EXPECT_EQ(expErr, err);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Update }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working }, ERP_ERR_NOERROR);
 }
 
 
@@ -688,6 +759,31 @@ TEST_F(ErpPermissionTestsFixture, PermissionGenerateHashKey)
     testFn({users::Update}, ERP_ERR_NOERROR);
     testFn({users::Working}, ERP_ERR_PERMISSION_DENIED);
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+
+//ERP_GeneratePseudonameKey
+TEST_F(ErpPermissionTestsFixture, PermissionGeneratePseudonameKey)
+{
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users>& setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        UIntInput genKeyIn = { 0 };
+        auto output = ERP_GeneratePseudonameKey(m_logonSession, genKeyIn);
+
+        EXPECT_EQ(expErr, output.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Set1, users::Set2 }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Setup, users::Update }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Update }, ERP_ERR_PERMISSION_DENIED);
+    testFn({ users::Working }, ERP_ERR_NOERROR);
+    testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
+    testFn({ users::Working, users::Update }, ERP_ERR_NOERROR);
 }
 
 //ERP_GenerateDerivationKey

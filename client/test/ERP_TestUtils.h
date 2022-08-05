@@ -122,42 +122,34 @@ unsigned int teststep_getTEEToken(
     unsigned char* sigData,
     ERPBlob* pOutBlob);
 unsigned int teststep_GenerateDerivationKey(HSMSession sesh, unsigned int desiredGeneration, ERPBlob* pOutBlob);
-unsigned int teststep_deriveTaskPersistenceKey(
-    HSMSession sesh,
-    unsigned char* pAKName, // SHA_1_LEN
-    ERPBlob* pTEEToken,
-    ERPBlob* pDerivationKey,
-    size_t derivationDataLength,
-    unsigned char* derivationData,
-    unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+
+typedef unsigned int (deriveFunc_t)(
+    HSMSession,
+    unsigned char*,
+    ERPBlob*,
+    ERPBlob*,
+    size_t,
+    unsigned char* a,
+    unsigned int, // 1 => Initial Derivation, 0 => subsequent Derivation. 
     // Output
-    size_t* pUsedDerivationDataLength,
-    unsigned char* usedDerivationData, // MAX_BUFFER
-    unsigned char* derivedKey); // AES_256_LEN
-unsigned int teststep_deriveAuditKey(
-        HSMSession sesh,
-        unsigned char* pAKName, // TPM_NAME_LEN
-        ERPBlob* pTEEToken,
-        ERPBlob* pDerivationKey,
-        size_t derivationDataLength,
-        unsigned char* derivationData,
-        unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation.
-        // Output
-        size_t* pUsedDerivationDataLength,
-        unsigned char* usedDerivationData, // MAX_BUFFER
-        unsigned char* derivedKey); // AES_256_LEN
-unsigned int teststep_deriveCommsKey(
-        HSMSession sesh,
-        unsigned char* pAKName, // TPM_NAME_LEN
-        ERPBlob* pTEEToken,
-        ERPBlob* pDerivationKey,
-        size_t derivationDataLength,
-        unsigned char* derivationData,
-        unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation.
-        // Output
-        size_t* pUsedDerivationDataLength,
-        unsigned char* usedDerivationData, // MAX_BUFFER
-        unsigned char* derivedKey); // AES_256_LEN
+    size_t*,
+    unsigned char*, // MAX_BUFFER
+    unsigned char*); // AES_256_LEN;
+
+deriveFunc_t teststep_deriveTaskPersistenceKey;
+deriveFunc_t teststep_deriveAuditKey;
+deriveFunc_t teststep_deriveCommsKey;
+deriveFunc_t teststep_deriveChargeItemKey;
+
+// The pGoodTestFunc is one of the teststep_DeriveXXXXPersistenceKey Methods which will
+//   be checked that it produces a consistent derived key for initial and subsequent derivations.
+// The pOtherTestFunc is another test function for a DIFFERENT class of derivation 
+//   key which should NOT produce the same derived key as the first.
+extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
+    ERPBlob* pTEEToken, unsigned char* pAKName,
+    deriveFunc_t *pGoodTestFunc, // Will be checked for consistent derivation
+    deriveFunc_t *pOtherTestFunc // Will be checked that it DOES NOT prpoduce the same result.
+);
 
 void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZeroOk = true);
 
@@ -169,7 +161,9 @@ void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZero
 extern unsigned int varyNONCE(const char* variation, unsigned char* nonceDataIn, unsigned char* variedNONCEOut);
 
 extern unsigned int teststep_GenerateHashKey(HSMSession sesh, unsigned int Generation, SingleBlobOutput* pHashBlobOut);
+extern unsigned int teststep_GeneratePseudonameKey(HSMSession sesh, unsigned int Generation, SingleBlobOutput* pPseudonameBlobOut);
 
 extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob* hashBlob, AES256KeyOutput* pKeyOut);
+extern unsigned int teststep_UnwrapPseudonameKey(HSMSession sesh, ERPBlob* PseudonameBlob, AES256KeyOutput* pKeyOut);
 
 #endif

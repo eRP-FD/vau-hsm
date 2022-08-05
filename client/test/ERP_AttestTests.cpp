@@ -17,17 +17,17 @@
 
 class ErpAttestationTestFixture : public ::testing::Test {
 public:
-    static HSMSession m_logonSession;
+    HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
     static ERPBlob m_SavedTEEToken;
 
     ErpAttestationTestFixture() = default;
 
-    void static connect() {
-        // code here will execute just before the test ensues 
+    void connect() {
+        // This method is intended to be invoked for each test just before the test starts 
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
-    void static logonSetup() {
+    void logonSetup() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -46,7 +46,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void static logonWorking() {
+    void logonWorking() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -64,7 +64,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void static logonUpdate() {
+    void logonUpdate() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -82,7 +82,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void static logoff()
+    void logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
         {
@@ -91,7 +91,7 @@ public:
         }
     }
     void SetUp() override {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -109,7 +109,6 @@ public:
     }
 };
 
-HSMSession ErpAttestationTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
 const std::string ErpAttestationTestFixture::devIP = SINGLE_SIM_HSM;
 ERPBlob ErpAttestationTestFixture::m_SavedTEEToken = { 0,0,{'\0'} };
 
@@ -389,47 +388,31 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
         err = writeBlobResourceFile("saved/StaticDerivationKey.blob", pDerivationKeyBlob.get());
     }
     // 13. derive Task persistence Key for initial derivation
-    auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
-    std::uint8_t usedDerivationData[MAX_BUFFER];
-    size_t usedDerivationDataLength = 0;
-    std::uint8_t initialDerivedKey[AES_256_LEN];
-    if (err == ERP_ERR_SUCCESS)
-    {
-        err = teststep_deriveTaskPersistenceKey(
-            ErpAttestationTestFixture::m_logonSession,
-            savedAKName.data(), // SHA_1_LEN...
-            pTEEToken.get(),
-            pDerivationKeyBlob.get(),
-            derivationData.size(),
-            derivationData.data(),
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
-            // Output
-            &usedDerivationDataLength,
-            &(usedDerivationData[0]), // MAX_BUFFER
-            &(initialDerivedKey[0])); // AES_256_LEN
-    }
-    // 14. Derive Task persistence key again for a non-initial derivation
-    std::uint8_t subsequentDerivedKey[AES_256_LEN];
-    for (int m = 0; m < SMALL_LOOP; m++)
-    {
-        if (err == ERP_ERR_SUCCESS)
-        {
-            err = teststep_deriveTaskPersistenceKey(
-                ErpAttestationTestFixture::m_logonSession,
-                savedAKName.data(), // SHA_1_LEN...
-                pTEEToken.get(),
-                pDerivationKeyBlob.get(),
-                usedDerivationDataLength,
-                &(usedDerivationData[0]),
-                0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
-                // Output
-                &usedDerivationDataLength,
-                &(usedDerivationData[0]), // MAX_BUFFER
-                &(subsequentDerivedKey[0])); // AES_256_LEN
-        }
-    }
-    // 15. Compare the two keys
-    // TODO(chris).
+    // Each of these teststeps does an initial derivation and then a subsequent one and 
+    //   compares the results which should be equal.
+    // The second check in each of these teststeps is that the derivation for a different
+    //   class of key produces a different result.
+    teststep_GoodKeyDerivation(ErpAttestationTestFixture::m_logonSession,
+        pTEEToken.get(),
+        savedAKName.data(), // SHA_1_LEN...
+        teststep_deriveTaskPersistenceKey,
+        teststep_deriveCommsKey);
+    teststep_GoodKeyDerivation(ErpAttestationTestFixture::m_logonSession,
+        pTEEToken.get(),
+        savedAKName.data(), // SHA_1_LEN...
+        teststep_deriveCommsKey,
+        teststep_deriveAuditKey);
+    teststep_GoodKeyDerivation(ErpAttestationTestFixture::m_logonSession,
+        pTEEToken.get(),
+        savedAKName.data(), // SHA_1_LEN...
+        teststep_deriveAuditKey,
+        teststep_deriveChargeItemKey);
+    teststep_GoodKeyDerivation(ErpAttestationTestFixture::m_logonSession,
+        pTEEToken.get(),
+        savedAKName.data(), // SHA_1_LEN...
+        teststep_deriveChargeItemKey,
+        teststep_deriveAuditKey);
+
     // Save the last TEEToken for anyone else who wants to use it.
     ErpAttestationTestFixture::m_SavedTEEToken = *pTEEToken;
     EXPECT_EQ(ERP_ERR_NOERROR, err);

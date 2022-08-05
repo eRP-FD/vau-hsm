@@ -314,6 +314,62 @@ int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
 }
 
 // Externally callable FWAPI Command
+// Command to generate a new pseudoname Key Blob with an existing Generation.
+// Pseudoname Key blobs expire automatically after 8 months.
+// Required Permission: Working
+// Input: unsigned int Desired Generation - if zero, then the highest available Generation
+//           in the HSM is used.   Otherwise the input value must
+//           match an existing Blob Key Generation present in the HSM.
+// Output: Pseudoname Key Blob
+// Return: Success or Error code.
+extern int ERP_GeneratePseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Pseudoname_Key_Generation;
+    unsigned int Generation = 0;
+
+    // This operation requires ERP Working Rights.
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseSingleIntInput(l_cmd, p_cmd, &Generation);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = CheckAvailableGeneration(p_hdl, Generation);
+    }
+    ClearBlob_t* clear = NULL;
+
+    if (err == E_ERP_SUCCESS)
+    { // Create the new hash key
+        err = getPseudonameKeyBlob(p_hdl, &clear);
+    }
+    SealedBlob_t* sealed = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = SealBlob(p_hdl, clear, Generation, &sealed);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSingleSealedBlobOutput(p_hdl, sealed);
+    }
+    FREE_IF_NOT_NULL(sealed);
+    FREE_IF_NOT_NULL(clear);
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_Pseudoname_Key_Generated);
+    }
+    else {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Externally callable FWAPI Command
 // Command to generate a new Derivation Key Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
@@ -1686,6 +1742,13 @@ int ERP_DeriveCommsKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)   
 }
 
 // Externally callable FWAPI Command
+// As ERP_deriveTaskKey, but for ChargeItem persistence keys.
+int ERP_DeriveChargeItemKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)        // SFC = 30
+{
+    return ERP_DerivePersistenceKey(p_hdl, l_cmd, p_cmd, "ERP_CHARGE");
+}
+
+// Externally callable FWAPI Command
 // Command to generate a Random Data with the HSM hardware RND Generator
 // Input: none.
 // Output: The requested RND Data
@@ -1973,6 +2036,66 @@ extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
     if (err == E_ERP_SUCCESS)
     {
         err = UnsealBlobAndCheckType(p_hdl, Hash_Key, pKeyBlob, &clearKey);
+    }
+    AES256KeyBlob_t* keyBlob = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        keyBlob = (AES256KeyBlob_t*)&(clearKey->Data[0]);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSimpleOctetStringOutput(p_hdl, AES_256_LEN / 8, &(keyBlob->KeyData[0]));
+    }
+    FREE_IF_NOT_NULL(pKeyBlob);
+    FREE_IF_NOT_NULL(clearKey);
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Externally callable FWAPI Command
+// Extract AES 256 Pseudoname key
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: Hash Key Blob
+// Output: Symmetric AES256 hash key.
+// Return: Success or Error code.
+extern int ERP_UnwrapPseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_Unwrap_Pseudoname_Key;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    SealedBlob_t* pKeyBlob = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // To avoid lots of copying and reallocating, the pointers returned by this method are all
+        //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
+        //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        // Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
+        //   buffers and must be freed by the caller. 
+        err = parseTwoBlobInputRequest(l_cmd, p_cmd,
+            &pTEETokenBlob,
+            &pKeyBlob);
+    }
+
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clearKey = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, Pseudoname_Key, pKeyBlob, &clearKey);
     }
     AES256KeyBlob_t* keyBlob = NULL;
     if (err == E_ERP_SUCCESS)

@@ -27,6 +27,8 @@ class HsmClientPackage(ConanFile):
 
     _build_tests_cmake_argument = 'BUILD_TESTS'
 
+    _no_clang_tidy_cmake_argument = 'WITHOUT_CLANG_TIDY'
+
     _verbose_cmake_argument = 'VERBOSE'
 
     _cmake = None
@@ -81,6 +83,10 @@ class HsmClientPackage(ConanFile):
 
         self._cmake = CMake(self, set_cmake_flags=True)
 
+        # do not run clang-tidy
+        #
+        self._cmake.definitions[self._no_clang_tidy_cmake_argument] = 1
+
         # build the tests if option was given
         #
         if self.options.with_tests:
@@ -102,7 +108,7 @@ class HsmClientPackage(ConanFile):
     def set_version(self):
         if not self.version:
             git = tools.Git()
-            self.version = git.run('describe --all --exclude "v-*" --match "v*"')[6:]
+            self.version = git.run('describe --tags --abbrev=0 --match "v-[0-9\.]*"')[2:]
 
     def requirements(self):
         if self.options.with_tests:

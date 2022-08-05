@@ -433,6 +433,10 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateHashKey(
     HSMSession sesh,            // HSM Session
     UIntInput input); // input for command.   Desired Generation
 
+ERP_API_FUNC SingleBlobOutput ERP_GeneratePseudonameKey(
+    HSMSession sesh,            // HSM Session
+    UIntInput input); // input for command.   Desired Generation
+
 ERP_API_FUNC SingleBlobOutput ERP_GenerateECIESKeyPair(
     HSMSession sesh,            // HSM Session
     UIntInput input); // input for command.   Desired Generation
@@ -535,7 +539,7 @@ ERP_API_FUNC DeriveKeyOutput ERP_DeriveTaskKey(
 
 /**
  * Derive a symmetric AES 256 key from the HSM's private key and the given derivation data.
- * The returned key is intended to be used for encrypting Audito Log entries and uses a private key with a suitable life time.
+ * The returned key is intended to be used for encrypting Audit Log entries and uses a private key with a suitable life time.
  *
  * See ERP_DeriveTaskKey for details and a description of input and output parameters.
  */
@@ -550,6 +554,16 @@ ERP_API_FUNC DeriveKeyOutput ERP_DeriveAuditKey(
  * See ERP_DeriveTaskKey for details and a description of input and output parameters.
  */
 ERP_API_FUNC DeriveKeyOutput ERP_DeriveCommsKey(
+    HSMSession sesh,
+    DeriveKeyInput input);
+
+/**
+ * Derive a symmetric AES 256 key from the HSM's private key and the given derivation data.
+ * The returned key is intended to be used for encrypting ChargeItem resources and uses a private key with a suitable life time.
+ *
+ * See ERP_DeriveTaskKey for details and a description of input and output parameters.
+ */
+ERP_API_FUNC DeriveKeyOutput ERP_DeriveChargeItemKey(
     HSMSession sesh,
     DeriveKeyInput input);
 
@@ -636,6 +650,21 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
  *         PublicKeyOutput.keyData                AES 256 Key length of binary data containing the raw key value
  */
 ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
+    HSMSession sesh,
+    TwoBlobGetKeyInput input);
+
+/**
+ * Return the secret value of a Pseudoname Key to be used for HMAC ID calculation in the VAU.   This requires a valid TEE Token.
+ *
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param input.TEEToken                          currently valid TEE Token
+ * @param input.KeyPair                           ERP Blob containing a Pseudoname Key encrypted AES 256 key which has been generated
+ *                                                  by the ERP_GeneratePseudonameKey method called by the VAU.
+ * @return PublicKeyOutput.returnCode             0 for no error, error code otherwise
+ *         PublicKeyOutput.keyLength              AES 256 key length
+ *         PublicKeyOutput.keyData                AES 256 Key length of binary data containing the raw key value
+ */
+ERP_API_FUNC AES256KeyOutput ERP_UnwrapPseudonameKey(
     HSMSession sesh,
     TwoBlobGetKeyInput input);
 

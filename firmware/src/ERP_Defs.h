@@ -22,7 +22,15 @@
 #define EC_COORD_SIZE 0x100
 // Size of TPM key Name hashes in bytes.
 #define TPM_NAME_LEN (SHA_256_LEN/8) + 2
-
+// ERP-10197 - Expiry period of pseudoname Key Blobs in seconds - currently eight Months
+// Synodic month is the lunar month is 29.531 days.The number here is actually a 30 day month.
+// Average calendar month is 30.43 days.
+// The logic here is that intended working lifetime of this is six months.
+//    Plus a month before to allow creation and deployment overhead and 
+//    a month afterwards to allow imprecise retirment
+// The exact length of the month is not critical.
+#define THIRTY_DAY_MONTH_S (30*24*60*60)
+#define PSEUDONAME_BLOB_EXPIRY THIRTY_DAY_MONTH_S * 8
 // The Blob Domain for which this firmware has been built.
 // This can be modified by compilation option during the build process.
 // Intended values are "SIML" - Simulator

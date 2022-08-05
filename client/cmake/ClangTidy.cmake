@@ -106,6 +106,11 @@ endfunction()
 # function that sets up static code analysis via clang-tidy
 #
 function (setup_clang_tidy)
+	if (WITHOUT_CLANG_TIDY)
+		message(STATUS "Skipping static code analysis")
+		return()
+	endif()
+
 	find_program(CLANG_TIDY "clang-tidy")
 	if (NOT CLANG_TIDY)
 	    message(STATUS "Cannot find `clang-tidy`. Continuing without static code analysis.")

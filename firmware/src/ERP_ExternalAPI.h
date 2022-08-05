@@ -60,6 +60,17 @@ extern int ERP_ListBlobKeys(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cm
 extern int ERP_GenerateHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
+// Command to generate a new pseudoname Key Blob with an existing Generation.
+// Pseudoname Key blobs expire automatically after 8 months.
+// Required Permission: Working
+// Input: unsigned int Desired Generation - if zero, then the highest available Generation
+//           in the HSM is used.   Otherwise the input value must
+//           match an existing Blob Key Generation present in the HSM.
+// Output: Pseudoname Key Blob
+// Return: Success or Error code.
+extern int ERP_GeneratePseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
 // Command to generate a new Derivation Key Blob with an existing Generation
 // Input: unsigned int Desired Generation - if zero, then the highest available Generation
 //           in the HSM is used.   Otherwise the input value must
@@ -207,12 +218,26 @@ extern int ERP_DeriveAuditKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
 extern int ERP_DeriveCommsKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 19
 
 // Externally callable FWAPI Command
+// As ERP_deriveTaskKey, but for ChargeItem persistence keys.
+// Return: Success or Error code.
+extern int ERP_DeriveChargeItemKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 30
+
+// Externally callable FWAPI Command
 // Extract AES 256 Hash key
 // Input: currently valid TEE Token
 // Input: Hash Key Blob
 // Output: Symmetric AES256 hash key.
 // Return: Success or Error code.
 extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Extract AES 256 Pseudoname key
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: Hash Key Blob
+// Output: Symmetric AES256 hash key.
+// Return: Success or Error code.
+extern int ERP_UnwrapPseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
 // Command to generate a new Hash Key with an existing Generation

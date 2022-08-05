@@ -22,7 +22,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-        		cleanWs()
+                cleanWs()
                 commonCheckout()
             }
         }
@@ -35,7 +35,7 @@ pipeline {
                 }
             }
             steps {
-                gradleCreateReleaseEpa()
+                gradleCreateVersionRelease()
             }
         }
         
@@ -50,11 +50,11 @@ pipeline {
             }
             steps {
                 loadNexusConfiguration {
-	                withCredentials(
-	                    [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
-	                ){        
+                    withCredentials(
+                        [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
+                    ){
                         script {
-                            def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()           
+                            def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
                             checkDockerBuild(
                                 DOCKER_OPTS:"--build-arg NEXUS_USERNAME='${env.NEXUS_USERNAME}' --build-arg NEXUS_PASSWORD='${env.NEXUS_PASSWORD}' --build-arg GITHUB_USERNAME='${env.GITHUB_USERNAME})' --build-arg GITHUB_OAUTH_TOKEN='${env.GITHUB_OAUTH_TOKEN}' --build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}'",
                                 DOCKER_BUILDCONTEXT:'firmware',
@@ -63,8 +63,8 @@ pipeline {
 
                             currentBuild.description = generateDescription (releaseVersion)
                         }
-	                }
-	            }
+                    }
+                }
             }
         }
         
@@ -77,9 +77,9 @@ pipeline {
             }
             steps {
                 loadNexusConfiguration {
-	                withCredentials(
-	                    [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
-	                ){  
+                    withCredentials(
+                        [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
+                    ){
                         script {
                             def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
                                  
@@ -91,11 +91,44 @@ pipeline {
 
                             currentBuild.description = generateDescription (releaseVersion)
                         }
-	                }
-	            }
+                    }
+                }
             }
         }
-        
+        stage('HSM Client') {
+            agent {
+                docker {
+                    label 'dockerstage'
+                    image 'conanio/gcc9:latest'
+                    reuseNode true
+                    args '-u root:sudo -v $HOME/tools:$HOME/tools'
+                }
+            }
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'release/*'
+                }
+            }
+            stages {
+                stage ("Publish to Nexus") {
+                    steps {
+                        script {
+                            loadNexusConfiguration {
+                                sh """
+                                    conan remote clean &&\
+                                    conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal true --force &&\
+                                    conan user -r erp -p ${env.NEXUS_PASSWORD} ${env.NEXUS_USERNAME} &&\
+                                    conan export client &&\
+                                    conan export client hsmclient/latest@_/_ &&\
+                                    conan upload --remote erp --confirm hsmclient
+                               """
+                            }
+                        }
+                    }
+                }
+            }
+        }
         stage('Publish Release') {
             when {
                 anyOf {
@@ -126,6 +159,16 @@ pipeline {
             }
         }
     }
+    post {
+        success {
+            script {
+                if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME.startsWith("release/")) {
+                    slackSendClient(message: "A new version of the eRezept VAU-HSM client is available: ${env.BUILD_DISPLAY_NAME.minus('v-')}. \nFor more information about what this update includes and any requirement for a particular firmware version please visit the 'vau-hsm' repo.",
+                                    channel: '#erp-cpp')
+                }
+            }
+        }
+    }
 }
 
 def getHsmVersion (releaseVersion, isPu = false){
@@ -135,8 +178,8 @@ def getHsmVersion (releaseVersion, isPu = false){
     sb.append ("0x");
     def b = versionStr[0].toInteger();
     if (isPu){
-  		def withSignificantBit = (b | 0x00000080);
-		sb.append(String.format("%02x", withSignificantBit));
+        def withSignificantBit = (b | 0x00000080);
+        sb.append(String.format("%02x", withSignificantBit));
     } else {
         def withSignificantBit = (b & 0x0000007F);
         sb.append(String.format("%02x", withSignificantBit));

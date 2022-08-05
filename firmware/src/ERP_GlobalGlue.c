@@ -93,6 +93,8 @@ FILE_CONST T_MODULE_LINK_TAB Module_link_tab[] =
 //-----------------------------------------------------------------------------
 #define MODULE_HAS_EXT_INTERFACE                 // module has external interface
 
+// This table defines the external interface of the firmware.   The positions in this list 
+//   must match the values defined in client file ERP_SFC.h
 FILE_CONST P_CMDS_FCT Module_func_tab[] =
 {
     ERP_GenerateBlobKey         // SFC = 0
@@ -125,6 +127,9 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_MigrateBlob            // SFC = 27
     ,ERP_GetBlobContentHash     // SFC = 28
     ,ERP_GetBlobContentHashWithToken   // SFC = 29
+    ,ERP_DeriveChargeItemKey    // SFC = 30
+    ,ERP_GeneratePseudonameKey  // SFC = 31
+    ,ERP_UnwrapPseudonameKey    // SFC = 32
 };
 
 MDL_GLOBAL DB* p_BlobKDB;

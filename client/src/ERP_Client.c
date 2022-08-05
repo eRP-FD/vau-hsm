@@ -929,10 +929,6 @@ ERP_API_FUNC BlobKeyListOutput ERP_ListLoadedBlobKeys(
     return retVal;
 }
 
-//ERP_API_FUNC SingleBlobOutput ERP_GenerateHashKey(
-//    HSMSession sesh,            // HSM Session
-//    UIntInput input); // input for command.   Desired Generation
-
 EmptyOutput ERP_DumpHSMMemory(
     HSMSession sesh)            // HSM Session
 {
@@ -1060,6 +1056,13 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateHashKey(
     UIntInput input) // input for command.   Desired Generation
 {
     return ERP_GenerateAES256Key(sesh, input, ERP_SFC_GENERATE_HASH_KEY);
+}
+
+ERP_API_FUNC SingleBlobOutput ERP_GeneratePseudonameKey(
+    HSMSession sesh,            // HSM Session
+    UIntInput input) // input for command.   Desired Generation
+{
+    return ERP_GenerateAES256Key(sesh, input, ERP_SFC_GENERATE_PSEUDONAME_KEY);
 }
 
 ERP_API_FUNC SingleBlobOutput ERP_GenerateECKeyPair(
@@ -2130,6 +2133,13 @@ ERP_API_FUNC DeriveKeyOutput ERP_DeriveCommsKey(
     return ERP_DeriveKey(sesh, ERP_SFC_DERIVE_COMMS_KEY, input);
 }
 
+ERP_API_FUNC DeriveKeyOutput ERP_DeriveChargeItemKey(
+    HSMSession sesh,            // HSM Session
+    DeriveKeyInput input)    // Input Data for command
+{
+    return ERP_DeriveKey(sesh, ERP_SFC_DERIVE_CHARGE_ITEM_KEY, input);
+}
+
 ERP_API_FUNC PublicKeyOutput ERP_GetECPublicKey(
     HSMSession sesh,            // HSM Session
     SingleBlobInput input) // input for command.
@@ -2457,18 +2467,23 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
 }
 
 /**
- * Return the secret value of a Hash Key to be used for HMAC ID calculation in the VAU.   This requires a valid TEE Token.
+ * Shared Implementation Method.
+ * Return the secret value of an AES256 Key from a Blob.
+ *    Accepted Blob types are Hash Key Blobs or Pseudoname Key Blobs.
+`*    This requires a valid TEE Token.
  *
  * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
  * @param input.TEEToken                          currently valid TEE Token
  * @param input.KeyPair                           ERP Blob containing a Hash Key encrypted AES 256 key which is provided by independent configuration process.
+ * @param SFCCode                                 Firmware method id which this function will call.
  * @return PublicKeyOutput.returnCode             0 for no error, error code otherwise
  *         PublicKeyOutput.keyLength              AES 256 key length
  *         PublicKeyOutput.keyData                AES 256 Key length of binary data containing the raw key value
  */
-ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
+ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
     HSMSession sesh,
-    TwoBlobGetKeyInput input)
+    TwoBlobGetKeyInput input,
+    unsigned int SFCCode) 
 {
     AES256KeyOutput retVal = { ERP_ERR_NOERROR,{0} };
 
@@ -2504,7 +2519,7 @@ ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
     unsigned int p_l_answ = 0;
 
 #ifdef TRACE_HSM_API
-    fprintf(stderr,"\nExecuting UnwrapHashKeycommand %.8x...\n", ERP_SFC_UNWRAP_HASH_KEY);
+    fprintf(stderr,"\nExecuting UnwrapXXXKeycommand %.8x...\n", SFCCode);
     API_xtrace("Command: %s\n", pCmdData, (int)cmdLength);
 #endif
 
@@ -2512,7 +2527,7 @@ ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
     {
         retVal.returnCode = ERP_FirmwareExec(sesh, 
             ERP_MDL_ID,
-            ERP_SFC_UNWRAP_HASH_KEY,
+            SFCCode,
             pCmdData,
             (unsigned int)cmdLength,
             &p_answ,
@@ -2572,6 +2587,42 @@ ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
     }
     return retVal;
 }
+
+/**
+ * Return the secret value of a Hash Key to be used for HMAC ID calculation in the VAU.   This requires a valid TEE Token.
+ *
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param input.TEEToken                          currently valid TEE Token
+ * @param input.KeyPair                           ERP Blob containing a Hash Key encrypted AES 256 key which is provided by independent configuration process.
+ * @return PublicKeyOutput.returnCode             0 for no error, error code otherwise
+ *         PublicKeyOutput.keyLength              AES 256 key length
+ *         PublicKeyOutput.keyData                AES 256 Key length of binary data containing the raw key value
+ */
+ERP_API_FUNC AES256KeyOutput ERP_UnwrapHashKey(
+    HSMSession sesh,
+    TwoBlobGetKeyInput input)
+{
+    return UnwrapAES256Key(sesh, input, ERP_SFC_UNWRAP_HASH_KEY);
+}
+
+/**
+ * Return the secret value of a Pseudoname Key to be used for Bowdlerisation in the VAU.   This requires a valid TEE Token.
+ *
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param input.TEEToken                          currently valid TEE Token
+ * @param input.KeyPair                           ERP Blob containing a Pseudoname Key encrypted AES 256 key which has been generated
+ *                                                  by the ERP_GeneratePseudonameKey method called by the VAU.
+ * @return PublicKeyOutput.returnCode             0 for no error, error code otherwise
+ *         PublicKeyOutput.keyLength              AES 256 key length
+ *         PublicKeyOutput.keyData                AES 256 Key length of binary data containing the raw key value
+ */
+ERP_API_FUNC AES256KeyOutput ERP_UnwrapPseudonameKey(
+    HSMSession sesh,
+    TwoBlobGetKeyInput input)
+{
+    return UnwrapAES256Key(sesh, input, ERP_SFC_UNWRAP_PSEUDONAME_KEY);
+}
+
 /**
  * Export a single Blob Generation using the AES256 MBK.
  * @pre Requires 20000000 - Administrator permission.

@@ -544,7 +544,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
 }
 
 
-TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Github Issue 71 is resolved
+TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) 
 {
   /* Same function with different key prefixes
    * ERP_DeriveTaskKey, ERP_DeriveAuditKey, ERP_DeriveCommsKey
@@ -557,9 +557,10 @@ TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) // DISABLED until Gith
       &ERP_DeriveTaskKey,
       &ERP_DeriveAuditKey,
       &ERP_DeriveCommsKey,
+      &ERP_DeriveChargeItemKey,
     };
 
-  const unsigned NUM_FUNCS = 3;
+  const unsigned NUM_FUNCS = 4;
   const unsigned NUM_ITERATIONS = 100;
   std::vector<std::vector<unsigned char>> savedKeysList;
   for(auto ERP_toTestFunc : funcs)

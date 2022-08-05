@@ -177,7 +177,7 @@ HSMParameterSetFactory createClusterSimHSMParameterSetFactory()
 
         parameters.SessionFactory = []()
         {
-            // code here will execute just before the test ensues
+            // This method is intended to be invoked for each test just before the test starts
             const char* devArray[] = CLUSTER_HSM; // 10 is maximum
 
             int NDevices = 0;
@@ -241,7 +241,7 @@ HSMParameterSetFactory createFailoverPairSimHSMParameterSetFactory()
 
         parameters.SessionFactory = []()
         {
-            // code here will execute just before the test ensues
+            // This method is intended to be invoked for each test just before the test starts
             const char* devArray[] = FAILOVER_PAIR_HSM; // 10 is maximum
 
             int NDevices = 0;

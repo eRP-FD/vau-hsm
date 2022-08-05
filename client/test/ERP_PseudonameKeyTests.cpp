@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
+ * (C) Copyright IBM Deutschland GmbH 2022
+ * (C) Copyright IBM Corp. 2022
  * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
  **************************************************************************************************/
 
@@ -14,12 +14,12 @@
 #include <memory>
 #include <vector>
 
-class ErpHashKeyTestFixture : public ::testing::Test {
+class ErpPseudonameKeyTestFixture : public ::testing::Test {
 public:
     HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
 
-    ErpHashKeyTestFixture() = default;
+    ErpPseudonameKeyTestFixture() = default;
 
     void connect() {
         // This method is intended to be invoked for each test just before the test starts 
@@ -89,31 +89,33 @@ public:
     }
 };
 
-const std::string ErpHashKeyTestFixture::devIP = SINGLE_SIM_HSM;
+const std::string ErpPseudonameKeyTestFixture::devIP = SINGLE_SIM_HSM;
 
-TEST_F(ErpHashKeyTestFixture, GenerateHashKey)
+TEST_F(ErpPseudonameKeyTestFixture, GeneratePseudonameKey)
 {
     unsigned int Gen = THE_ANSWER;
     UIntInput in = { Gen };
-    SingleBlobOutput out = ERP_GenerateHashKey(ErpHashKeyTestFixture::m_logonSession, in);
+    SingleBlobOutput out = ERP_GeneratePseudonameKey(ErpPseudonameKeyTestFixture::m_logonSession, in);
     // If we want to use this blob in later test runs then we need to copy it to the saved directory
     ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
-    writeBlobResourceFile("HashKey.blob", &(out.BlobOut));
+    writeBlobResourceFile("PseudonameKey.blob", &(out.BlobOut));
 }
-TEST_F(ErpHashKeyTestFixture, UnwrapHashKey)
+TEST_F(ErpPseudonameKeyTestFixture, UnwrapPseudonameKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/HashKeySaved.blob"));
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/PseudonameKeySaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
     AES256KeyOutput keyOut = { 0,{0} };
-    teststep_UnwrapHashKey(ErpHashKeyTestFixture::m_logonSession, savedKeyPairBlob.get(),&keyOut);
+    teststep_UnwrapPseudonameKey(ErpPseudonameKeyTestFixture::m_logonSession, savedKeyPairBlob.get(), &keyOut);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-    const unsigned char expectedKey[] = { 
-        0xa7, 0xab, 0xd1, 0x94, 0xe5, 0x0b, 0x14, 0x0c, 0x9b, 0xe7, 0xfe, 0xe7, 0xbb, 0x39, 0x07, 0xd9
-        ,0xbe, 0xd8, 0xda, 0xdc, 0x2f, 0xc8, 0x3f, 0x9c, 0xaa, 0x41, 0x05, 0xa8, 0xc1, 0x1a, 0xc2, 0xf8
+    const unsigned char expectedKey[] = {
+        0xd3, 0x76, 0x59, 0xff, 0x63, 0x98, 0x67, 0x84, 
+        0x67, 0xf8, 0x71, 0xea, 0xd9, 0xde, 0x77, 0xb1, 
+        0x29, 0xe3, 0xd3, 0xee, 0x57, 0xd4, 0x96, 0xfa, 
+        0xcd, 0x38, 0xe4, 0x43, 0x6d, 0x9b, 0xfe, 0xea
     };
     ASSERT_TRUE(0 == memcmp(&(keyOut.Key[0]), &(expectedKey[0]), 32));
 
-    writeERPResourceFile("ERPHashKey.bin",
+    writeERPResourceFile("ERPPseudonameKey.bin",
         std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
 }

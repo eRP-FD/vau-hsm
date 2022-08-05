@@ -1049,6 +1049,63 @@ TEST_F(erpInvalidDataTestsFixture, DeriveCommsKey)
     });
 }
 
+//ERP_DeriveChargeItemKey
+TEST_F(erpInvalidDataTestsFixture, DeriveChargeItemKey)
+{
+    auto pDerivationKeyBlob = getEmptyBlob(generationSaved);
+    auto err = teststep_GenerateDerivationKey(m_logonSession, generationSaved, pDerivationKeyBlob.get());
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
+
+    DeriveKeyInput in{};
+    DeriveKeyInput inTest{};
+
+    in.derivationDataLength = derivationData.size();
+    std::memcpy(&(in.AKName[0]), savedAKName.data(), TPM_NAME_LEN);
+    std::memcpy(&(in.derivationData), derivationData.data(), derivationData.size());
+    in.TEEToken = *teeToken;
+    in.derivationKey = *pDerivationKeyBlob;
+    in.initialDerivation = 1;
+
+    DeriveKeyOutput output = ERP_DeriveChargeItemKey(m_logonSession, in);
+    ASSERT_EQ(ERP_ERR_NOERROR, output.returnCode);
+
+    // the inTest struct will be set to "good" values before the call to the mutation lambda
+    const auto testFun = [&](const std::function<unsigned int(DeriveKeyInput&)>& f) {
+        std::memcpy(&inTest, &in, sizeof(in));
+        unsigned int expectedErr = f(inTest);
+        output = ERP_DeriveChargeItemKey(m_logonSession, inTest);
+        printf("Returned from ERP_DeriveChargeItemKey Command - Return Value: 0x%08x\n", output.returnCode);
+        EXPECT_NE(ERP_ERR_NOERROR, output.returnCode) << "The return code is not an error";
+        if (expectedErr != EXPECTED_RESULT_UNKNOWN)
+        {
+            EXPECT_EQ(expectedErr, output.returnCode);
+        }
+    };
+
+    printf("Invalid blob type\n");
+    testFun([&](DeriveKeyInput& input)
+        {
+            input.TEEToken = *savedTrustedAK;
+            return ERP_ERR_WRONG_BLOB_TYPE;
+        });
+
+    printf("Invalid blob type\n");
+    testFun([&](DeriveKeyInput& input)
+        {
+            input.derivationKey = *savedTrustedAK;
+            return ERP_ERR_WRONG_BLOB_TYPE;
+        });
+
+    printf("Invalid derivation data length\n");
+    testFun([&](DeriveKeyInput& input)
+        {
+            input.derivationDataLength = 0;
+            return ERP_ERR_ASN1_CONTENT_ERROR;
+        });
+}
+
 // ERP_DeriveAuditKey
 // This test collects the invalid AKName calls for the derived keys.
 // Currently there are no checks on AK Name, so this test is disabled.

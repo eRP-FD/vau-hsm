@@ -18,20 +18,20 @@ public:
         Setup=0, Working=1, Set1=2, Set2=3, Update=4
     };
 
-    static HSMSession m_logonSession;
+    HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
 
     ErpBaseTestsFixture();
 
-    void static connect();
+    void connect();
 
-    void static logonSetup();
+    void logonSetup();
 
-    void static logonWorking();
+    void logonWorking();
 
-    void static logon(const std::vector<ErpBaseTestsFixture::users>& setOfUsers);
+    void logon(const std::vector<ErpBaseTestsFixture::users>& setOfUsers);
 
-    void static logoff();
+    void logoff();
 
     static void SetUpTestSuite();
 

@@ -101,13 +101,14 @@ typedef enum ERPBlobType {
     , Trusted_Quote     = 5 // Known and trusted Attestation Quote Data.TPM PCR Hash values relating to a secure boot of a system setupand SGX Enclave.   Trusted by us during the enrollment process to match a trusted software and hardware stack allowed to run our VAU.
     , Derivation_Key    = 6 // A symmetric key used to derive Persistence Keys.
     , Hash_Key          = 7 // A symmetric key used to calculate keyed hashes.
-    , ECIES_KeyPair = 8 // EC Keypair used for ECIES VAU communications encryption
-    , VAUSIG_KeyPair = 10 // EC Keypair used for VAU Signature operations.
+    , ECIES_KeyPair     = 8 // EC Keypair used for ECIES VAU communications encryption
+    , VAUSIG_KeyPair    = 10 // EC Keypair used for VAU Signature operations.
     // Transient Blobs:
-    , NONCE_Blob = 9 // A NONCE to be used to prevent replay attacks.
-    , AKChallenge = 3 // A credential that must be decrypted during the AK attestation.
+    , NONCE_Blob        = 9 // A NONCE to be used to prevent replay attacks.
+    , AKChallenge       = 3 // A credential that must be decrypted during the AK attestation.
 //    , TPM_Challenge = 10 // A Credential Challenge to be cross checked against 
-    , TEE_Token = 11  // A time limited Token allowing access to the VAU HSM functions.
+    , TEE_Token         = 11  // A time limited Token allowing access to the VAU HSM functions.
+    , Pseudoname_Key    = 12 // time limited unwrappable AES key.    See PSEUDONAME_BLOB_EXPIRY
 } ERPBlobType_t;
 
 
@@ -235,6 +236,12 @@ extern unsigned int getNONCEBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob);
 // The time is set to the current HSM time.
 // The memory for the Blob is allocated by this method and must be freed by os_mem_del_set.
 extern unsigned int getHashKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob);
+
+// Allocates and fills a HashKey clear Blob with a new RND value.
+// The time is set to the current HSM time.
+// The blob is given an expiry period of 8 months, but this is enforced in the UnsealAndCheckBlob method.
+// The memory for the Blob is allocated by this method and must be freed by os_mem_del_set.
+extern unsigned int getPseudonameKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob);
 
 // Allocates and fills a Derivation Key Blob with a newly generated Derivation Key.
 // The time is set to the current HSM time.

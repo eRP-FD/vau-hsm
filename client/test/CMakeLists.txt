@@ -23,7 +23,8 @@ set(SOURCE_FILES "ERP_AttestTests.cpp"
                  "ERP_RUAttestationTests.cpp"
                  "ERP_SingleBlobKeyBackupTests.cpp"
                  "ERP_BlobMigrationAndIdentityTests.cpp"
-                 "ERP_TestParams.cpp" )
+                 "ERP_TestParams.cpp"
+                 "ERP_PseudonameKeyTests.cpp" )
 
 # also list the targets under test (that the test target depends on)
 #

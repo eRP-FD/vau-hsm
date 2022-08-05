@@ -15,16 +15,16 @@
 
 class ErpECIESTestFixture : public ::testing::Test {
 public:
-    static HSMSession m_logonSession;
+    HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
 
     ErpECIESTestFixture() = default;
 
-    void static connect() {
-        // code here will execute just before the test ensues 
+    void connect() {
+        // This method is intended to be invoked for each test just before the test starts 
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
-    void static logonSetup() {
+    void logonSetup() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -43,7 +43,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void static logonWorking() {
+    void logonWorking() {
         bool doLogon = true;
         if (doLogon)
         {
@@ -61,7 +61,7 @@ public:
             ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
         }
     }
-    void static logoff()
+    void logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
         {
@@ -70,7 +70,7 @@ public:
         }
     }
     void SetUp() override {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -88,7 +88,6 @@ public:
     }
 };
 
-HSMSession ErpECIESTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
 const std::string ErpECIESTestFixture::devIP = SINGLE_SIM_HSM;
 
 TEST_F(ErpECIESTestFixture, GenerateECIESKeypair)

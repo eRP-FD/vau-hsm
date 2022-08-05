@@ -21,7 +21,7 @@
 
 class ErpRUAttestationTestFixture : public ::testing::Test {
 public:
-    static HSMSession m_logonSession;
+    HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
 
     // This is the static set of generations that I want setup in the RU.
@@ -40,13 +40,13 @@ public:
     // Used for dynamic and transient blobs.
     static const unsigned int workingGeneration = 6;
 
-    void static connect()
+    void connect()
     {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
 
-    void static logonSetup()
+    void logonSetup()
     {
         // user ERP_SETUP with "password" and permissions 00000200
         const static std::string setupUsername = "ERP_SETUP";
@@ -56,7 +56,7 @@ public:
         m_logonSession = ERP_LogonPassword(m_logonSession, setupUsername.c_str(), password.c_str());
         ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
     }
-    void static logonWorking() {
+    void logonWorking() {
         // user ERP_WORK with "password" and permissions 00000020
         const static std::string workUsername = "ERP_WORK";
         const static std::string password = "password";
@@ -65,7 +65,7 @@ public:
         ASSERT_EQ(HSMLoggedIn, m_logonSession.status);
     }
 
-    void static logoff()
+    void logoff()
     {
         if (m_logonSession.status == HSMLoggedIn)
         {
@@ -74,7 +74,7 @@ public:
         }
     }
 
-    void static forceCreateBlobGeneration(unsigned int generation)
+    void forceCreateBlobGeneration(unsigned int generation)
     {
         unsigned int err = teststep_GenerateBlobKey(m_logonSession, generation);
         EXPECT_TRUE((err == ERP_ERR_NOERROR) || (err == ERP_ERR_BAD_BLOB_GENERATION));
@@ -82,7 +82,7 @@ public:
 
     void SetUp() override
     {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -106,8 +106,6 @@ public:
             (m_logonSession.errorCode == ERP_ERR_NO_CONNECTION));
     }
 };
-
-HSMSession ErpRUAttestationTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
 
 const std::string ErpRUAttestationTestFixture::devIP = HARDWARE_HSM;
 

@@ -49,7 +49,7 @@ public:
 
     void SetUp() override
     {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         HSMParameterSetFactory factory = GetParam();
         parameters = factory();
         if (!parameters.TestEnabled)

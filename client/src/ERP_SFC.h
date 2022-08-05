@@ -11,6 +11,8 @@
 #define ERP_MDL_ID 0x101
 
 // sub function codes of the example module
+// These values define the entry points for the firmware module and MUST match those defined in firmware
+//   file ERP_GlobalGlue.c
 #define ERP_SFC_GENERATE_BLOB_KEY        0
 #define ERP_SFC_LIST_BLOB_KEYS           1
 #define ERP_SFC_GENERATE_HASH_KEY        2
@@ -41,5 +43,8 @@
 #define ERP_SFC_MIGRATE_BLOB             27
 #define ERP_SFC_GET_BLOB_CONTENT_HASH    28
 #define ERP_SFC_GET_BLOB_CONTENT_HASH_WITH_TOKEN    29
+#define ERP_SFC_DERIVE_CHARGE_ITEM_KEY   30
+#define ERP_SFC_GENERATE_PSEUDONAME_KEY  31
+#define ERP_SFC_UNWRAP_PSEUDONAME_KEY    32
 
 #endif

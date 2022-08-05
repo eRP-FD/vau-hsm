@@ -19,7 +19,7 @@
 
 class ErpClusterTestFixture : public ::testing::Test {
 public:
-    static HSMSession m_logonSession;
+    HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static ERPBlob m_SavedTEEToken;
 
     ErpClusterTestFixture() {
@@ -27,7 +27,7 @@ public:
     }
 
     void connect() {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         const char* devArray[] = CLUSTER_HSM; // 10 is maximum
         int nDevices = 0;
         while ((devArray[nDevices] != NULL) && (nDevices < 10))
@@ -96,7 +96,7 @@ public:
         }
     }
     void SetUp() override {
-        // code here will execute just before the test ensues 
+        // This method is intended to be invoked for each test just before the test starts 
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -114,7 +114,6 @@ public:
     }
 };
 
-HSMSession ErpClusterTestFixture::m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR };
 ERPBlob ErpClusterTestFixture::m_SavedTEEToken = { 0,0,{'\0'} };
 
 TEST_F(ErpClusterTestFixture, AttestationSequencePart1)

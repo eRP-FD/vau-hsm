@@ -565,6 +565,43 @@ unsigned int teststep_deriveCommsKey(
     return output.returnCode;
 }
 
+unsigned int teststep_deriveChargeItemKey(
+    HSMSession sesh,
+    unsigned char* pAKName, // TPM_NAME_LEN
+    ERPBlob* pTEEToken,
+    ERPBlob* pDerivationKey,
+    size_t derivationDataLength,
+    unsigned char* derivationData,
+    unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation.
+    // Output
+    size_t* pUsedDerivationDataLength,
+    unsigned char* usedDerivationData, // MAX_BUFFER
+    unsigned char* derivedKey) // AES_256_LEN
+{
+    DeriveKeyInput in{};
+
+    in.derivationDataLength = derivationDataLength;
+    memcpy(&(in.AKName[0]), pAKName, TPM_NAME_LEN);
+    memcpy(&(in.derivationData), derivationData, derivationDataLength);
+    in.TEEToken = *pTEEToken;
+    in.derivationKey = *pDerivationKey;
+    in.initialDerivation = isInitial;
+    printf("\nExecuting DeriveChargeItemKey command...\n");
+    // zero will ask for next new generation.
+    DeriveKeyOutput output = ERP_DeriveChargeItemKey(sesh, in);
+
+    printf("Returned from DeriveChargeItemKey Command - Return Value: 0x%08x\n", output.returnCode);
+
+    if (output.returnCode == 0)
+    {
+        (*pUsedDerivationDataLength) = output.derivationDataLength;
+        memcpy(&(usedDerivationData[0]), &(output.derivationData[0]), output.derivationDataLength);
+        memcpy(&(derivedKey[0]), &(output.derivedKey[0]), AES_256_LEN);
+    }
+
+    return output.returnCode;
+}
+
 void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZeroOk)
 {
     // the nolint comments are for the clang-tody readability - magic numbers checks which ado not
@@ -646,7 +683,14 @@ extern unsigned int teststep_GenerateHashKey(HSMSession sesh, unsigned int Gener
     return pHashBlobOut->returnCode;
 }
 
-extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob * hashBlob, AES256KeyOutput* pKeyOut)
+extern unsigned int teststep_GeneratePseudonameKey(HSMSession sesh, unsigned int Generation, SingleBlobOutput* pPseudonameBlobOut)
+{
+    UIntInput in = { Generation };
+    *pPseudonameBlobOut = ERP_GeneratePseudonameKey(sesh, in);
+    return pPseudonameBlobOut->returnCode;
+}
+
+extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob* hashBlob, AES256KeyOutput* pKeyOut)
 {
     TwoBlobGetKeyInput get{};
     get.Key = *hashBlob;
@@ -655,5 +699,99 @@ extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob * hashBlob, 
     EXPECT_NE(nullptr, teeToken);
     get.TEEToken = *teeToken;
     *pKeyOut = ERP_UnwrapHashKey(sesh, get);
+    return pKeyOut->returnCode;
+}
+
+extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
+    ERPBlob* pTEEToken, unsigned char* pAKName,
+    deriveFunc_t* pGoodTestFunc, // Will be checked for consistent derivation
+    deriveFunc_t* pOtherTestFunc // Will be checked that it DOES NOT prpoduce the same result.
+)
+{
+    unsigned int err = ERP_ERR_NOERROR;
+    // 12. Derive or retrieve a new Derivation Key Blob.
+    ERPBlob derivationKeyBlob = {};
+    if (err == ERP_ERR_SUCCESS)
+    {
+        err = teststep_GenerateDerivationKey(sesh, 0, &derivationKeyBlob);
+        // Alternatively - Fill derivationKeyBlob from previously generated data...
+    }
+    // derive good persistence Key for initial derivation
+    auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
+    std::uint8_t usedDerivationData[MAX_BUFFER];
+    size_t usedDerivationDataLength = 0;
+    std::uint8_t initialDerivedKey[AES_256_LEN];
+    if (err == ERP_ERR_SUCCESS)
+    {
+        err = (*pGoodTestFunc)(
+            sesh,
+            pAKName, // SHA_1_LEN...
+            pTEEToken,
+            &derivationKeyBlob,
+            derivationData.size(),
+            derivationData.data(),
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            // Output
+            &usedDerivationDataLength,
+            &(usedDerivationData[0]), // MAX_BUFFER
+            &(initialDerivedKey[0])); // AES_256_LEN
+    }
+    EXPECT_EQ(ERP_ERR_NOERROR, err);
+    EXPECT_EQ(usedDerivationDataLength, 2 + 32 + derivationData.size()); /* check that the used derivation data is correct */
+    // Derive good persistence key again for a non-initial derivation
+    std::uint8_t subsequentDerivedKey[AES_256_LEN];
+    for (int m = 0; m < SMALL_LOOP; m++)
+    {
+        if (err == ERP_ERR_SUCCESS)
+        {
+            err = (*pGoodTestFunc)(
+                sesh,
+                pAKName, // SHA_1_LEN...
+                pTEEToken,
+                &derivationKeyBlob,
+                usedDerivationDataLength,
+                &(usedDerivationData[0]),
+                0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+                // Output
+                &usedDerivationDataLength,
+                &(usedDerivationData[0]), // MAX_BUFFER
+                &(subsequentDerivedKey[0])); // AES_256_LEN
+        }
+    }
+    // Compare the two keys from the good derivation:
+    EXPECT_EQ(0, memcmp(&(initialDerivedKey[0]), &(subsequentDerivedKey[0]), AES_256_LEN));
+
+    // Derive a different class of persistence key for a non-initial derivation
+    std::uint8_t otherDerivedKey[AES_256_LEN];
+    if (err == ERP_ERR_SUCCESS)
+    {
+        err = (*pOtherTestFunc)(
+            sesh,
+            pAKName, // SHA_1_LEN...
+            pTEEToken,
+            &derivationKeyBlob,
+            usedDerivationDataLength,
+            &(usedDerivationData[0]),
+            0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            // Output
+            &usedDerivationDataLength,
+            &(usedDerivationData[0]), // MAX_BUFFER
+            &(otherDerivedKey[0])); // AES_256_LEN
+    }
+    // Now check that the other class of key derivation did NOT match the good one:
+    EXPECT_FALSE(0 == memcmp(&(initialDerivedKey[0]), &(otherDerivedKey[0]), AES_256_LEN));
+
+    return err;
+}
+
+extern unsigned int teststep_UnwrapPseudonameKey(HSMSession sesh, ERPBlob* hashBlob, AES256KeyOutput* pKeyOut)
+{
+    TwoBlobGetKeyInput get{};
+    get.Key = *hashBlob;
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    get.TEEToken = *teeToken;
+    *pKeyOut = ERP_UnwrapPseudonameKey(sesh, get);
     return pKeyOut->returnCode;
 }
