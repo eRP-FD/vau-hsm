@@ -1734,18 +1734,38 @@ unsigned int parseBasicConstraints(
 
     if (err == E_ERP_SUCCESS)
     {
+// ERP-10331 - TPM EK Certificates fail to pass parse checks.
+// Some TPM EK certificates pass in an empty ASN1 Sequence at this point
         if ((Items[0].tag != ASN_SEQUENCE) ||
-            ((Items[0].nitems != 1) && (Items[0].nitems != 2)) || // May or may not have a path length constraint
-            (Items[1].tag != ASN_BOOLEAN) )
+            (Items[0].nitems > 2))
+#           // Items[0].nitems can be 1 for no path constraint, just an isCA,
+            //    2 if isCA and path constraint are both present and
+            //    0 if neither is present which is non standard, but does actually happen in the wild (Nuvoton)
         {
             err = E_ERP_ASN1_CONTENT_ERROR;
             INDEX_ERR(err, 0x12);
         }
     }
+    if (err == E_ERP_SUCCESS)
+    {
+        // ERP-10331 - TPM EK Certificates fail to pass parse checks.
+        // Some TPM EK certificates pass in an empty ASN1 Sequence at this point
+        if ((Items[0].nitems > 0) && (Items[1].tag != ASN_BOOLEAN) )
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+            INDEX_ERR(err, 0x14);
+        }
+    }
 
     if (err == E_ERP_SUCCESS)
     {
-        err = getASN1Boolean(&(Items[1]), pBIsCA);
+        if (Items[0].nitems > 0)
+        {
+            err = getASN1Boolean(&(Items[1]), pBIsCA);
+        }
+        else { // ERP-10331 default FALSE
+            *pBIsCA = 0;
+        }
     }
 
     if (err == E_ERP_SUCCESS)
@@ -1921,16 +1941,17 @@ unsigned int parsex509ECCertificate(
             // The data following the tag is:
             //   BOOLEAN isCritical - optional
             //   OCTET_STRING containing an ASN Sequence of:
-            //     BOOLEAN isCA
+            //     BOOLEAN isCA   ERP-10331 - Not Optional, but may be missing.
             //     integer pathLengthConstraint.   Optional.
             if (pIsCANode->tag == ASN_BOOLEAN)
-            { // We are not interested in the isCritical value because it is not used consistently in thge Certs that we deal with.
+            { // We are not interested in the isCritical value because it is not used consistently in the Certs that we deal with.
                 pIsCANode++;
             }
             if ((pIsCANode->tag == ASN_OCTET_STRING) &&
                 (pIsCANode->nitems == 0))
             {
                 // We don't actually use the isCritical or path length constraint here and it may or may not be present.
+                // We are only parsing here to check formal correctness and ensure that parsing from this point on is still valid.
                 unsigned int pathLengthConstraint = 0;
                 err = parseBasicConstraints(pIsCANode->len, pIsCANode->p_data, pbIsCA, &pathLengthConstraint);
             }
@@ -2175,7 +2196,7 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
             (Items[1].tag != ASN_SEQUENCE))
         {
             err = E_ERP_ASN1_CONTENT_ERROR;
-            INDEX_ERR(err, 0x12);
+            INDEX_ERR(err, 0x13);
         }
     }
 

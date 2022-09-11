@@ -183,7 +183,7 @@ TEST_F(ErpAttestationTestFixture, EKCertIsRoot)
 
     // 4. Enroll EK
     auto pTrustedEK = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_EnrollTPMEK(
             ErpAttestationTestFixture::m_logonSession,
@@ -195,6 +195,7 @@ TEST_F(ErpAttestationTestFixture, EKCertIsRoot)
     }
     EXPECT_EQ(ERP_ERR_CERT_WRONG_ISCA_VALUE, err);
 }
+
 TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
 {
     unsigned int err = ERP_ERR_NOERROR;
@@ -206,7 +207,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
 
     err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrustedRoot.get(), MfrRootCert);
 
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("saved/trustedRoot.blob", pTrustedRoot.get());
@@ -222,7 +223,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
 
     // 4. Enroll EK
     auto pTrustedEK = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_EnrollTPMEK(
             ErpAttestationTestFixture::m_logonSession,
@@ -232,7 +233,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
             pEKCert.size(),
             pEKCert.data());
     }
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         // Save this in case we want to take a snapshot of a TPM decryption.
         err = writeBlobResourceFile("saved/trustedEK.blob", pTrustedEK.get());
@@ -249,7 +250,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
     size_t encCredentialLength = 0;
     std::uint8_t secretData[MAX_BUFFER] = "";
     size_t secretLength = 0;
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_GetAKChallenge(
             ErpAttestationTestFixture::m_logonSession,
@@ -277,11 +278,11 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
     writeBlobResourceFile("EnrollmentQuoteNONCE.blob", &(quoteNONCE.BlobOut));
     std::uint8_t variedEnrollmentNONCE[NONCE_LEN];
     // Don't save the NONCE, but save the varied NONCE value instead.
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = varyNONCE("ERP_ENROLLMENT", &(quoteNONCE.NONCE[0]), &(variedEnrollmentNONCE[0]));
     }
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<std::uint8_t>(&(variedEnrollmentNONCE[0]), &(variedEnrollmentNONCE[0]) + RND_256_LEN));
     }
@@ -289,11 +290,11 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart1)
     NONCEOutput attestNONCE = ERP_GenerateNONCE(ErpAttestationTestFixture::m_logonSession, genIn);
     writeBlobResourceFile("AttestationQuoteNONCE.Blob", &(attestNONCE.BlobOut));
     std::uint8_t variedAttestationNONCE[NONCE_LEN];
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = varyNONCE("ERP_ATTESTATION", &(attestNONCE.NONCE[0]), &(variedAttestationNONCE[0]));
     }
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<std::uint8_t>(&(variedAttestationNONCE[0]), &(variedAttestationNONCE[0]) + RND_256_LEN));
     }
@@ -317,7 +318,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
     auto savedAKPub = readERPResourceFile("saved/AKPub.bin");
     auto savedAKName = readERPResourceFile("saved/h80000002.bin");
     auto pTrustedAK = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_EnrollAK(
             ErpAttestationTestFixture::m_logonSession,
@@ -340,7 +341,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
     std::unique_ptr<ERPBlob> savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
     // 7. Enroll Enclave
     auto pTrustedQuote = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_TrustQuote(
             ErpAttestationTestFixture::m_logonSession,
@@ -358,7 +359,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
     auto attestSig = readERPResourceFile("saved/AttestationQuoteSigSaved.bin");
     // 11. getTEEToken
     auto pTEEToken = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_getTEEToken(
             ErpAttestationTestFixture::m_logonSession,
@@ -371,19 +372,19 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
             pTEEToken.get());
     }
     // Save the TEEToken for use in other tests.
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = writeBlobResourceFile("saved/StaticTEEToken.blob", pTEEToken.get());
     }
     // 12. Derive or retrieve a new Derivation Key Blob.
     auto pDerivationKeyBlob = getEmptyBlob(Gen);
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_GenerateDerivationKey(ErpAttestationTestFixture::m_logonSession, Gen, pDerivationKeyBlob.get());
         // Alternatively - Fill derivationKeyBlob from previously generated data...
     }
     // Save the Derivation Key for use in other tests.
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = writeBlobResourceFile("saved/StaticDerivationKey.blob", pDerivationKeyBlob.get());
     }
@@ -430,7 +431,7 @@ TEST_F(ErpAttestationTestFixture, StaticKeyDerivation)
     std::uint8_t usedDerivationData[MAX_BUFFER];
     size_t usedDerivationDataLength = 0;
     std::uint8_t initialDerivedKey[AES_256_LEN];
-    if (err == ERP_ERR_SUCCESS)
+    if (err == ERP_ERR_NOERROR)
     {
         err = teststep_deriveTaskPersistenceKey(
             ErpAttestationTestFixture::m_logonSession,
@@ -591,4 +592,52 @@ TEST_F(ErpAttestationTestFixture, ParseTPMQuoteTest)
     offset += 2; //NOLINT  (readability-magic-numbers)
     offset += TPM_PCR_DIGESTHASH_LENGTH;
     ASSERT_EQ(offset, (unsigned int) TPM_QUOTE_LENGTH);
+}
+
+// This test should be extended with any new HW TPM Manufacturer CA or TPMEK types that are
+//   introduced into our hardware ecosystem.
+TEST_F(ErpAttestationTestFixture, HWTPMCertificates)
+{
+    unsigned int err = ERP_ERR_NOERROR;
+    unsigned int Gen = THE_ANSWER; // This should be present on default simulator.
+    // Sequence:
+    // 1. Trust Mfr Root CA Certificate
+    auto pTrustedRootOld = getEmptyBlob(Gen);
+    auto pTrustedRootNew = getEmptyBlob(Gen);
+    auto MfrRootCertOld = readERPResourceFile("NuvotonTPMRootCA1110.crt");
+
+    err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrustedRootOld.get(), MfrRootCertOld);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    auto MfrRootCertNew = readERPResourceFile("NuvotonTPMRootCA2111.crt");
+
+    err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrustedRootNew.get(), MfrRootCertNew);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    UIntInput genIn = { Gen };
+
+    // 2. Missing Step to call TPM to get the EK Cert
+    //    for now just use some certificate from a file.
+    auto pEKCert = readERPResourceFile("20220623NovutonTUProblemTPMCert.crt");
+
+    // 4. Enroll EK
+    auto pTrustedEK = getEmptyBlob(Gen);
+
+    err = teststep_EnrollTPMEK(
+        ErpAttestationTestFixture::m_logonSession,
+        Gen,
+        pTrustedRootOld.get(),
+        pTrustedEK.get(),
+        pEKCert.size(),
+        pEKCert.data());
+    ASSERT_EQ(E_ECDSA_VERIFY_FAILED, err);
+
+    err = teststep_EnrollTPMEK(
+        ErpAttestationTestFixture::m_logonSession,
+        Gen,
+        pTrustedRootNew.get(),
+        pTrustedEK.get(),
+        pEKCert.size(),
+        pEKCert.data());
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
 }

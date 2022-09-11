@@ -345,7 +345,7 @@ extern int ERP_GeneratePseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned c
     ClearBlob_t* clear = NULL;
 
     if (err == E_ERP_SUCCESS)
-    { // Create the new hash key
+    { // Create the new pseudoname key
         err = getPseudonameKeyBlob(p_hdl, &clear);
     }
     SealedBlob_t* sealed = NULL;
