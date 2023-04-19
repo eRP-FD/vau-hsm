@@ -42,7 +42,7 @@ public:
 
     void connect()
     {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
 
@@ -82,7 +82,7 @@ public:
 
     void SetUp() override
     {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -196,7 +196,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart1)
 
     // The following step should be done after the AK attestation and before getting a quote, but if we do it here then
     //    the activateHSMCredential script will generate a quote using it.
-    //  
+    //
     // 8. getNONCE for TPM Quote
     UIntInput genIn = {workingGeneration};
     // 8. getNONCE for TPM Enrollment Quote - do this out of sequence to allow a single manual TPM step.
@@ -234,8 +234,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
     auto err = ERP_ERR_NOERROR;
     // 7. Enroll AK
     // Use blob and decyrpted credential from a previous test run
-    std::unique_ptr<ERPBlob> savedAKChallengeBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/AKChallengeSaved.blob"));
-    std::unique_ptr<ERPBlob> savedTrustedEKBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/trustedEKSaved.blob"));
+    std::unique_ptr<ERPBlob> savedAKChallengeBlob = readBlobResourceFile("rusaved/AKChallengeSaved.blob");
+    std::unique_ptr<ERPBlob> savedTrustedEKBlob = readBlobResourceFile("rusaved/trustedEKSaved.blob");
     auto savedDecCred = readERPResourceFile("rusaved/credDecHSMSaved.bin");
     auto savedAKPub = readERPResourceFile("rusaved/AKPub.bin");
     auto savedAKName = readERPResourceFile("rusaved/h80000002.bin");
@@ -269,8 +269,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
     // 9. get Quote from TPM.   Actually load previously saved...
     auto enrollQuote = readERPResourceFile("rusaved/EnrollmentQuoteSaved.bin");
     auto enrollSig = readERPResourceFile("rusaved/EnrollmentQuoteSigSaved.bin");
-    std::unique_ptr<ERPBlob> enrollNONCE = std::unique_ptr<ERPBlob>(
-        readBlobResourceFile("rusaved/EnrollmentQuoteNONCESaved.blob"));
+    std::unique_ptr<ERPBlob> enrollNONCE =
+        readBlobResourceFile("rusaved/EnrollmentQuoteNONCESaved.blob");
     // 7. Enroll Enclave
     auto pTrustedQuote = getEmptyBlob();
     if (err == ERP_ERR_SUCCESS)
@@ -292,8 +292,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
     // 10. get New NONCE for TEE Token request.   Actually load previously saved...
     auto attestQuote = readERPResourceFile("rusaved/AttestationQuoteSaved.bin");
     auto attestSig = readERPResourceFile("rusaved/AttestationQuoteSigSaved.bin");
-    std::unique_ptr<ERPBlob> attestNONCE = std::unique_ptr<ERPBlob>(
-        readBlobResourceFile("rusaved/AttestationQuoteNONCESaved.blob"));
+    std::unique_ptr<ERPBlob> attestNONCE =
+        readBlobResourceFile("rusaved/AttestationQuoteNONCESaved.blob");
 
     // 11. getTEEToken
     auto pTEEToken = getEmptyBlob();
@@ -320,7 +320,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_AttestationSequencePart2)
 
 // Run this test once static test data has been saved from AttestationSequencePart1 and going to the TPM for an
 // Answer to the challenge.
-// This test will create the static working keys if they are not already present.   It checks 
+// This test will create the static working keys if they are not already present.   It checks
 //   for the existence of the rusaved/ blob files and only recreates them if they are not present.
 TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
 {
@@ -360,7 +360,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
     if (err == ERP_ERR_NOERROR)
     {
         static const char* filename = "rusaved/hashKeySaved.blob";
-        ERPBlob* pReadBlob = readBlobResourceFile(filename,false);
+        auto pReadBlob = readBlobResourceFile(filename,false);
 
         if (pReadBlob == nullptr)
         {
@@ -372,14 +372,12 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-
-        delete pReadBlob;
     }
 
     if (err == ERP_ERR_NOERROR)
     {
         static const char* filename = "rusaved/eciesKeyPairSaved.blob";
-        ERPBlob* pReadBlob = readBlobResourceFile(filename,false);
+        auto pReadBlob = readBlobResourceFile(filename,false);
 
         if (pReadBlob == nullptr)
         {
@@ -391,14 +389,12 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-
-        delete pReadBlob;
     }
 
     if (err == ERP_ERR_NOERROR)
     {
         static const char* filename = "rusaved/VAUSIGKeyPairSaved_UT.blob";
-        ERPBlob* pReadBlob = readBlobResourceFile(filename,false);
+        auto pReadBlob = readBlobResourceFile(filename,false);
 
         if (pReadBlob == nullptr)
         {
@@ -410,8 +406,6 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveAESKeyBlobs)
                 writeBlobResourceFile(filename, &(out.BlobOut));
             }
         }
-
-        delete pReadBlob;
     }
 
     EXPECT_EQ(ERP_ERR_NOERROR, err);
@@ -421,8 +415,8 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
 {
     auto err = ERP_ERR_NOERROR;
 
-    std::unique_ptr<ERPBlob> savedTEEToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/staticTEETokenSaved.blob"));
-    std::unique_ptr<ERPBlob> savedTaskDerivationKey = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/taskDerivationKeySaved.blob"));
+    std::unique_ptr<ERPBlob> savedTEEToken = readBlobResourceFile("rusaved/staticTEETokenSaved.blob");
+    std::unique_ptr<ERPBlob> savedTaskDerivationKey = readBlobResourceFile("rusaved/taskDerivationKeySaved.blob");
     auto savedAKName = readERPResourceFile("rusaved/h80000002.bin");
     // 13. derive Task persistence Key for initial derivation
     auto derivationData = asciiToBuffer("(Dummy Derivation Data) KVNR:Z123-45678");
@@ -455,7 +449,7 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
                 savedTaskDerivationKey.get(),
                 usedDerivationDataLength,
                 &(usedDerivationData[0]),
-                0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+                0, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
                 &(usedDerivationData[0]), // MAX_BUFFER
@@ -467,14 +461,13 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_DeriveKeyTest)
 
 TEST_F(ErpRUAttestationTestFixture, DISABLED_getVAUSIGPrivateKey)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/VAUSIGKeyPairSaved_UT.blob"));
+    std::unique_ptr<ERPBlob> savedKeyPairBlob = readBlobResourceFile("rusaved/VAUSIGKeyPairSaved_UT.blob");
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
     TwoBlobGetKeyInput vauSIG = { {0,0,{0}}, {0,0,{0}} };
     vauSIG.Key = *savedKeyPairBlob;
     // Take the TEEToken from a previous test run:
-    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/staticTEETokenSaved.blob"));
+    auto teeToken = readBlobResourceFile("rusaved/staticTEETokenSaved.blob");
     ASSERT_NE(nullptr, teeToken);
     vauSIG.TEEToken = *teeToken;
     PrivateKeyOutput keyOut = ERP_GetVAUSIGPrivateKey(m_logonSession, vauSIG);
@@ -568,13 +561,13 @@ TEST_F(ErpRUAttestationTestFixture, DISABLED_generateECIESCSR)
 TEST_F(ErpRUAttestationTestFixture, DISABLED_UnwrapHashKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/hashKeySaved.blob"));
+        readBlobResourceFile("rusaved/hashKeySaved.blob");
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
     TwoBlobGetKeyInput get{};
     get.Key = *savedKeyPairBlob;
     // Take the TEEToken from a previous test run:
-    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("rusaved/staticTEETokenSaved.blob"));
+    auto teeToken = readBlobResourceFile("rusaved/staticTEETokenSaved.blob");
     ASSERT_NE(nullptr, teeToken);
     get.TEEToken = *teeToken;
     AES256KeyOutput keyOut = ERP_UnwrapHashKey(m_logonSession, get);

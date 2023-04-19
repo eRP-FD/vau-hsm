@@ -93,7 +93,7 @@ FILE_CONST T_MODULE_LINK_TAB Module_link_tab[] =
 //-----------------------------------------------------------------------------
 #define MODULE_HAS_EXT_INTERFACE                 // module has external interface
 
-// This table defines the external interface of the firmware.   The positions in this list 
+// This table defines the external interface of the firmware.   The positions in this list
 //   must match the values defined in client file ERP_SFC.h
 FILE_CONST P_CMDS_FCT Module_func_tab[] =
 {
@@ -101,13 +101,13 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_ListBlobKeys           // SFC = 1
     ,ERP_GenerateHashKey        // SFC = 2
     ,ERP_UnwrapHashKey          // SFC = 3
-    ,ERP_GenerateECIESKeyPair   // SFC = 4 
-    ,ERP_GenerateECIESCSR       // SFC = 5 
+    ,ERP_GenerateECIESKeyPair   // SFC = 4
+    ,ERP_GenerateECIESCSR       // SFC = 5
     ,ERP_DumpHSMMemory          // SFC = 6 // Devtime only.
     ,ERP_DeleteBlobKey          // SFC = 7
     ,ERP_GenerateNONCE          // SFC = 8
     ,ERP_GenerateDerivationKey  // SFC = 9
-    ,ERP_DoECIES128             // SFC = 10 
+    ,ERP_DoECIES128             // SFC = 10
     ,ERP_TrustTPMMfr            // SFC = 11
     ,ERP_EnrollTPMEK            // SFC = 12
     ,ERP_GetAKChallenge         // SFC = 13
@@ -119,7 +119,7 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_DeriveCommsKey         // SFC = 19
     ,ERP_GetECPublicKey         // SFC = 20
     ,ERP_GetRNDBytes            // SFC = 21
-    ,ERP_GenerateVAUSIGKeyPair  // SFC = 22 
+    ,ERP_GenerateVAUSIGKeyPair  // SFC = 22
     ,ERP_GenerateVAUSIGCSR      // SFC = 23
     ,ERP_GetVAUSIGPrivateKey    // SFC = 24
     ,ERP_ExportSingleBlobKey    // SFC = 25
@@ -130,6 +130,9 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_DeriveChargeItemKey    // SFC = 30
     ,ERP_GeneratePseudonameKey  // SFC = 31
     ,ERP_UnwrapPseudonameKey    // SFC = 32
+    ,ERP_WrapRawPayload         // SFC = 33
+    ,ERP_WrapRawPayloadWithToken// SFC = 34
+    ,ERP_UnwrapRawPayload       // SFC = 35
 };
 
 MDL_GLOBAL DB* p_BlobKDB;

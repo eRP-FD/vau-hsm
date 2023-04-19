@@ -16,8 +16,8 @@
 //----------------------------------------------------------------
 // Blob Key Declarations and Definitions.
 //----------------------------------------------------------------
-// We use arrays of undefined size to indicate open ended structures, 
-//   i.e. the structure contains data beyond the end, but it is not 
+// We use arrays of undefined size to indicate open ended structures,
+//   i.e. the structure contains data beyond the end, but it is not
 //   defined at the level of this struct.
 #ifdef _MSC_VER
 #pragma warning (push)
@@ -106,9 +106,10 @@ typedef enum ERPBlobType {
     // Transient Blobs:
     , NONCE_Blob        = 9 // A NONCE to be used to prevent replay attacks.
     , AKChallenge       = 3 // A credential that must be decrypted during the AK attestation.
-//    , TPM_Challenge = 10 // A Credential Challenge to be cross checked against 
+//    , TPM_Challenge = 10 // A Credential Challenge to be cross checked against
     , TEE_Token         = 11  // A time limited Token allowing access to the VAU HSM functions.
     , Pseudoname_Key    = 12 // time limited unwrappable AES key.    See PSEUDONAME_BLOB_EXPIRY
+    , RawPayload        = 13 // arbitrary Payload
 } ERPBlobType_t;
 
 
@@ -121,7 +122,7 @@ typedef struct {
     // End of AES-GCM AD.
     unsigned char ICV[BLOB_IV_LEN]; // AES GCM 96 bits ICV
     unsigned char AuthTag[BLOB_AD_HASH_LEN]; // AES GCM 128 bits Authorisation Tag.
-    unsigned int EncodedDataLength; // 
+    unsigned int EncodedDataLength; //
     unsigned char EncodedData[]; // Open ended array.
 } SealedBlob_t;
 
@@ -152,21 +153,21 @@ typedef struct {
 typedef struct {
     unsigned char EKName[TPM_NAME_LEN]; // This is TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
     unsigned int CertificateLength;
-    unsigned char CertificateData[]; // Open ended ASN1.DER x509 Certificate. 
+    unsigned char CertificateData[]; // Open ended ASN1.DER x509 Certificate.
 } KnownEKBlob_t;
 
 // This may change depending on whether we use an AK Certificate to wrap the AK public key or not.
 typedef struct {
     unsigned char AKName[TPM_NAME_LEN]; // This is TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
     unsigned int DataLength;
-    unsigned char Data[]; // plaintext Data of the credential challenge. 
+    unsigned char Data[]; // plaintext Data of the credential challenge.
 } AKChallengeBlob_t;
 
 // This may change depending on whether we use an AK Certificate to wrap the AK public key or not.
 typedef struct {
     unsigned char AKName[TPM_NAME_LEN]; // This is an TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
     unsigned int ANSIPubKeyLength;
-    unsigned char ANSIPubKeyData[]; // Open ended ASN1.DER x509 Certificate. 
+    unsigned char ANSIPubKeyData[]; // Open ended ASN1.DER x509 Certificate.
 } KnownAKBlob_t;
 
 // This may change depending on whether we have some flexibility in the PCR selection set..
@@ -178,7 +179,7 @@ typedef struct {
 
 typedef struct {
     unsigned int CertificateLength;
-    unsigned char CertificateData[]; // Open ended ASN1.DER x509 Certificate. 
+    unsigned char CertificateData[]; // Open ended ASN1.DER x509 Certificate.
 } TPMMfrRootCertBlob_t;
 
 // At the moment, I can't think of anything else to put in a TEE Token - time, type and so on are
@@ -187,7 +188,7 @@ typedef struct {
 #define TEE_TOKEN_TEXT_LEN 51
 typedef struct {
     unsigned char AKName[TPM_NAME_LEN]; // This is TPM Name hash (0x000b + SHA256) of AK Public - used by TPM as name
-    char TokenText[TEE_TOKEN_TEXT_LEN]; 
+    char TokenText[TEE_TOKEN_TEXT_LEN];
 } TEETokenBlob_t;
 
 #define TPM_PCR_COUNT 16
@@ -216,7 +217,7 @@ extern unsigned int SealBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t* pInBlob, unsigne
 
 // Unseals a sealed blob using the generation contained in the Blob.
 // The memory for the ClearBlob is allocated by this method and must be freed by os_mem_del_set
-// Use UnsealBlobAndCheckType whenever the blob has a single allowed type, otherwise 
+// Use UnsealBlobAndCheckType whenever the blob has a single allowed type, otherwise
 //   the caller must check the blob type manually after this call has returned.
 // The Generation of the sealed blob must match a blob key present in the HSM.
 unsigned int UnsealBlob(T_CMDS_HANDLE* p_hdl, SealedBlob_t* pInBlob, ClearBlob_t** ppOutBlob);
@@ -251,7 +252,7 @@ unsigned int getDerivationKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob)
 // Allocates and fills a BackupBlob_t with a backup of the blob key with the input generation.
 // The caller must free the returned BackupBlob_t.
 // The current AES 256 Master Backup Key in the HSM is used to create the backup.
-// Information about the MBK used is stored in the Backup´Blob.
+// Information about the MBK used is stored in the Backupï¿½Blob.
 // Metadata in clear is only provided as information.   The same values are stored in the encrypted
 //   data which is AES_GCM encoded to protect against manipulation.
 // In the event of failure, *ppBackupBlob will be returned == NULL and there will be no memory to free.
@@ -264,7 +265,7 @@ unsigned int backupBlobGeneration(T_CMDS_HANDLE* p_hdl, unsigned int Generation,
 // Ownership of the input BackupBlob_t remains with the caller.
 unsigned int restoreBlobGeneration(T_CMDS_HANDLE* p_hdl, BackupBlob_t* pBackupBlob);
 
-// Calculate an SHA256 hash if the contents of a clear blob and write them to the command output 
-//   buffer as an OCTET String. 
+// Calculate an SHA256 hash if the contents of a clear blob and write them to the command output
+//   buffer as an OCTET String.
 unsigned int hashAndReturnBlobContents(T_CMDS_HANDLE* p_hdl, ClearBlob_t* input);
 #endif

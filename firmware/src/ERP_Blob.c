@@ -5,7 +5,7 @@
  **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
-#define no_init_all 
+#define no_init_all
 
 #include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
@@ -34,9 +34,9 @@ MDL_GLOBAL unsigned int NumLoadedBlobGenerations = 0;
 extern MDL_GLOBAL void* p_BlobSemaphore;
 
 // May only be called from countLoadedBlobKeys due to semaphore ownership.
-// Semaphore object is NOT owner-counted, i.e. isf the caller onws the semaphore, it would fail to claim it here.
+// Semaphore object is NOT owner-counted, i.e. if the caller owns the semaphore, it would fail to claim it here.
 void freeLoadedBlobKeyList()
-{   
+{
     if (LoadedBlobKeyList != NULL)
     {
         unsigned int i = 0;
@@ -132,7 +132,7 @@ unsigned int countLoadedBlobKeys(T_CMDS_HANDLE* p_hdl)
         LoadedBlobKeyList[index] = NULL;
     }
     if (err != E_ERP_SUCCESS)
-    {   // This can only be caused by a DB or malloc error - either way the firmware is dead until it can complete a successful 
+    {   // This can only be caused by a DB or malloc error - either way the firmware is dead until it can complete a successful
         // loading of the blob keys.
         // Set the firmware state to no loaded blob keys so a future attempt may try this agin.
         freeLoadedBlobKeyList();
@@ -185,7 +185,7 @@ T_BLOBK* getSingleBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int Generation)
     unsigned int err = E_ERP_SUCCESS;
     // Warning - multiple returns in this method
     T_BLOBK* const* keyList = NULL;
-    // We don't actually need the key list here, we jsut call it to 
+    // We don't actually need the key list here, we jsut call it to
     //   force an initial load if it has not yet been loaded.
     if (err == E_ERP_SUCCESS)
     {
@@ -223,7 +223,7 @@ int addNewBlobKey(T_CMDS_HANDLE* p_hdl, const T_BLOBK* newBlob)
     // the case (err == E_DB_EXISTS):
     // This should have been caught earlier in the call tree.
     // The key is already there, so do NOT update it.
-    
+
     if (err == E_ERP_SUCCESS)
     {
         // Now update the cached list of keys:
@@ -254,7 +254,7 @@ int createNewBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int * pGeneration)
         if (*pGeneration == 0)
         {
             T_BLOBK* const* keyList = NULL;
-            // We don't actually need the key list here, we just call it to 
+            // We don't actually need the key list here, we just call it to
             //   force an initial load if it has not yet been loaded.
             err = getLoadedBlobKeys(p_hdl, &keyList);
             pNewBlobKey->Generation = getHighestBlobGeneration(p_hdl) + 1;
@@ -348,9 +348,9 @@ int deleteBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int Generation)
 
 size_t SizeofClearBlobData(ClearBlob_t* blob)
 {
-    size_t result = sizeof(ERPBlobType_t) + 
-                    sizeof(unsigned int) + 
-                    sizeof(blob->DataLength) + 
+    size_t result = sizeof(ERPBlobType_t) +
+                    sizeof(unsigned int) +
+                    sizeof(blob->DataLength) +
                     blob->DataLength;
     return result;
 }
@@ -364,13 +364,13 @@ const char* getBlobDomain()
 }
 
 // Helper method to return the IV used for AES GCM Encryption and Decryption of Blobs.
-// Has the value blob Domain padded with 0x00 to 16 bytes. 
+// Has the value blob Domain padded with 0x00 to 16 bytes.
 // Input: pLen - length of input buffer.   Minimum BLOB_IV_LEN
 // Input: pOutBuff - Buffer to hold RND.
 // Output: *pLen - the length of the IV created.
 // Output: pOutBuff - filled with the data of the IV.
 unsigned int getNewBlobIV(unsigned int * pLen, unsigned char *pOutBuff)
-{ 
+{
     int err = E_ERP_SUCCESS;
     if (*pLen < BLOB_IV_LEN)
     {
@@ -400,9 +400,9 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
     unsigned int err = E_ERP_SUCCESS;
     unsigned int now = 0;
     unsigned int ms = 0;
-    // ERP-8927 - "Lets do the Time Slip agaaaainnnn..."   This is a tolerance built into time checking 
+    // ERP-8927 - "Lets do the Time Slip agaaaainnnn..."   This is a tolerance built into time checking
     //   to deal with imperfect clock synchronisation between the HSM which issued a blob and the HSM currently
-    //   checking it.   Units are seconds.   Current HSM NTP setup should correct after 500ms slippage so 
+    //   checking it.   Units are seconds.   Current HSM NTP setup should correct after 500ms slippage so
     //   1 second is the theoretical maximum difference not allowing for non-zero NTP polling intervals.
     // Empirical observations showed up to 600ms before corrections.   So, 2 seconds should be enough.
     static const int TIME_SLIP = 2; // two second time slip.
@@ -433,12 +433,13 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
         case Derivation_Key: // = 6 // A symmetric key used to derive Persistence Keys.
         case Hash_Key: // = 7 // A symmetric key used to calculate keyed hashes.
         case ECIES_KeyPair: // = 8
+        case RawPayload:
             Validity = 0;
             break;
             // Transient Blobs:
         case NONCE_Blob: // = 9 // A NONCE to be used to prevent replay attacks.
         case AKChallenge: // = 3 // A credential that must be decrypted during the AK attestation.
-//        case TPM_Challenge: // = 10 // A Credential Challenge to be cross checked against 
+//        case TPM_Challenge: // = 10 // A Credential Challenge to be cross checked against
             Validity = 300; // 5 minutes
             break;
         case TEE_Token: // = 11  // A time limited Token allowing access tothe VAU HSM functions.
@@ -449,8 +450,8 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
             break;
         }
         // ERP-6199   !!!  THIS Must definitely be enabled for final version!!!!
-        // Leaving the blob expiry disabled enables replay attacks - we use 
-        //   this for testing, but it must be removed for final versions and 
+        // Leaving the blob expiry disabled enables replay attacks - we use
+        //   this for testing, but it must be removed for final versions and
         //   the removal needs to be confirmed by test cases.
 // Force this for now:
 #ifndef DISABLE_BLOB_EXPIRY
@@ -575,7 +576,7 @@ unsigned int SealBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t* pInBlob, unsigned int G
 
 // Unseals a sealed blob using the generation contained in the Blob.
 // The memory for the ClearBlob is allocated by this method and must be freed by os_mem_del_set
-// Use UnsealBlobAndCheckType whenever the blob has a single allowed type, otherwise 
+// Use UnsealBlobAndCheckType whenever the blob has a single allowed type, otherwise
 //   the caller must check the blob type manually after this call has returned.
 // The Generation of the sealed blob must match a blob key present in the HSM.
 unsigned int UnsealBlob(T_CMDS_HANDLE* p_hdl, SealedBlob_t* pInBlob, ClearBlob_t** ppOutBlob)
@@ -824,7 +825,7 @@ unsigned int getPseudonameKeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob)
 unsigned int getBlobKeyKCV(T_BLOBK* pBlobKey, size_t * pLen, unsigned char* pOutput)
 {
     unsigned int err = E_ERP_SUCCESS;
-    
+
     if (*pLen < (SHA_256_LEN / 8))
     {
         err = E_ERP_INTERNAL_BUFFER_ERROR;
@@ -846,7 +847,7 @@ unsigned int getBlobKeyKCV(T_BLOBK* pBlobKey, size_t * pLen, unsigned char* pOut
 const unsigned int AES_MBK_Number = MBK_EI_KEY_NO_AES;
 
 // Utility method wrapping access to the backup key used to backup and restore single blob generations.
-// This method returns an AES_256 key in raw form derived from the AES_256 Utimaco MBK and using a 
+// This method returns an AES_256 key in raw form derived from the AES_256 Utimaco MBK and using a
 //    key derivation unique to all eRP Firmware versions plus the BLOB_DOMAIN identifier for the Blobs.
 // input:   length of and pointer to buffer to hold the resulting AES_KEY.   This must be at least AES_256_LEN/8
 // output:    length and content of the AES key
@@ -906,7 +907,7 @@ unsigned int backupBlobGeneration(T_CMDS_HANDLE* p_hdl, unsigned int Generation,
     unsigned int keyLen = AES_256_LEN/8;
     unsigned char keyData[AES_256_LEN/8] = "";
     AES_KEY* pEncryptKeyToken = NULL;
-    
+
     // First get the backup key derived from the MBK and its' metadata from the HSM.
     // Note that for AES_GCM both encryption and decryption are actually AES Encryption operations
     //   on the keystream
@@ -938,7 +939,7 @@ unsigned int backupBlobGeneration(T_CMDS_HANDLE* p_hdl, unsigned int Generation,
 
     if (err == E_ERP_SUCCESS)
     {
-        // Build the response 
+        // Build the response
         *ppBackupBlob = os_mem_new_tag(sizeof(BackupBlob_t) + encDataSize, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
         CHECK_NOT_NULL(err, *ppBackupBlob, 0x3b);
     }
@@ -1223,8 +1224,8 @@ unsigned int restoreBlobGeneration(T_CMDS_HANDLE* p_hdl, BackupBlob_t* pBackupBl
     }
     return err;
 }
-// Calculate an SHA256 hash if the contents of a clear blob and write them to the command output 
-//   buffer as an OCTET String. 
+// Calculate an SHA256 hash if the contents of a clear blob and write them to the command output
+//   buffer as an OCTET String.
 unsigned int hashAndReturnBlobContents(T_CMDS_HANDLE* p_hdl, ClearBlob_t* input)
 {
     unsigned int err = E_ERP_SUCCESS;

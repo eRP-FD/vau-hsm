@@ -42,12 +42,12 @@ std::unique_ptr<ERPBlob> getEmptyBlob(unsigned int Gen = 0);
 // Utility Method for byte arrays initialised from strings.
 std::vector<std::uint8_t> asciiToBuffer(std::string_view in );
 
-// Utility method to read a file form the resources directory, allocates a pointer to a buffer to it and return that pointer 
+// Utility method to read a file form the resources directory, allocates a pointer to a buffer to it and return that pointer
 // for the caller to own and be responsible for deletion.
 std::vector<uint8_t> readERPResourceFile(const std::string& filename,bool bMustExist = true);
 
 // Caller must delete returned object.
-ERPBlob* readBlobResourceFile(const std::string& filename,bool bMustExist = true);
+std::unique_ptr<ERPBlob> readBlobResourceFile(const std::string& filename,bool bMustExist = true);
 unsigned int writeERPResourceFile(const std::string& filename, const std::vector<uint8_t>& data);
 unsigned int writeBlobResourceFile(const std::string& filename, const ERPBlob * blob);
 
@@ -130,7 +130,7 @@ typedef unsigned int (deriveFunc_t)(
     ERPBlob*,
     size_t,
     unsigned char* a,
-    unsigned int, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+    unsigned int, // 1 => Initial Derivation, 0 => subsequent Derivation.
     // Output
     size_t*,
     unsigned char*, // MAX_BUFFER
@@ -143,7 +143,7 @@ deriveFunc_t teststep_deriveChargeItemKey;
 
 // The pGoodTestFunc is one of the teststep_DeriveXXXXPersistenceKey Methods which will
 //   be checked that it produces a consistent derived key for initial and subsequent derivations.
-// The pOtherTestFunc is another test function for a DIFFERENT class of derivation 
+// The pOtherTestFunc is another test function for a DIFFERENT class of derivation
 //   key which should NOT produce the same derived key as the first.
 extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
     ERPBlob* pTEEToken, unsigned char* pAKName,
@@ -165,5 +165,10 @@ extern unsigned int teststep_GeneratePseudonameKey(HSMSession sesh, unsigned int
 
 extern unsigned int teststep_UnwrapHashKey(HSMSession sesh, ERPBlob* hashBlob, AES256KeyOutput* pKeyOut);
 extern unsigned int teststep_UnwrapPseudonameKey(HSMSession sesh, ERPBlob* PseudonameBlob, AES256KeyOutput* pKeyOut);
+unsigned int teststep_WrapRawPayload(HSMSession sesh, unsigned int Generation, size_t payloadLength,
+                                     const unsigned char *rawPayload, SingleBlobOutput *payloadBlob);
+unsigned int teststep_WrapRawPayloadWithToken(HSMSession sesh, unsigned int Generation, size_t payloadLength,
+                                           const unsigned char *rawPayload, SingleBlobOutput *payloadBlob);
+unsigned int teststep_UnwrapRawPayload(HSMSession sesh, ERPBlob *payloadBlob, RawPayloadOutput *payloadOut);
 
 #endif

@@ -149,6 +149,10 @@ unsigned int GenerateAES256CheckSum(unsigned char* pKeyData, unsigned long* pChe
     {
         err = readBELongInt(&(encZero[0]), pCheckSum);
     }
+    if (pEncKey != NULL)
+    {
+        os_mem_del_set(pEncKey,0);
+    }
     return err;
 }
 

@@ -26,7 +26,7 @@ pipeline {
                 commonCheckout()
             }
         }
-        
+
         stage('Create Release') {
             when {
                 anyOf {
@@ -38,7 +38,7 @@ pipeline {
                 gradleCreateVersionRelease()
             }
         }
-        
+
         stage('Check Container Build') {
             when {
                 not {
@@ -56,10 +56,20 @@ pipeline {
                         script {
                             def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
                             checkDockerBuild(
-                                DOCKER_OPTS:"--build-arg NEXUS_USERNAME='${env.NEXUS_USERNAME}' --build-arg NEXUS_PASSWORD='${env.NEXUS_PASSWORD}' --build-arg GITHUB_USERNAME='${env.GITHUB_USERNAME})' --build-arg GITHUB_OAUTH_TOKEN='${env.GITHUB_OAUTH_TOKEN}' --build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}'",
+                                DOCKER_OPTS:'--build-arg NEXUS_USERNAME="${NEXUS_USERNAME}" --build-arg NEXUS_PASSWORD="${NEXUS_PASSWORD}" --build-arg GITHUB_USERNAME="${GITHUB_USERNAME}" --build-arg GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN}" ' +
+                                            "--build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}' " +
+                                            '--target=tibuild',
                                 DOCKER_BUILDCONTEXT:'firmware',
                                 DOCKER_FILE:'firmware/docker/Dockerfile'
                             )
+
+                            checkDockerBuild(
+                                DOCKER_OPTS:'--build-arg NEXUS_USERNAME="${NEXUS_USERNAME}" --build-arg NEXUS_PASSWORD="${NEXUS_PASSWORD}" --build-arg GITHUB_USERNAME="${GITHUB_USERNAME}" --build-arg GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN}" ' +
+                                            "--build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}' ",
+                                DOCKER_BUILDCONTEXT:'firmware',
+                                DOCKER_FILE:'firmware/docker/Dockerfile'
+                            )
+
 
                             currentBuild.description = generateDescription (releaseVersion)
                         }
@@ -67,7 +77,7 @@ pipeline {
                 }
             }
         }
-        
+
         stage('Build Container') {
             when {
                 anyOf {
@@ -82,9 +92,18 @@ pipeline {
                     ){
                         script {
                             def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
-                                 
+                            // ti build
+                            checkDockerBuild(
+                                DOCKER_OPTS:'--build-arg NEXUS_USERNAME="${NEXUS_USERNAME}" --build-arg NEXUS_PASSWORD="${NEXUS_PASSWORD}" --build-arg GITHUB_USERNAME="${GITHUB_USERNAME}" --build-arg GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN}" ' +
+                                            "--build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}' " +
+                                            '--target=tibuild',
+                                DOCKER_BUILDCONTEXT:'firmware',
+                                DOCKER_FILE:'firmware/docker/Dockerfile'
+                            )
+                            // simulator build
                             buildAndPushContainer(
-                                DOCKER_OPTS:"--build-arg NEXUS_USERNAME='${env.NEXUS_USERNAME}' --build-arg NEXUS_PASSWORD='${env.NEXUS_PASSWORD}' --build-arg GITHUB_USERNAME='${env.GITHUB_USERNAME}' --build-arg GITHUB_OAUTH_TOKEN='${env.GITHUB_OAUTH_TOKEN}' --build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}'",
+                                DOCKER_OPTS:'--build-arg NEXUS_USERNAME="${NEXUS_USERNAME}" --build-arg NEXUS_PASSWORD="${NEXUS_PASSWORD}" --build-arg GITHUB_USERNAME="${GITHUB_USERNAME}" --build-arg GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN}" ' +
+                                            "--build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}' ",
                                 DOCKER_BUILDCONTEXT:'firmware',
                                 DOCKER_FILE:'firmware/docker/Dockerfile'
                             )
@@ -115,14 +134,14 @@ pipeline {
                     steps {
                         script {
                             loadNexusConfiguration {
-                                sh """
+                                sh '''
                                     conan remote clean &&\
                                     conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal true --force &&\
-                                    conan user -r erp -p ${env.NEXUS_PASSWORD} ${env.NEXUS_USERNAME} &&\
+                                    conan user -r erp -p "${NEXUS_PASSWORD}" "${NEXUS_USERNAME}" &&\
                                     conan export client &&\
                                     conan export client hsmclient/latest@_/_ &&\
                                     conan upload --remote erp --confirm hsmclient
-                               """
+                               '''
                             }
                         }
                     }
@@ -140,7 +159,7 @@ pipeline {
                 finishRelease()
             }
         }
-      
+
         stage('Deployment to dev') {
             when {
                 anyOf {

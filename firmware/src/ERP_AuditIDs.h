@@ -61,7 +61,10 @@ typedef enum ERP_AuditID {
     ERP_AUDIT_Pseudoname_Key_Generated                              = 48,
     ERP_AUDIT_Failed_Pseudoname_Key_Generation                      = 49,
     ERP_AUDIT_Failed_Unwrap_Pseudoname_Key                          = 50,
-    ERP_AUDIT_LastUsedId                                            = 51 // Used for programmatic reasons.
+    ERP_AUDIT_Wrap_Raw_Payload                                      = 51,
+    ERP_AUDIT_Failed_Wrap_Raw_Payload                               = 52,
+    ERP_AUDIT_Failed_Unwrap_Raw_Payload                             = 53,
+    ERP_AUDIT_LastUsedId                                            = 54 // Used for programmatic reasons.
 }ERP_AuditID_t;
 
 // Used for successful setup operations

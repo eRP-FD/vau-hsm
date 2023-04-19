@@ -24,7 +24,7 @@ public:
     ErpAttestationTestFixture() = default;
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
     void logonSetup() {
@@ -91,7 +91,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -389,7 +389,7 @@ TEST_F(ErpAttestationTestFixture, AttestationSequencePart2)
         err = writeBlobResourceFile("saved/StaticDerivationKey.blob", pDerivationKeyBlob.get());
     }
     // 13. derive Task persistence Key for initial derivation
-    // Each of these teststeps does an initial derivation and then a subsequent one and 
+    // Each of these teststeps does an initial derivation and then a subsequent one and
     //   compares the results which should be equal.
     // The second check in each of these teststeps is that the derivation for a different
     //   class of key produces a different result.
@@ -440,7 +440,7 @@ TEST_F(ErpAttestationTestFixture, StaticKeyDerivation)
             derivationKey.get(),
             derivationData.size(),
             derivationData.data(),
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
             // Output
             &usedDerivationDataLength,
             &(usedDerivationData[0]), // MAX_BUFFER
@@ -492,7 +492,7 @@ TEST_F(ErpAttestationTestFixture, ParseTPMQuoteTest)
        0xA9, 0x17, 0x18, 0xA7, 0xF6, 0x6E, 0xE2, 0xC3, 0x00, 0x9D, 0x06, 0x61, 0xFB, 0xE3, 0xA4, 0xFB,  //NOLINT  (readability-magic-numbers)
        0x19, 0xCA, 0x1D, 0xE8, 0x51, 0x92, 0xAC, 0xC6, 0xE4, 0x75, 0x8B, 0x3A, 0xC5, 0xDF, 0x09, 0xE0  }; //NOLINT  (readability-magic-numbers)
     ASSERT_EQ(0, memcmp(&(expectedQualifiedSignerName[0]), &(retVal.qualifiedSignerName[0]), TPM_NAME_LEN));
-    uint8_t expectedQualifyingInformation[NONCE_LEN] = { 
+    uint8_t expectedQualifyingInformation[NONCE_LEN] = {
         0xB6, 0x61, 0x0D, 0x0A, 0x5B, 0x19, 0xBE, 0x0E, 0x7B, 0x59, 0x22, 0xD0, 0x7C, 0xCC, 0x8D, 0x88,  //NOLINT  (readability-magic-numbers)
         0xE3, 0xB4, 0x09, 0x61, 0x0C, 0xE9, 0xF8, 0xAE, 0x89, 0x41, 0x0E, 0x36, 0x8B, 0xC0, 0x78, 0x68 }; //NOLINT  (readability-magic-numbers)
     ASSERT_EQ(0, memcmp(&(expectedQualifyingInformation[0]), &(retVal.qualifyingInformation[0]), NONCE_LEN));
@@ -614,8 +614,6 @@ TEST_F(ErpAttestationTestFixture, HWTPMCertificates)
     err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrustedRootNew.get(), MfrRootCertNew);
     ASSERT_EQ(ERP_ERR_NOERROR, err);
 
-    UIntInput genIn = { Gen };
-
     // 2. Missing Step to call TPM to get the EK Cert
     //    for now just use some certificate from a file.
     auto pEKCert = readERPResourceFile("20220623NovutonTUProblemTPMCert.crt");
@@ -640,4 +638,33 @@ TEST_F(ErpAttestationTestFixture, HWTPMCertificates)
         pEKCert.size(),
         pEKCert.data());
     ASSERT_EQ(ERP_ERR_NOERROR, err);
+}
+
+TEST_F(ErpAttestationTestFixture, VsdmTestKeys)
+{
+    unsigned int Gen = THE_ANSWER;
+    unsigned int err = ERP_ERR_NOERROR;
+    // the encrypted key is generated from ecies scheme using the vau cert public key
+    {
+        // the key is 14860104534d5a1f7d47e61b2aa58c9d06bf7b627542bda96909fed204f77d61
+        const char inputA1[] = R"({"betreiberkennung":"A","version":"1","exp":"2025-31-12","hmac_empty_string":"8dc5840595d86b3d5aac5faf16a590de26a7a29a075cd70d17386c7d7e81f065","encrypted_key":"019d4eb5779cbbc9703ee12b43079d5360daa8354a192bf6e3382b927ede67b85a8966de8f3b9cb69b3330e6ead0dd8516fb2ceebbe0474191343090ff3f1b1ba2b9b9e06f94c152308d6ebb6523d0a88e433bf5cf68b860937349a84659ef1155d0e8be5d7a665694c2a94a5221fbd910e952c0cdfaddf7cc741337b0"})";
+        SingleBlobOutput outA1;
+        teststep_WrapRawPayload(m_logonSession, Gen, sizeof(inputA1), (const unsigned char*)inputA1, &outA1);
+        ASSERT_EQ(ERP_ERR_NOERROR, outA1.returnCode);
+        RawPayloadOutput outputPayload = {0, 0, {0}};
+        teststep_UnwrapRawPayload(m_logonSession, &outA1.BlobOut, &outputPayload);
+        ASSERT_TRUE(0 == memcmp(&(outputPayload.rawPayload[0]), &(inputA1[0]), sizeof(inputA1)));
+        err = writeBlobResourceFile("saved/vsdmkeyA1.blob", &outA1.BlobOut);
+        ASSERT_EQ(ERP_ERR_NOERROR, err);
+    }
+
+    {
+        // key is d6d1c7e7bad52d6f5599498e83ffde9a256cc154ab813578dc0f1f1540ffaff2
+        const char inputA2[] = R"({"betreiberkennung":"A","version":"2","exp":"2025-31-12","hmac_empty_string":"4c46a20b002f98ced91fe8596624705574dc4c81b1d115531ed70fd037b71664","encrypted_key":"017616ac26dfe27f826530e30ce352c8db787fb0b1355de84e68393b68edbd79f40105b71b121d749716fecf5b44d6b03bb1c79810e44c7a972da697ddcae805acd8edad98a2854b544c4d1b6ecff18709091e94d18b02c3cb55cf3c1a04b1c86d90d03f506f1a98f2dd89bb2df3228c25b4adf30abd1fd01d7913ef8b"})";
+        SingleBlobOutput outA2;
+        teststep_WrapRawPayload(m_logonSession, Gen, sizeof(inputA2), (const unsigned char*)inputA2, &outA2);
+        ASSERT_EQ(ERP_ERR_NOERROR, outA2.returnCode);
+        err = writeBlobResourceFile("saved/vsdmkeyA2.blob", &outA2.BlobOut);
+        ASSERT_EQ(ERP_ERR_NOERROR, err);
+    }
 }

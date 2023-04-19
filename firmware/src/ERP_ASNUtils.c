@@ -5,7 +5,7 @@
  **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
-#define no_init_all 
+#define no_init_all
 
 #include <cryptoserversdk/stype.h>
 #include <cryptoserversdk/memutil.h>
@@ -49,7 +49,7 @@ unsigned int getASN1Length(unsigned int len)
 }
 
 // This method assumes a well-formed item list.
-size_t getEncodedSize(ASN1_ITEM* pItem, unsigned int NItems,ASN1_ITEM **ppNextItem) 
+size_t getEncodedSize(ASN1_ITEM* pItem, unsigned int NItems,ASN1_ITEM **ppNextItem)
 {
     size_t len = 0;
     unsigned int i;
@@ -126,7 +126,7 @@ extern unsigned int decodeASNList(int l_cmd, const unsigned char* p_cmd, ASN1_IT
         *pItems = os_mem_new_tag(sizeof(ASN1_ITEM) * TableLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
         CHECK_NOT_NULL(err, *pItems, 0x01);
     }
- 
+
     if (err == E_ERP_SUCCESS)
     {
         err = asn1_decode((unsigned char *)p_cmd, // input Data
@@ -249,7 +249,7 @@ unsigned int getASN1Boolean(ASN1_ITEM* pItem, unsigned int* pOut)
 }
 
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASM1_ITEM array to return the OCTET STRING Data. 
+//   into the ASM1_ITEM array to return the OCTET STRING Data.
 // Length is returned in pOutLen.
 unsigned int getASN1OCTETSTRING(ASN1_ITEM* pItems, unsigned int* pOutLen, unsigned char** pOut)
 {
@@ -267,7 +267,7 @@ unsigned int getASN1OCTETSTRING(ASN1_ITEM* pItems, unsigned int* pOutLen, unsign
 }
 
 // This method does not allocate memory for the outpu buffer, but provides a pointer
-//   into the ASM1_ITEM array to return the NONCE Data. 
+//   into the ASM1_ITEM array to return the NONCE Data.
 unsigned int getASN1NONCE(ASN1_ITEM* pItems, unsigned char** pOut)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -282,7 +282,7 @@ unsigned int getASN1NONCE(ASN1_ITEM* pItems, unsigned char** pOut)
     return err;
 }
 
-// This method does allocate memory for the output buffer, which must be deleted by the caller. 
+// This method does allocate memory for the output buffer, which must be deleted by the caller.
 unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** ppOut)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -330,11 +330,11 @@ unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t ** ppOut)
             INDEX_ERR(err, 0x08);
         }
     }
-    
+
     return err;
 }
 
-// This method does allocate memory for the output buffer, which must be deleted by the caller. 
+// This method does allocate memory for the output buffer, which must be deleted by the caller.
 unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -432,7 +432,7 @@ unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut)
 }
 
 // Creates a new ASN1_ITEM array containing the blob key.
-// If a null pointer is passed in for pItem then a new array of 4 
+// If a null pointer is passed in for pItem then a new array of 4
 //    ASN1_ITEMS items will be allocted.
 // The returned ASN1_ITEMs must be deleted using deleteASN1Item.
 // SHA256Hash ::= SEQUENCE {
@@ -484,7 +484,7 @@ unsigned int makeBlobKeyInfoItem(ASN1_ITEM** pItem, const T_BLOBK* blobKey)
     return err;
 }
 
-// Deletes an ASN1 Item list, assuming that all the items in the list are part of a 
+// Deletes an ASN1 Item list, assuming that all the items in the list are part of a
 //   single allocation in an array.
 // It also assumes that p_data (if not NULL) is allocated separately from the Itemlist itself.
 // The size of the list passed in is used to walk the array checking the p_data values.
@@ -517,7 +517,7 @@ unsigned int parseSingleIntInput(int l_cmd, unsigned char* p_cmd, unsigned int* 
         // Extract the requested integer
         err = getASN1Integer(&Items[1], pOut);
     }
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -525,10 +525,10 @@ unsigned int parseSingleIntInput(int l_cmd, unsigned char* p_cmd, unsigned int* 
 
 // Utility method to parse an ASN input to extract a Single Blob input argument.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseSingleBlobInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -546,7 +546,7 @@ unsigned int parseSingleBlobInput(
         err = getASN1SealedBlob(&Items[1], ppOutBlob);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -554,10 +554,10 @@ unsigned int parseSingleBlobInput(
 
 // Utility method to parse an ASN input to extract a Migrate Blob input argument.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseMigrateBlobInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -581,7 +581,7 @@ unsigned int parseMigrateBlobInput(
         err = getASN1SealedBlob(&Items[2], ppOutBlob);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -615,7 +615,7 @@ unsigned int parseTrustTPMMfrInput(
         err = getASN1OCTETSTRING(&Items[2], pOutLen, ppOutData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -623,10 +623,10 @@ unsigned int parseTrustTPMMfrInput(
 
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseEnrollTPMEKInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -657,17 +657,17 @@ unsigned int parseEnrollTPMEKInput(
         err = getASN1OCTETSTRING(&Items[5], pEKCertLength, ppEKCertData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseGetAKChallengeInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -717,17 +717,17 @@ unsigned int parseGetAKChallengeInput(
         err = getASN1OCTETSTRING(&Items[6], pAKPubLength, ppAKPubData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseEnrollAKInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -791,17 +791,17 @@ unsigned int parseEnrollAKInput(
         err = getASN1SealedBlob(&Items[8], ppTrustedEKBlob);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseEnrollEnclaveInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -865,17 +865,17 @@ unsigned int parseEnrollEnclaveInput(
         err = getASN1OCTETSTRING(&Items[10], pSignatureLength, ppSignatureData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseGetTEETokenInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -938,7 +938,7 @@ unsigned int parseGetTEETokenInput(
         err = getASN1OCTETSTRING(&Items[12], pSignatureLength, ppSignatureData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -946,10 +946,10 @@ unsigned int parseGetTEETokenInput(
 
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseDeriveKeyInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -1004,7 +1004,7 @@ unsigned int parseDeriveKeyInput(
         err = getASN1SealedBlob(&Items[7], ppDerivationKeyBlob);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -1012,7 +1012,7 @@ unsigned int parseDeriveKeyInput(
 
 // Method to validate an x509 ANSI X9.62 encoded public key.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
 extern unsigned int parseASN1PublicKey(
     size_t keyLength,
@@ -1072,7 +1072,7 @@ extern unsigned int parseASN1PublicKey(
     }
     if (err == E_ERP_SUCCESS)
     { // If we get here then we can pick out the values for the return data.
-        
+
         // For now, both curves that we support have 256 bit coordinates.
         *pCoordinateSize = 0x20;
         *pCurveOIDLen = Items[3].len;
@@ -1081,17 +1081,17 @@ extern unsigned int parseASN1PublicKey(
         *ppYCoord = &(Items[4].p_data[0x22]);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseTwoBlobInputRequest(
     int l_cmd,
     unsigned char* p_cmd,
@@ -1107,7 +1107,7 @@ unsigned int parseTwoBlobInputRequest(
     ASN1_ITEM* Items = NULL;
 
     err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 2);
- 
+
     if (err == E_ERP_SUCCESS)
     {
         err = getASN1SealedBlob(&Items[1], ppBlob1);
@@ -1117,17 +1117,17 @@ unsigned int parseTwoBlobInputRequest(
         err = getASN1SealedBlob(&Items[4], ppBlob2);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseGenerateCSRInput(int l_cmd,
     unsigned char* p_cmd,
     // All Parameters from here are output:
@@ -1154,17 +1154,114 @@ unsigned int parseGenerateCSRInput(int l_cmd,
         err = getASN1OCTETSTRING(&Items[4], pCandidateCSRLength, ppCandidateCSRData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
 }
 
+unsigned int parseWrapRawPayloadRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    unsigned int* pDesiredGeneration,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 3;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 2);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the generation.
+        err = getASN1Integer(&Items[1], pDesiredGeneration);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        *pPayloadLen = 0;
+        err = getASN1OCTETSTRING(&Items[2], pPayloadLen, ppPayloadData);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
+unsigned int parseWrapRawPayloadWithTokenRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    unsigned int* pDesiredGeneration,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 6;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 3);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the tee token.
+        err = getASN1SealedBlob(&Items[1], ppTEETokenBlob);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1Integer(&Items[4], pDesiredGeneration);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        *pPayloadLen = 0;
+        err = getASN1OCTETSTRING(&Items[5], pPayloadLen, ppPayloadData);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
+
+unsigned int parseUnwrapRawPayloadRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    SealedBlob_t** ppPayloadBlob)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 7;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 2);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1SealedBlob(&Items[1], ppTEETokenBlob);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1SealedBlob(&Items[4], ppPayloadBlob);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
+
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseDoECIESAES128Request(
     int l_cmd,
     unsigned char* p_cmd,
@@ -1198,7 +1295,7 @@ extern unsigned int parseDoECIESAES128Request(
         err = getASN1OCTETSTRING(&Items[7], pClientPubKeyLength, ppClientPubKeyData);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.
     FREE_IF_NOT_NULL(Items);
     return err;
@@ -1207,7 +1304,7 @@ extern unsigned int parseDoECIESAES128Request(
 unsigned int buildOutputBuffer(T_CMDS_HANDLE* p_hdl, ASN1_ITEM * itemList, unsigned int numItems)
 {
     unsigned int err = E_ERP_SUCCESS;
-    ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required 
+    ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required
                             // by the recursive sub calls in the length measurement.
     unsigned int OutputLength = getEncodedSize(itemList, 1, &offEnd);
     unsigned char* pBuff = os_mem_new_tag(OutputLength, OS_MEM_TYPE_SECURE,__FILE__,__LINE__);
@@ -1250,7 +1347,7 @@ unsigned int makeSingleIntOutput(T_CMDS_HANDLE* p_hdl, unsigned int input)
 {
     unsigned int err = E_ERP_SUCCESS;
     unsigned int TableLength = 2;
-    
+
     ASN1_ITEM* Items = os_mem_new_tag(sizeof(ASN1_ITEM) * TableLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
     CHECK_NOT_NULL(err, Items, 0x07);
     if (err == E_ERP_SUCCESS)
@@ -1322,8 +1419,8 @@ unsigned int makeSingleSealedBlobOutput(
         CHECK_NOT_NULL(err, Items[2].p_data, 0x09);
     }
     if (err == E_ERP_SUCCESS)
-    { 
-        // We do not need to make streaming of blob structure endian independent since the blob is 
+    {
+        // We do not need to make streaming of blob structure endian independent since the blob is
         //    meant to be opaque to the client.   And blobs cannot be shared between architectures anyway.
         os_mem_cpy(Items[2].p_data, input, Items[2].len);
     }
@@ -1645,7 +1742,7 @@ unsigned int makeDirectASN1Output(
     unsigned char* pData)
 {
     unsigned int err = E_ERP_SUCCESS;
-  
+
     unsigned char* pOutputData = NULL;
     // Allocate the output buffer:
     if (err == E_ERP_SUCCESS)
@@ -1778,6 +1875,7 @@ unsigned int parseBasicConstraints(
             *pPathLengthConstraint = 0;
         }
     }
+    FREE_IF_NOT_NULL(Items);
     return err;
 }
 
@@ -1806,7 +1904,7 @@ unsigned int parsex509ECCertificate(
     size_t * pCurveIDLen, // OID of curve.
     unsigned char **ppCurveID,
     unsigned int * pbIsCA
-) 
+)
 {
     unsigned int err = E_ERP_SUCCESS;
     unsigned int TableLength = 0;
@@ -1914,7 +2012,7 @@ unsigned int parsex509ECCertificate(
         *ppx509ECKeyData = pPublicKey->p_data - pPublicKey->raw_off;
         *px509ECKeyLength = pPublicKey->len + pPublicKey->raw_off;
     }
-    // Set PublicKey Return values the second is the 0x41 bytes of the public point 
+    // Set PublicKey Return values the second is the 0x41 bytes of the public point
     //   representation starting with 0x04
     if (err == E_ERP_SUCCESS)
     {
@@ -2006,7 +2104,7 @@ unsigned int parsex509ECCertificate(
 
     // Subsidiary structures in ASN1_ITEMs point to the original data stream.
     FREE_IF_NOT_NULL(Items);
- 
+
     return err;
 }
 
@@ -2143,7 +2241,7 @@ unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPai
 }
 // This method will parse and verify the candidate CSR and then replace the contained public key
 //   with the public key from the keypair and resign with the private key from the keypair.
-// The candidate CSR must be complete with a public key and signature, though the content of 
+// The candidate CSR must be complete with a public key and signature, though the content of
 //    the public ky and the validity of the signature do not matter.
 // Admission Extensions will be checkd for VAUSIG and ECIES keypairs
 // A new buffer will be allocated for the modified CSR which must be freed by the caller.
@@ -2210,7 +2308,7 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
     }
 
     if (err == E_ERP_SUCCESS)
-    {   // Check that the admissions are correct for 
+    {   // Check that the admissions are correct for
         err = checkX509Admissions(pAdmissions, keyPair);
     }
 
@@ -2337,8 +2435,8 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
         pSignatureBody->nitems = 0;
     }
 
-    // We need this extra stp of encoding to a larger buffer because sometimes the Utimaco method 
-    //   requires an extra byte of data, but if it does then it does not encode the data to the start 
+    // We need this extra stp of encoding to a larger buffer because sometimes the Utimaco method
+    //   requires an extra byte of data, but if it does then it does not encode the data to the start
     //   of the buffer which breaks the code that later frees that buffer.
     size_t encodedLength = 0;
     unsigned char* pEncodedDataBuffer = NULL;
@@ -2351,7 +2449,7 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
         CHECK_NOT_NULL(err, pEncodedDataBuffer, 0x19);
     }
     if (err == E_ERP_SUCCESS)
-    {   // The asn1_encode starts at the end of the buffer, so the start of the encoded data may not be the 
+    {   // The asn1_encode starts at the end of the buffer, so the start of the encoded data may not be the
         //   start of the buffer.
         pEncodedData = pEncodedDataBuffer;
         err = asn1_encode(Items, // input Items
@@ -2446,7 +2544,7 @@ extern unsigned int makeAsn1PublicKey(
     }
 
     // At the moment both our supported curves are 256 bit.
-    // If this changes then we will need to derive coordinate size from curve ID.   
+    // If this changes then we will need to derive coordinate size from curve ID.
     const size_t coordSize = EC_COORD_SIZE / 8;
     if (err == E_ERP_SUCCESS)
     {
@@ -2466,7 +2564,7 @@ extern unsigned int makeAsn1PublicKey(
     }
     if (err == E_ERP_SUCCESS)
     {
-        ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required 
+        ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required
                         // by the recursive sub calls in the length measurement.
         *pOutLen = getEncodedSize(Items, 1, &offEnd);
         *ppPubOut = os_mem_new_tag(*pOutLen, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
@@ -2590,7 +2688,7 @@ extern unsigned int makeBackupBlobOutput(
     return err;
 }
 
-// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller. 
+// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller.
 extern unsigned int parseBackupBlobInputRequest(
     int l_cmd,
     unsigned char* p_cmd,
@@ -2615,7 +2713,7 @@ extern unsigned int parseBackupBlobInputRequest(
         err = getASN1BackupBlob(&Items[1], ppBackupBlob);
     }
 
-    // Subsidiary structures in Itemlist from der_decode point into the original buffer 
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
     //   and should not be deleted here.   i.e. we have taken a copy of what we want to keep.
     FREE_IF_NOT_NULL(Items);
     return err;

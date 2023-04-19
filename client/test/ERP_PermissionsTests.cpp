@@ -1067,3 +1067,81 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetBlobContentHashWithToken)
     testFn({ users::Working }, ERP_ERR_NOERROR);
     testFn({ users::Working, users::Setup }, ERP_ERR_NOERROR);
 }
+
+TEST_F(ErpPermissionTestsFixture, PermissionWrapPayload)
+{
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        RawPayloadInput input = {};
+        input.desiredGeneration = THE_ANSWER;
+        memcpy(input.rawPayload, "hello", 5);
+        input.payloadLen = 5;
+
+        auto rndOut = ERP_WrapRawPayload(m_logonSession, input);
+        EXPECT_EQ(expErr, rndOut.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_NOERROR);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_NOERROR);
+    testFn({users::Update}, ERP_ERR_NOERROR);
+    testFn({users::Working}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+TEST_F(ErpPermissionTestsFixture, PermissionWrapRawPayloadWithToken)
+{
+    const unsigned int Generation = THE_ANSWER;
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+        const char data[] = "hello";
+        SingleBlobOutput out;
+
+        auto err = teststep_WrapRawPayloadWithToken(m_logonSession, Generation, sizeof(data), (const unsigned char *)&data[0], &out);
+        EXPECT_EQ(expErr, err);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working}, ERP_ERR_NOERROR);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+
+TEST_F(ErpPermissionTestsFixture, PermissionUnwrapPayload)
+{
+    logonSetup();
+
+    RawPayloadInput input = {};
+    input.desiredGeneration = THE_ANSWER;
+    memcpy(input.rawPayload, "hello", 5);
+    input.payloadLen = 5;
+
+    auto retBlob = ERP_WrapRawPayload(m_logonSession, input);
+    ASSERT_EQ(ERP_ERR_NOERROR, retBlob.returnCode);
+
+    logoff();
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+        RawPayloadOutput out;
+        auto err = teststep_UnwrapRawPayload(m_logonSession, &retBlob.BlobOut, &out);
+        EXPECT_EQ(expErr, err);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working}, ERP_ERR_NOERROR);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}

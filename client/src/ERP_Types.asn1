@@ -13,7 +13,7 @@ blobGeneration INTEGER,
 aBlob OCTET STRING
 }
 NONCEAndBlob ::= SEQUENCE {
-aNONCE OCTET STRING (32), 
+aNONCE OCTET STRING (32),
 aNONCEBlob SingleBlob
 }
 X509CSR ::= SEQUENCE {
@@ -90,7 +90,7 @@ derivationKeyBlob SingleBlob -- Blob containing the derivation key to be used.
 }
 DerivedKey ::= SEQUENCE {
 derivedKey OCTET STRING (32), -- AES 256 Symmetric key.
-usedDerivationData OCTET STRING -- derivation data actually used by HSM.   For an initial derivation, this will 
+usedDerivationData OCTET STRING -- derivation data actually used by HSM.   For an initial derivation, this will
                                 -- differ from the derivation data passed in the request.
 }
 ERPOctetString ::= SEQUENCE {
@@ -109,7 +109,7 @@ keyValue OCTET STRING (32) -- 256 bit AES Key value.
 }
 ECParams ::=    SEQUENCE {
 algID OBJECT IDENTIFIER, -- must be id_ecPublicKey 1,2,840,10045,2,1
-curveID OBJECT IDENTIFIER 
+curveID OBJECT IDENTIFIER
 }
 ECCPublicKey ::= SEQUENCE { -- actually same as x.509
 params ECParams,
@@ -134,5 +134,18 @@ blobEncData OCTET STRING -- Encrypted Data of BUBlob
 }
 BackupBlobRequest ::= SEQUENCE {
 buBlob BackupBlob
+}
+WrapRawPayloadRequest ::= SEQUENCE {
+desiredGeneration INTEGER,
+rawPayload OCTET STRING
+}
+WrapRawPayloadWithTokenRequest ::= SEQUENCE {
+tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+desiredGeneration INTEGER,
+rawPayload OCTET STRING
+}
+UnwrapRawPayloadRequest ::= SEQUENCE {
+tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+wrappedRawPayload SingleBlob
 }
 END -- End

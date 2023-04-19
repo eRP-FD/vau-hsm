@@ -119,3 +119,60 @@ TEST_F(ErpPseudonameKeyTestFixture, UnwrapPseudonameKey)
     writeERPResourceFile("ERPPseudonameKey.bin",
         std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
 }
+
+// The intent of this test is to allow triggering of a single memory dump manually when using 
+//   the test suite for memory leak hunting.   i.e. run before and after a suspect other test.
+TEST_F(ErpPseudonameKeyTestFixture, DumpMemoryTrace)
+{
+    teststep_DumpHSMMemory(ErpPseudonameKeyTestFixture::m_logonSession);
+}
+
+// The intent of this test is that it be run and then the HSM Memory dumps are inspected to see if the 
+//   number of allocated memory blocks is growing.
+// This has actually grown to include other operations than psuedoname since the parameterised test suite in ERP_Tests.cpp 
+//   had a problem causing MSVS Test to crash.
+TEST_F(ErpPseudonameKeyTestFixture, LoadLoopTests)
+{
+    std::unique_ptr<ERPBlob> savedKeyPairBlob =
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
+
+    SingleBlobInput get = { {0,0,{0}} };
+    get.BlobIn = *savedKeyPairBlob;
+
+    TwoBlobGetKeyInput vauSIG = { {0,0,{0}}, {0,0,{0}} };
+    vauSIG.Key = *savedKeyPairBlob;
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    ASSERT_NE(nullptr, teeToken);
+    vauSIG.TEEToken = *teeToken;
+
+    EmptyOutput dmpOut = ERP_DumpHSMMemory(ErpPseudonameKeyTestFixture::m_logonSession);
+    for (int i = 0; i < BIG_LOOP; i++)
+    {
+        // Dump the memory on the simulator output, used to investigate memory leaks
+        (void)ERP_DumpHSMMemory(ErpPseudonameKeyTestFixture::m_logonSession);
+        UIntInput desiredBytes = { RND_256_LEN };
+        RNDBytesOutput rndOut = ERP_GetRNDBytes(ErpPseudonameKeyTestFixture::m_logonSession, desiredBytes);
+        EXPECT_EQ(ERP_ERR_NOERROR, rndOut.returnCode);
+        EXPECT_EQ(RND_256_LEN, rndOut.RNDDataLen);
+        unsigned int Gen = THE_ANSWER;
+        UIntInput in = { Gen };
+        SingleBlobOutput out = ERP_GeneratePseudonameKey(ErpPseudonameKeyTestFixture::m_logonSession, in);
+        // If we want to use this blob in later test runs then we need to copy it to the saved directory
+        ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
+        SingleBlobOutput out2 = ERP_GenerateDerivationKey(ErpPseudonameKeyTestFixture::m_logonSession, in);
+        // If we want to use this blob in later test runs then we need to copy it to the saved directory
+        ASSERT_EQ(ERP_ERR_NOERROR, out2.returnCode);
+        NONCEOutput quoteNONCE = ERP_GenerateNONCE(ErpPseudonameKeyTestFixture::m_logonSession, in);
+        ASSERT_EQ(ERP_ERR_NOERROR, quoteNONCE.returnCode);
+        AES256KeyOutput keyOut = { 0,{0} };
+        teststep_UnwrapPseudonameKey(ErpPseudonameKeyTestFixture::m_logonSession, &(out.BlobOut), &keyOut);
+        EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
+        PrivateKeyOutput privKeyOut = ERP_GetVAUSIGPrivateKey(ErpPseudonameKeyTestFixture::m_logonSession, vauSIG);
+        ASSERT_EQ(ERP_ERR_NOERROR, privKeyOut.returnCode);
+        PublicKeyOutput pubKeyOut = ERP_GetECPublicKey(ErpPseudonameKeyTestFixture::m_logonSession, get);
+        EXPECT_EQ(ERP_ERR_NOERROR, pubKeyOut.returnCode);
+    }
+    dmpOut = ERP_DumpHSMMemory(ErpPseudonameKeyTestFixture::m_logonSession);
+}

@@ -46,12 +46,12 @@
 
 // A structure to hold the HSM connection and login status.
 //  Generated in the ERP_Connect call.
-//  Modified bny the ERP_Login/ERP_Logoff calls 
+//  Modified bny the ERP_Login/ERP_Logoff calls
 //  Invalidated by the ERP_Disconnect call.
 //  Used by all calls that communicate with the HSM
-typedef enum HSMSessionStatus_t{ 
+typedef enum HSMSessionStatus_t{
     HSMUninitialised,
-    HSMClosed, 
+    HSMClosed,
     HSMAnonymousOpen,
     HSMLoggedIn,
     HSMLoginFailed,
@@ -93,7 +93,7 @@ typedef struct {
 
 // Structure for commands with a single int as input data.
 typedef struct {
-    unsigned int intValue; 
+    unsigned int intValue;
 } UIntInput;
 
 // Structure for commands with a single int as output data.
@@ -110,7 +110,7 @@ typedef struct {
 typedef struct {
     unsigned int returnCode; // Return code from firmware call -> 0 == good.
     int NumKeys;
-    // If more than Generations than this are returned by the firmware 
+    // If more than Generations than this are returned by the firmware
     //    then the excess will be discarded.
     // Note: The firmware should be blocking th creation of more blab keys than this anyway.
     BlobKeyInfo_if_t Generations[MAX_BLOB_GENERATIONS];
@@ -144,7 +144,7 @@ typedef struct {
 
 typedef struct {
     unsigned int returnCode; // Return code from firmware call -> 0 == good.
-    uint8_t hash [SHA_256_LEN]; 
+    uint8_t hash [SHA_256_LEN];
 } SHA256Output;
 
 typedef struct {
@@ -189,7 +189,7 @@ typedef struct {
     ERPBlob KnownEKBlob;
     size_t AKPubLength; // Attestation Key in TPMT_PUBLIC format.
     uint8_t AKPubData[MAX_BUFFER];
-    size_t decCredentialLength; 
+    size_t decCredentialLength;
     uint8_t decCredentialData[MAX_BUFFER];
     ERPBlob challengeBlob;
 } EnrollTPMAKInput;
@@ -199,7 +199,7 @@ typedef struct {
     uint8_t AKName[TPM_NAME_LEN]; // 0x000b + SHA256 hash of AK Public - used by TPM as name
     ERPBlob    KnownAKBlob;
     ERPBlob NONCEBlob; // Blob related to HSM NONCE used to generate the quote (see below).
-    size_t quoteLength; 
+    size_t quoteLength;
     // The quote data will include a NONCE-derived value of HMAC(HSM NONCE,"ERP_ENROLLMENT")
     uint8_t quoteData[MAX_BUFFER]; // TPMS_ATTEST with TPMI_ST_ATTEST_QUOTE
     size_t signatureLength;
@@ -241,7 +241,7 @@ typedef struct {
 
 // Used to request either a public, private key or symmetric key
 // For a private key the keypair must be a VAUSIG Keypair
-// For a smmetric key the key blob must be a Hash_Key blob
+// For a symmetric key the key blob must be a Hash_Key blob
 typedef struct {
     ERPBlob TEEToken;
     ERPBlob Key;
@@ -287,7 +287,7 @@ typedef struct {
     uint8_t candidateCSR[MAX_BUFFER]; // ASN1.DER encoded.
 } GetVAUCSRInput;
 
-// Note, the metadata (everything outside the encrypted data) is also present in the encrypted data - the 
+// Note, the metadata (everything outside the encrypted data) is also present in the encrypted data - the
 //    plaintext info is to allow easier management outside the HSM.
 // The plaintext is checked against the encrypted Data during HSM operations
 typedef struct {
@@ -322,6 +322,31 @@ typedef struct TPMParsedQuote_s {
     uint8_t PCRHash[TPM_PCR_DIGESTHASH_LENGTH];
 } TPMParsedQuote_t;
 
+typedef struct RawPayloadInput_s {
+    uint32_t desiredGeneration; // for output blob
+    size_t payloadLen;
+    uint8_t rawPayload[MAX_BUFFER];
+} RawPayloadInput;
+
+typedef struct RawPayloadWithTokenInput_s {
+    ERPBlob TEEToken;
+    uint32_t desiredGeneration; // for output blob
+    size_t payloadLen;
+    uint8_t rawPayload[MAX_BUFFER];
+} RawPayloadWithTokenInput;
+
+
+typedef struct RawPayloadOutput_s {
+    unsigned int returnCode;    // Return code from firmware call -> 0 == good.
+    size_t payloadLen;
+    uint8_t rawPayload[MAX_BUFFER];
+} RawPayloadOutput;
+
+typedef struct WrappedRawPayloadInput_s {
+    ERPBlob TEEToken;
+    ERPBlob wrappedRawPayload;
+} WrappedPayloadInput;
+
 #ifdef __cplusplus
 #define ERP_API_FUNC extern "C"
 #else
@@ -329,10 +354,10 @@ typedef struct TPMParsedQuote_s {
 #endif
 #define MAX_HSM_SESSIONS 20
 
-// ERP_Connect establishes a connection to an HSM - the definition of the device parameter is 
+// ERP_Connect establishes a connection to an HSM - the definition of the device parameter is
 //    taken from the utimaco documentation.   Usually <port>@<ip> e.g. 288@192.168.1.1
-// The returned session object contains no dynamically allocated data and must be passed into 
-//    ERP_ methods that require it - These are methods that deal with connection, Disconnection, 
+// The returned session object contains no dynamically allocated data and must be passed into
+//    ERP_ methods that require it - These are methods that deal with connection, Disconnection,
 //    logon, logoff, et.c.
 // Every ERP_Connect call must be paired eventually with a call to ERP_Disconnect.
 // ERP_Connect is a relatively costly operation in performance terms and should not be performed too often.
@@ -345,13 +370,13 @@ ERP_API_FUNC HSMSession ERP_Connect(
 
 // ERP_ClusterConnect establishes a connection to a cluster of HSMs.
 // devices is a null terminated list of pointers to null terminated strings describing individual HSMs
-//  - the definition of the device parameter for each HSM is 
+//  - the definition of the device parameter for each HSM is
 //    taken from the utimaco documentation.   Usually <port>@<ip> e.g. 288@192.168.1.1
 //  - There may formally be no more than 10 devices in the list, though the normal and tested mode will be with 2.
-// The returned session object contains no dynamically allocated data and must be passed into 
-//    ERP_ methods that require it - These are methods that deal with connection, Disconnection, 
+// The returned session object contains no dynamically allocated data and must be passed into
+//    ERP_ methods that require it - These are methods that deal with connection, Disconnection,
 //    logon, logoff, et.c.
-// Every ERP_ClusterConnect call must be paired eventually with a call to ERP_Disconnect.   One 
+// Every ERP_ClusterConnect call must be paired eventually with a call to ERP_Disconnect.   One
 //    disconnect per cluster connection session.
 // ERP_ClusterConnect is a relatively costly operation in performance terms and should not be performed too often.
 // There cannot be more than MAX_HSM_SESSIONS sessions connected at any given time.
@@ -361,7 +386,7 @@ ERP_API_FUNC HSMSession ERP_ClusterConnect(
     const char** devices,          // I: Null terminated array of device specifiers (e.g. PCI:0 / 192.168.1.1)
     unsigned int  connect_timeout,  // I: connection timeout [ms]
     unsigned int  read_timeout,     // I: read (command) timeout [ms]
-    unsigned int  reconnect_interval // I: interval after a failover before retrying a connection to the orignal HSM 
+    unsigned int  reconnect_interval // I: interval after a failover before retrying a connection to the orignal HSM
 );
 
 // Logs on a user with a password.
@@ -402,7 +427,7 @@ ERP_API_FUNC HSMSession ERP_Disconnect(HSMSession sesh);
 
 // DirectIO is only intended to be used for unit testing of the HSM interface
 //   formal handling of parameters.   i.e. bouncing it with invalid inputs.
-// It may be removed for the final build, or not - it rpesents no security risk
+// It may be removed for the final build, or not - it represents no security risk
 //   since the security is provided inside the HSM.
 // For the production build, this will return  E_ERP_DEV_FUNCTION_ONLY.
 ERP_API_FUNC DirectIOOutput ERP_DirectIO(HSMSession sesh,
@@ -698,7 +723,7 @@ ERP_API_FUNC EmptyOutput ERP_ImportSingleBlobKey(
 /**
  * Create a new Blob containing the contents of an existing blob but reencoded with a different Generation.
  * The intention here is to allow preservation of blob contents when the blob generation of the original blob is to be deleted.   The
- *   intention is that only special cases will require this treatment, e.g. Security reasons mandate hard retiral of some keys 
+ *   intention is that only special cases will require this treatment, e.g. Security reasons mandate hard retiral of some keys
  * There is a guarantee that the new blob and the old blob will return the same Check Value in calls to GetBlobContentsHash()
  * @pre Requires: 00000200 ERP Setup or 00002000 ERP Update Permission
  * @pre The Generation of the blob must be present in the HSM.
@@ -713,7 +738,7 @@ ERP_API_FUNC SingleBlobOutput ERP_MigrateBlob(
 
 /**
  * For Setup and Update Users:   Calculate and return the SHA256 hash of the contents of a Blob.
- * The intention here is to allow identification of a key that may be stored in multiple blobs with different generations as a result 
+ * The intention here is to allow identification of a key that may be stored in multiple blobs with different generations as a result
  *   of Blob Migration.
  * The hash is calculated over the derivation key value BEFORE the key value is varied to Task, Comms or Audit purposes.
  * The only guarantee is that multiple calls to this method with blobs containing the same key value will return the same hash.
@@ -753,10 +778,54 @@ ERP_API_FUNC SHA256Output ERP_GetBlobContentHashWithToken(
 * This method will parse a TPM Quote and return the system-invariant parts of the quote data.
 * The Signature of the quote is NOT checked.
 * The Qualified Signer Name, NONCE, PCR Set and hash are returned.
-* For the meaning of these fields see the TPM2.0 Specification 
+* For the meaning of these fields see the TPM2.0 Specification
 *   "Trusted Platform Module Library - Part 2: Structures" for TPM2B_ATTEST
 * Only quotes using SHA256 as the hash are supported.
 **/
 ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
     TPMQuoteInput input);
+
+/**
+ * Wrap the given rawPayload
+ * @pre Requires: 20000000 - Administrator permission.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn with 20000000 Admin permission.
+ * @param input.desiredGeneration               Generation for blob generation
+ * @param input.payloadLen                      length of the data to be wrapped
+ * @param input.rawPayload                      rawPayload data to be wrapped
+ * @return WrappedPayloadOutput.returnCode      0 for no error, error code otherwise
+ *         WrappedPayloadOutput.wrappedRawPayload  wrapped rawPayload blob
+ */
+ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayload(
+    HSMSession sesh,
+    RawPayloadInput input);
+
+/**
+ * Wrap the given rawPayload
+ * @pre Requires: 00000020 ERP Working and a currently valid TEEToken.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn with 20000000 Admin permission.
+ * @param input.TEEToken                        currently valid TEE Token
+ * @param input.desiredGeneration               Generation for blob generation
+ * @param input.payloadLen                      length of the data to be wrapped
+ * @param input.rawPayload                      rawPayload data to be wrapped
+ * @return WrappedPayloadOutput.returnCode      0 for no error, error code otherwise
+ *         WrappedPayloadOutput.wrappedRawPayload  wrapped rawPayload blob
+ */
+ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
+    HSMSession sesh,
+    RawPayloadWithTokenInput input);
+
+/**
+ * Unwrap the given rawPayload
+ * @pre Requires: 00000020 ERP Working and a currently valid TEEToken.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn with 20000000 Admin permission.
+ * @param input.TEEToken                        currently valid TEE Token
+ * @param input.wrappedRawPayload               Wrapped rawPayload as returned by ERP_WrapPayload
+ * @return RawPayloadOutput.returnCode          0 for no error, error code otherwise
+ *         RawPayloadOutput.payloadLen          length of the rawPayload
+ *         RawPayloadOutput.rawPayload          rawPayload data
+ */
+ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
+    HSMSession sesh,
+    WrappedPayloadInput input);
+
 #endif

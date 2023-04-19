@@ -28,17 +28,17 @@ extern unsigned int getASN1Integer(ASN1_ITEM* pItem, unsigned int* pOut);
 // Out value is left as value from the ASN Data, i.e. 0 or FF
 extern unsigned int getASN1Boolean(ASN1_ITEM* pItem, unsigned int* pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASN1_ITEM array to return the NONCE Data. 
+//   into the ASN1_ITEM array to return the NONCE Data.
 extern unsigned int getASN1NONCE(ASN1_ITEM* pItems, unsigned char ** pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASN1_ITEM array to return the OCTET STRING Data. 
+//   into the ASN1_ITEM array to return the OCTET STRING Data.
 // Length is returned in pOutLen.
 extern unsigned int getASN1OCTETSTRING(ASN1_ITEM* pItems, unsigned int * pOutLen, unsigned char** pOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASN1_ITEM array to return the SealedBlob structure. 
+//   into the ASN1_ITEM array to return the SealedBlob structure.
 extern unsigned int getASN1SealedBlob(ASN1_ITEM* pItems, SealedBlob_t** ppOut);
 // This method does not allocate memory for the output buffer, but provides a pointer
-//   into the ASN1_ITEM array to return the SealedBlob structure. 
+//   into the ASN1_ITEM array to return the SealedBlob structure.
 extern unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut);
 
 // Creates a new ASN1_ITEM containing the blob key.
@@ -51,7 +51,7 @@ extern unsigned int getASN1BackupBlob(ASN1_ITEM* pItems, BackupBlob_t** ppOut);
 //  keyHash SHA256Hash -- hex encoded SHA256 hash of key.
 //  }
 extern unsigned int makeBlobKeyInfoItem(ASN1_ITEM** pItem, const T_BLOBK* blobKey);
-// Deletes an ASN1 Item list, assuming that all the items in the list are part of a 
+// Deletes an ASN1 Item list, assuming that all the items in the list are part of a
 //   single allocation in an array.
 // It also assumes that p_data (if not NULL) is allocated separately from the Itemlist itself.
 // The size of the list passed in is used to walk the array checking the p_data values.
@@ -62,10 +62,10 @@ extern unsigned int parseSingleIntInput(int l_cmd, unsigned char* p_cmd, unsigne
 
 // Utility method to parse an ASN input to extract a Single Blob input argument.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseSingleBlobInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -74,10 +74,10 @@ extern unsigned int parseSingleBlobInput(
 
 // Utility method to parse an ASN input to extract a Migrate Blob input argument.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseMigrateBlobInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -86,23 +86,23 @@ extern unsigned int parseMigrateBlobInput(
     SealedBlob_t** ppOutBlob);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
 extern unsigned int parseTrustTPMMfrInput(
     int l_cmd,
-    unsigned char* p_cmd, 
+    unsigned char* p_cmd,
     // All Parameters from here are output:
     unsigned int * pDesiredGeneration,
-    unsigned int * pOutLen, 
+    unsigned int * pOutLen,
     unsigned char ** ppOutData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseEnrollTPMEKInput(
-    int l_cmd, 
+    int l_cmd,
     unsigned char * p_cmd,
     // All Parameters from here are output:
     unsigned int * pDesiredGeneration,
@@ -111,10 +111,10 @@ extern unsigned int parseEnrollTPMEKInput(
     unsigned char ** ppEKCertData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseGetAKChallengeInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -126,10 +126,10 @@ extern unsigned int parseGetAKChallengeInput(
     unsigned char** ppAKName);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseEnrollAKInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -144,10 +144,10 @@ extern unsigned int parseEnrollAKInput(
     unsigned char** ppPlainCredData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseEnrollEnclaveInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -162,10 +162,10 @@ extern unsigned int parseEnrollEnclaveInput(
     unsigned char** ppSignatureData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseGetTEETokenInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -180,10 +180,10 @@ extern unsigned int parseGetTEETokenInput(
     unsigned char** ppSignatureData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseDeriveKeyInput(
     int l_cmd,
     unsigned char* p_cmd,
@@ -196,10 +196,10 @@ extern unsigned int parseDeriveKeyInput(
     unsigned char** ppDerivationData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseTwoBlobInputRequest(
     int l_cmd,
     unsigned char* p_cmd,
@@ -207,7 +207,7 @@ extern unsigned int parseTwoBlobInputRequest(
     SealedBlob_t** ppBlob1,
     SealedBlob_t** ppBlob2);
 
-// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller. 
+// The returned Backup Blobs will be in newly allocated buffers and must be freed by the caller.
 extern unsigned int parseBackupBlobInputRequest(
     int l_cmd,
     unsigned char* p_cmd,
@@ -215,10 +215,10 @@ extern unsigned int parseBackupBlobInputRequest(
     BackupBlob_t** ppBackupBlob);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 unsigned int parseGenerateCSRInput(int l_cmd,
     unsigned char* p_cmd,
     // All Parameters from here are output:
@@ -227,10 +227,10 @@ unsigned int parseGenerateCSRInput(int l_cmd,
     unsigned char** ppCandidateCSRData);
 
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
-// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated 
-//   buffers and must be freed by the caller. 
+// Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+//   buffers and must be freed by the caller.
 extern unsigned int parseDoECIESAES128Request(
     int l_cmd,
     unsigned char* p_cmd,
@@ -242,7 +242,7 @@ extern unsigned int parseDoECIESAES128Request(
 
 // Method to validate an x509 ANSI X9.62 encoded public key.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
-//   pointing into the original data buffer so do not delete the input buffer until you are 
+//   pointing into the original data buffer so do not delete the input buffer until you are
 //   finished with the output pointers.
 extern unsigned int parseASN1PublicKey(
     size_t keyLength, const unsigned char* pKeyData,
@@ -369,13 +369,37 @@ unsigned int parsex509ECCertificate(
     unsigned int * pbIsCA
 );
 
+unsigned int parseWrapRawPayloadRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    unsigned int* pDesiredGeneration,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData);
+
+unsigned int parseWrapRawPayloadWithTokenRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    unsigned int* pDesiredGeneration,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData);
+
+unsigned int parseUnwrapRawPayloadRequest(
+    int l_cmd,
+    unsigned char *p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    SealedBlob_t** ppPayloadBlob);
+
 // Utility method to check an admissions x590 extension against allowed value for the keypair
 // return:  error status.
 unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPair);
 
 // This method will parse and verify the candidate CSR and then replace the contained public key
 //   with the public key from the keypair and resign with the private key from the keypair.
-// The candidate CSR must be complete with a public key and signature, though the content of 
+// The candidate CSR must be complete with a public key and signature, though the content of
 //    the public ky and the validity of the signature do not matter.
 // Admission Extensions will be checkd for VAUSIG and ECIES keypairs
 // A new buffer will be allocated for the modified CSR which must be freed by the caller.

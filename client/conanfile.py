@@ -62,7 +62,7 @@ class HsmClientPackage(ConanFile):
                        'csxapi:shared': True}
 
     settings = {'os': ['Linux', 'Windows'],
-                'compiler': ['gcc', 'Visual Studio'],
+                'compiler': ['gcc', 'clang', 'Visual Studio'],
                 'build_type': ['Debug', 'Release', 'RelWithDebInfo'],
                 'arch': ['x86', 'x86_64']}
 
@@ -126,7 +126,7 @@ class HsmClientPackage(ConanFile):
             cmake.test()
 
     def package(self):
-        # call the CMake install target 
+        # call the CMake install target
         #
         cmake = self._get_cmake()
         cmake.install()

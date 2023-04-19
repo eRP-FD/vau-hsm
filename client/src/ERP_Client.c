@@ -10,7 +10,7 @@
 #include "ERP_Error.h"
 
 #ifdef _WIN32
- //  Windows warning complaining of C5105 entries in winbase.h... 
+ //  Windows warning complaining of C5105 entries in winbase.h...
 #pragma warning (push)
 #pragma warning (disable: 5105)
 #endif
@@ -38,6 +38,9 @@
 #include <asn1_hsmclient/TEETokenRequest.h>
 #include <asn1_hsmclient/TrustTPMMfrRequest.h>
 #include <asn1_hsmclient/TwoBlobKeyRequest.h>
+#include <asn1_hsmclient/WrapRawPayloadRequest.h>
+#include <asn1_hsmclient/WrapRawPayloadWithTokenRequest.h>
+#include <asn1_hsmclient/UnwrapRawPayloadRequest.h>
 #include <asn1_hsmclient/X509CSR.h>
 
 #ifdef _WIN32
@@ -111,7 +114,7 @@ unsigned int checkSessionContext(unsigned int inHandle, void** ppSessionContext)
     return ERP_ERR_NOERROR;
 }
 
-// Pass in 0 as the handle and a new session will be created, otherwise the 
+// Pass in 0 as the handle and a new session will be created, otherwise the
 //   existing session with that handle will be updated.
 unsigned int setSessionContext(unsigned int * newHandle, void* pSessionContext)
 {
@@ -196,7 +199,7 @@ ERP_API_FUNC HSMSession ERP_ClusterConnect(
     const char** devices,          // I: device specifier (e.g. PCI:0 / 192.168.1.1)
     unsigned int  connect_timeout,  // I: connection timeout [ms]
     unsigned int  read_timeout,     // I: read (command) timeout [ms]
-    unsigned int  reconnect_interval // I: interval after a failover before retrying a connection to the original HSM 
+    unsigned int  reconnect_interval // I: interval after a failover before retrying a connection to the original HSM
 )
 {
     HSMSession retVal = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 1 };
@@ -256,7 +259,7 @@ HSMSession ERP_SingleLogonImplementation(
     HSMSession retVal = sesh;
     // (sesh.h_cs == 0) is not a problem
     // Multiple Logons are not a problem.
-    if ((sesh.status != HSMAnonymousOpen) && 
+    if ((sesh.status != HSMAnonymousOpen) &&
         (sesh.status != HSMLoggedIn))
     {
         retVal.errorCode = ERP_ERR_BAD_CONNECTION;
@@ -421,7 +424,7 @@ ERP_API_FUNC HSMSession ERP_SingleDisconnect(HSMSession sesh)
     HSMSession retVal = sesh;
     // h_cs == 0 is a valid connection!
     if ((sesh.status == HSMUninitialised) ||
-        (sesh.status == HSMClosed)) 
+        (sesh.status == HSMClosed))
     {
         retVal.errorCode = ERP_ERR_NO_CONNECTION;
         return retVal;
@@ -449,7 +452,7 @@ ERP_API_FUNC HSMSession ERP_ClusterDisconnect(HSMSession sesh)
     HSMSession retVal = sesh;
     // h_cs == 0 is a valid connection!
     if ((sesh.status == HSMUninitialised) ||
-        (sesh.status == HSMClosed)) 
+        (sesh.status == HSMClosed))
     {
         retVal.errorCode = ERP_ERR_NO_CONNECTION;
         return retVal;
@@ -514,7 +517,7 @@ int ERP_FirmwareExec(HSMSession sesh,
 ERP_API_FUNC DirectIOOutput ERP_DirectIO(HSMSession sesh,
     DirectIOInput input) // input for the command.
 {
-    // Note, it should not be possible to blow this method up, but all that will happen if you do 
+    // Note, it should not be possible to blow this method up, but all that will happen if you do
     //    is that the HSM will reject the input.
     DirectIOOutput retVal = { 0 ,0,{'\0'} };
     if (input.DataLength > (MAX_BUFFER * 2))
@@ -701,7 +704,7 @@ ERP_API_FUNC EmptyOutput ERP_DeleteBlobKey(
     }
     if (p_answ != NULL)
     {
-    
+
 #ifdef TRACE_HSM_API
         API_xtrace("(Unexpected) Answ", p_answ, p_l_answ);
 #endif
@@ -799,7 +802,7 @@ ERP_API_FUNC NONCEOutput ERP_GenerateNONCE(
         else {
             retVal.BlobOut.BlobLength = NONCEOut->aNONCEBlob.aBlob.size;
             memcpy(retVal.BlobOut.BlobData, NONCEOut->aNONCEBlob.aBlob.buf, NONCEOut->aNONCEBlob.aBlob.size);
-            // First four bytes of 
+            // First four bytes of
             retVal.BlobOut.BlobGeneration = NONCEOut->aNONCEBlob.blobGeneration;
             if (NONCEOut->aNONCE.size != NONCE_LEN)
             {
@@ -872,7 +875,7 @@ ERP_API_FUNC BlobKeyListOutput ERP_ListLoadedBlobKeys(
     }
     if (p_answ != NULL)
     { // Answer Data:
-    
+
 #ifdef TRACE_HSM_API
         API_xtrace("Answ", p_answ, p_l_answ);
 #endif
@@ -964,7 +967,7 @@ EmptyOutput ERP_DumpHSMMemory(
     }
     if (p_answ != NULL)
     { // There should not be any answer data here, but clean it up anyway in case.
-    
+
 #ifdef TRACE_HSM_API
         API_xtrace("Answ", p_answ, p_l_answ);
 #endif
@@ -1289,7 +1292,7 @@ ERP_API_FUNC SingleBlobOutput ERP_TrustTPMMfr(
     {
         request->desiredGeneration = input.desiredGeneration;
         retVal.returnCode = asn_buffer2OctetString(&(request->certificateData), input.certData, input.certLength);
-    
+
     }
     size_t cmdLength = 0;
     unsigned char* pCmdData = NULL;
@@ -1360,7 +1363,7 @@ ERP_API_FUNC SingleBlobOutput ERP_TrustTPMMfr(
         else {
             retVal.BlobOut.BlobLength = TokenOut->aBlob.size;
             memcpy(retVal.BlobOut.BlobData, TokenOut->aBlob.buf, TokenOut->aBlob.size);
-            // First four bytes of 
+            // First four bytes of
             retVal.BlobOut.BlobGeneration = TokenOut->blobGeneration;
         }
     }
@@ -1512,7 +1515,7 @@ ERP_API_FUNC AKChallengeOutput ERP_GetAKChallenge(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_GET_AK_CHALLENGE,
             pCmdData,
@@ -1555,7 +1558,7 @@ ERP_API_FUNC AKChallengeOutput ERP_GetAKChallenge(
             memcpy(    retVal.ChallengeBlob.BlobData,
                     response->challengeBlob.aBlob.buf,
                     response->challengeBlob.aBlob.size);
-            // First four bytes of 
+            // First four bytes of
             retVal.ChallengeBlob.BlobGeneration = response->challengeBlob.blobGeneration;
         }
         if (response->credential.size > MAX_BUFFER)
@@ -1748,7 +1751,7 @@ ERP_API_FUNC SingleBlobOutput ERP_EnrollEnclave(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_ENROLL_ENCLAVE,
             pCmdData,
@@ -1839,7 +1842,7 @@ ERP_API_FUNC SingleBlobOutput ERP_GetTEEToken(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_GET_TEE_TOKEN,
             pCmdData,
@@ -1898,7 +1901,7 @@ DeriveKeyOutput ERP_DeriveKey(
     }
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = asn_buffer2OctetString(&(request->derivationData), 
+        retVal.returnCode = asn_buffer2OctetString(&(request->derivationData),
             input.derivationData, input.derivationDataLength);
     }
     if (retVal.returnCode == ERP_ERR_NOERROR)
@@ -1929,7 +1932,7 @@ DeriveKeyOutput ERP_DeriveKey(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             SFC_Code,
             pCmdData,
@@ -2046,7 +2049,7 @@ AES128KeyOutput ERP_DoVAUECIES128(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_DO_ECIES_128,
             pCmdData,
@@ -2179,7 +2182,7 @@ ERP_API_FUNC PublicKeyOutput ERP_GetECPublicKey(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_GET_EC_PUBLIC_KEY,
             pCmdData,
@@ -2289,7 +2292,7 @@ ERP_API_FUNC PrivateKeyOutput ERP_GetVAUSIGPrivateKey(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_GET_VAUSIG_PRIVATE_KEY,
             pCmdData,
@@ -2367,7 +2370,7 @@ ERP_API_FUNC PrivateKeyOutput ERP_GetVAUSIGPrivateKey(
  */
 ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
     HSMSession sesh,            // HSM Session
-    UIntInput input) // The number of bytes of RND to return.   Maimum MAX_RND_BYTES = 320.
+    UIntInput input) // The number of bytes of RND to return.   Maximum MAX_RND_BYTES = 320.
 {
     RNDBytesOutput retVal = { ERP_ERR_NOERROR, 0, {0} };
 
@@ -2407,7 +2410,7 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             ERP_SFC_GET_RND_BYTES,
             pCmdData,
@@ -2458,10 +2461,13 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
         asn_DEF_ERPOctetString.op->free_struct(
             &asn_DEF_ERPOctetString, response, 0);
     }
-
     if (p_answ != NULL)
     {
         cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        free(pCmdData);
     }
     return retVal;
 }
@@ -2483,7 +2489,7 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
 ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
     HSMSession sesh,
     TwoBlobGetKeyInput input,
-    unsigned int SFCCode) 
+    unsigned int SFCCode)
 {
     AES256KeyOutput retVal = { ERP_ERR_NOERROR,{0} };
 
@@ -2525,7 +2531,7 @@ ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        retVal.returnCode = ERP_FirmwareExec(sesh, 
+        retVal.returnCode = ERP_FirmwareExec(sesh,
             ERP_MDL_ID,
             SFCCode,
             pCmdData,
@@ -2559,7 +2565,7 @@ ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
-        if (response->keyValue.size != AES_256_LEN) 
+        if (response->keyValue.size != AES_256_LEN)
         {
             retVal.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
         }
@@ -3164,7 +3170,7 @@ ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
     }
     //        Signing key qualified name TPM2B_NAME
     //        00 22 // size 2 bytes
-    //        // TPMU_NAME - 
+    //        // TPMU_NAME -
     //        00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
     //        9A 9D 5C 78 E6 F2 9B 6A DB 8D 9F C0 16 4E B3 C4 92 0A 7C C3 FB 74 82 59 E7 06 74 40 FB E4 8E 3C
     if (retVal.returnCode == ERP_ERR_NOERROR)
@@ -3276,4 +3282,265 @@ ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
     //        00 20 38 72 3A 2E 5E 8A 17 AA 79 50 DC 00 82 09 94 4E 89 8F 69 A7 BD 10 A2 3C 83 9D 34 1E 93 5F D5 CA
 
     return retVal;
+}
+
+ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayload(
+    HSMSession sesh,
+    RawPayloadInput input)
+{
+    SingleBlobOutput retval = {ERP_ERR_NOERROR, {0} };
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    unsigned char* pCmdData = NULL;
+    size_t cmdLength = 0;
+
+    // send WrapRawPayloadRequest
+    WrapRawPayloadRequest_t* request = (WrapRawPayloadRequest_t *)calloc(sizeof(WrapRawPayloadRequest_t), 1);
+    if (request == NULL)
+    {
+        retval.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+
+    request->desiredGeneration = input.desiredGeneration;
+    if (input.payloadLen > sizeof(input.rawPayload))
+    {
+        retval.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    retval.returnCode = asn_buffer2OctetString(&(request->rawPayload), input.rawPayload, input.payloadLen);
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_enc_rval_t er; /* Encoder return value */
+
+    er = der_encode_dynamic_buffer(
+        &asn_DEF_WrapRawPayloadRequest,
+        request,
+        &cmdLength,
+        &pCmdData);
+    // Failed to encode the data.
+    if (er.encoded == -1)
+    {
+        retval.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    // recieve SingleBlob
+    retval.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_WRAP_PAYLOAD,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+#ifdef TRACE_HSM_API
+    API_xtrace("Answ", p_answ, p_l_answ);
+#endif
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    HandleSingleBlobResult(p_answ, p_l_answ, &retval);
+
+out:
+    if (request != NULL)
+    {
+        asn_DEF_WrapRawPayloadRequest.op->free_struct(
+            &asn_DEF_WrapRawPayloadRequest, request, ASFM_FREE_EVERYTHING);
+    }
+    if (p_answ != NULL)
+    {
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        free(pCmdData);
+    }
+
+    return retval;
+}
+
+
+ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
+    HSMSession sesh,
+    RawPayloadWithTokenInput input)
+{
+    SingleBlobOutput retval = {ERP_ERR_NOERROR, {0} };
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    unsigned char* pCmdData = NULL;
+    size_t cmdLength = 0;
+
+    // send WrapRawPayloadWithTokenRequest
+    WrapRawPayloadWithTokenRequest_t* request = (WrapRawPayloadWithTokenRequest_t *)calloc(sizeof(WrapRawPayloadWithTokenRequest_t), 1);
+    if (request == NULL)
+    {
+        retval.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+
+    retval.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->tokenTEE), &(input.TEEToken));
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    request->desiredGeneration = input.desiredGeneration;
+    if (input.payloadLen > sizeof(input.rawPayload))
+    {
+        retval.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    retval.returnCode = asn_buffer2OctetString(&(request->rawPayload), input.rawPayload, input.payloadLen);
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_enc_rval_t er; /* Encoder return value */
+
+    er = der_encode_dynamic_buffer(
+        &asn_DEF_WrapRawPayloadWithTokenRequest,
+        request,
+        &cmdLength,
+        &pCmdData);
+    // Failed to encode the data.
+    if (er.encoded == -1)
+    {
+        retval.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    // recieve SingleBlob
+    retval.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_WRAP_PAYLOAD_WITH_TOKEN,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+#ifdef TRACE_HSM_API
+    API_xtrace("Answ", p_answ, p_l_answ);
+#endif
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    HandleSingleBlobResult(p_answ, p_l_answ, &retval);
+
+out:
+    if (request != NULL)
+    {
+        asn_DEF_WrapRawPayloadWithTokenRequest.op->free_struct(
+            &asn_DEF_WrapRawPayloadWithTokenRequest, request, ASFM_FREE_EVERYTHING);
+    }
+    if (p_answ != NULL)
+    {
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        free(pCmdData);
+    }
+
+    return retval;
+}
+
+
+ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
+    HSMSession sesh,
+    WrappedPayloadInput input)
+{
+    RawPayloadOutput retval = {ERP_ERR_NOERROR, 0, {0} };
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    unsigned char* pCmdData = NULL;
+    ERPOctetString_t* response = NULL;
+    size_t cmdLength = 0;
+
+    // send UnwrapRawPayloadRequest
+    UnwrapRawPayloadRequest_t* request = (UnwrapRawPayloadRequest_t *)calloc(sizeof(UnwrapRawPayloadRequest_t), 1);
+    if (request == NULL)
+    {
+        retval.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+    retval.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->tokenTEE), &(input.TEEToken));
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    retval.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->wrappedRawPayload), &(input.wrappedRawPayload));
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_enc_rval_t er; /* Encoder return value */
+    er = der_encode_dynamic_buffer(&asn_DEF_UnwrapRawPayloadRequest, request,
+                                   &cmdLength, &pCmdData);
+
+    if (er.encoded == -1)
+    {
+        retval.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    // recieve ERPOctetString
+    retval.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_UNWRAP_PAYLOAD,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    asn_dec_rval_t rval;
+    rval = asn_DEF_ERPOctetString.op->ber_decoder(0,
+            &asn_DEF_ERPOctetString,
+            (void**)&response,
+            p_answ, p_l_answ,
+            0);
+
+    if (rval.code != RC_OK)
+    {
+        retval.returnCode = ERP_ERR_ASN1DECODING_ERROR;
+        goto out;
+    }
+    if (response->octets.size > MAX_BUFFER)
+    {
+        retval.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    retval.payloadLen = response->octets.size;
+    memcpy(retval.rawPayload,
+           response->octets.buf,
+           response->octets.size);
+
+out:
+    if (response != NULL)
+    {
+        asn_DEF_ERPOctetString.op->free_struct(
+            &asn_DEF_ERPOctetString, response, 0);
+    }
+    if (request != NULL)
+    {
+        asn_DEF_UnwrapRawPayloadRequest.op->free_struct(
+            &asn_DEF_UnwrapRawPayloadRequest, request, ASFM_FREE_EVERYTHING);
+    }
+    if (p_answ != NULL)
+    {
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        free(pCmdData);
+    }
+
+    return retval;
 }

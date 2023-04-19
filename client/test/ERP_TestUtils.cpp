@@ -37,7 +37,7 @@ std::unique_ptr<ERPBlob> getEmptyBlob(unsigned int Gen)
     return pBlob;
 }
 
-// Utility method to read a file form the resources directory, allocates a pointer to a buffer to it and return that pointer 
+// Utility method to read a file form the resources directory, allocates a pointer to a buffer to it and return that pointer
 // for the caller to own and be responsible for deletion.
 Buffer readERPResourceFile(const std::string& filename, bool bMustExist)
 {
@@ -56,7 +56,7 @@ Buffer readERPResourceFile(const std::string& filename, bool bMustExist)
 }
 
 // Caller must delete returned object.
-ERPBlob* readBlobResourceFile(const std::string& filename, bool bMustExist)
+std::unique_ptr<ERPBlob> readBlobResourceFile(const std::string& filename, bool bMustExist)
 {
     const auto data = readERPResourceFile(filename, bMustExist);
     if (bMustExist)
@@ -69,16 +69,16 @@ ERPBlob* readBlobResourceFile(const std::string& filename, bool bMustExist)
         return nullptr;
     }
 
-    auto* retVal = new ERPBlob{};
+    auto retVal = std::make_unique<ERPBlob>();
     EXPECT_NE(nullptr, retVal);
 
-    std::copy(data.cbegin(), data.cend(), reinterpret_cast<unsigned char*>(retVal));
+    std::copy(data.cbegin(), data.cend(), reinterpret_cast<unsigned char*>(retVal.get()));
     retVal->BlobLength = data.size() - ERPBlobHeader;
 
     return retVal;
 }
 
-unsigned int writeERPResourceFile(const std::string& filename, const std::vector<uint8_t>& data) 
+unsigned int writeERPResourceFile(const std::string& filename, const std::vector<uint8_t>& data)
 {
     const std::string fullFileName = testDataDir.data() + filename;
     std::ofstream writeFile = std::ofstream(fullFileName, std::ios::out | std::ios::binary);;
@@ -134,7 +134,7 @@ unsigned int deriveOrRetrieveDerivationKey(HSMSession sesh,
                                            ERPBlob* pOutBlob)
 {
     auto err = ERP_ERR_NOERROR;
-    ERPBlob* pReadBlob = readBlobResourceFile(filename, false);
+    auto pReadBlob = readBlobResourceFile(filename, false);
 
     if (pReadBlob == nullptr)
     {
@@ -150,8 +150,6 @@ unsigned int deriveOrRetrieveDerivationKey(HSMSession sesh,
     {
         *pOutBlob = *pReadBlob;
     }
-
-    delete pReadBlob;
 
     return err;
 }
@@ -461,7 +459,7 @@ unsigned int teststep_deriveTaskPersistenceKey(
     ERPBlob* pDerivationKey,
     size_t derivationDataLength,
     unsigned char* derivationData,
-    unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+    unsigned int isInitial, // 1 => Initial Derivation, 0 => subsequent Derivation.
     // Output
     size_t* pUsedDerivationDataLength,
     unsigned char* usedDerivationData, // MAX_BUFFER
@@ -605,7 +603,7 @@ unsigned int teststep_deriveChargeItemKey(
 void teststep_ASN1IntegerInput(HSMSession sesh, unsigned int SFCCode, bool bZeroOk)
 {
     // the nolint comments are for the clang-tody readability - magic numbers checks which ado not
-    //   result in an improvement. 
+    //   result in an improvement.
     DirectIOInput rawInput = { SFCCode,5,{0x30, 0x03, 0x02, 0x01, 0x00} }; // NOLINT
     DirectIOOutput rawOutput = ERP_DirectIO(sesh, rawInput);
     if (bZeroOk)
@@ -730,7 +728,7 @@ extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
             &derivationKeyBlob,
             derivationData.size(),
             derivationData.data(),
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
             // Output
             &usedDerivationDataLength,
             &(usedDerivationData[0]), // MAX_BUFFER
@@ -751,7 +749,7 @@ extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
                 &derivationKeyBlob,
                 usedDerivationDataLength,
                 &(usedDerivationData[0]),
-                0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+                0, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
                 &(usedDerivationData[0]), // MAX_BUFFER
@@ -772,7 +770,7 @@ extern unsigned int teststep_GoodKeyDerivation(HSMSession sesh,
             &derivationKeyBlob,
             usedDerivationDataLength,
             &(usedDerivationData[0]),
-            0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            0, // 1 => Initial Derivation, 0 => subsequent Derivation.
             // Output
             &usedDerivationDataLength,
             &(usedDerivationData[0]), // MAX_BUFFER
@@ -794,4 +792,43 @@ extern unsigned int teststep_UnwrapPseudonameKey(HSMSession sesh, ERPBlob* hashB
     get.TEEToken = *teeToken;
     *pKeyOut = ERP_UnwrapPseudonameKey(sesh, get);
     return pKeyOut->returnCode;
+}
+
+unsigned int teststep_WrapRawPayload(HSMSession sesh, unsigned int Generation, size_t payloadLength,
+                                           const unsigned char *rawPayload, SingleBlobOutput *payloadBlob)
+{
+    RawPayloadInput input{};
+    input.desiredGeneration = Generation;
+    memcpy(input.rawPayload, rawPayload, payloadLength);
+    input.payloadLen = payloadLength;
+    *payloadBlob = ERP_WrapRawPayload(sesh, input);
+    return payloadBlob->returnCode;
+}
+
+unsigned int teststep_WrapRawPayloadWithToken(HSMSession sesh, unsigned int Generation, size_t payloadLength,
+                                           const unsigned char *rawPayload, SingleBlobOutput *payloadBlob)
+{
+    RawPayloadWithTokenInput input{};
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    input.TEEToken = *teeToken;
+    input.desiredGeneration = Generation;
+    memcpy(input.rawPayload, rawPayload, payloadLength);
+    input.payloadLen = payloadLength;
+    *payloadBlob = ERP_WrapRawPayloadWithToken(sesh, input);
+    return payloadBlob->returnCode;
+}
+
+
+unsigned int teststep_UnwrapRawPayload(HSMSession sesh, ERPBlob* payloadBlob, RawPayloadOutput* payloadOut)
+{
+    WrappedPayloadInput input{};
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    input.TEEToken = *teeToken;
+    input.wrappedRawPayload = *payloadBlob;
+    *payloadOut = ERP_UnwrapRawPayload(sesh, input);
+    return payloadOut->returnCode;
 }

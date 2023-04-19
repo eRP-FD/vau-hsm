@@ -91,7 +91,7 @@ extern int ERP_GenerateECIESKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned ch
 // Externally callable FWAPI Command
 // Generate CSR for an ECIES Keypair
 // Input: ECIES KeyPair Blob
-// Input: Candidate CSR with all valid fields, except public key and signature 
+// Input: Candidate CSR with all valid fields, except public key and signature
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
@@ -110,7 +110,7 @@ extern int ERP_GenerateVAUSIGKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned c
 // Externally callable FWAPI Command
 // Generate CSR for a VAUSIG Keypair
 // Input: VAUSIG KeyPair Blob
-// Input: Candidate CSR with all valid fields, except public key and signature 
+// Input: Candidate CSR with all valid fields, except public key and signature
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
 // Output: ASN1.DER encoded CSR
@@ -133,7 +133,7 @@ extern int ERP_NotUsed(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 // Externally callable FWAPI Command
 // Command to add a trusted TPM Manufacturer Root CA certificate.
 // Input: ASN1.DER encoded x509r3 Certificate for the TPM Manufacturer Root CA.
-// Output: Trusted TPM Manufacturer Root Certificate Blob 
+// Output: Trusted TPM Manufacturer Root Certificate Blob
 // Return: Success or Error code.
 extern int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);        // SFC = 11
 
@@ -199,7 +199,7 @@ extern int ERP_GetTEEToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd
 // Input: currently valid TEE Token
 // Input: Input Derivation Data
 // Input: Initial Derivation 1 is true, 0 is false
-//          if Initial Derivation then the HSM will add extra data to the derivation data which must be 
+//          if Initial Derivation then the HSM will add extra data to the derivation data which must be
 //          stored by the application for subsequent derivations of this key.
 // Input: Derivation Key Blob
 // Output: Symmetric derived key.
@@ -240,6 +240,32 @@ extern int ERP_UnwrapHashKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_c
 extern int ERP_UnwrapPseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
+// Extract rawPayload
+// Required Permission: setup or update
+// Input: Payload
+// Output: rawPayload blob
+// Return: Success or Error code.
+extern int ERP_WrapRawPayload(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Extract rawPayload
+// Required Permission: 00000020 ERP Working permission with a valid TEE Token
+// Input: tee token
+// Input: rawPayload
+// Output: rawPayload blob
+// Return: Success or Error code.
+extern int ERP_WrapRawPayloadWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Extract rawPayload
+// Requires: 00000020 ERP Working permission with a valid TEE Token.
+// Input: currently valid TEE Token
+// Input: Payload Blob
+// Output: Unwrapped rawPayload
+// Return: Success or Error code.
+extern int ERP_UnwrapRawPayload(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
 // Command to generate a new Hash Key with an existing Generation
 // Input: int - number of bytes of RND requested
 // Output: The RND Data
@@ -247,7 +273,7 @@ extern int ERP_UnwrapPseudonameKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned cha
 extern int ERP_GetRNDBytes(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
-// ERP-9411 - allowed for ERP_SETUP, ERP_WORKING or ERP_UPDATE userpermissions. 
+// ERP-9411 - allowed for ERP_SETUP, ERP_WORKING or ERP_UPDATE userpermissions.
 // return public key for keypair.
 // input: ECIES KeyPair Blob
 // output: ASN1.DER encoded public key from the blob.
@@ -282,7 +308,7 @@ extern int ERP_ExportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned cha
 // Import a single Blob Generation using the AES256 MBK.
 // Requires: 20000000 - Administrator permission.
 // The MBK loaded in the HSM must match that in the BUBlob
-// The GEneration inthe BUBlob must not already be present in the HSM, neither with the same key value, nor a different one.
+// The GEneration in the BUBlob must not already be present in the HSM, neither with the same key value, nor a different one.
 // input: BUBlob Structure
 // output: None.
 extern int ERP_ImportSingleBlobKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
