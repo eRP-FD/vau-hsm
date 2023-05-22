@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -27,7 +28,7 @@ public:
     }
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         const char* devArray[] = CLUSTER_HSM; // 10 is maximum
         int nDevices = 0;
         while ((devArray[nDevices] != NULL) && (nDevices < 10))
@@ -96,7 +97,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -322,7 +323,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
             pDerivationKeyBlob.get(),
             derivationDataLength,
             derivationData,
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
             // Output
             &usedDerivationDataLength,
             usedDerivationData, // MAX_BUFFER
@@ -341,7 +342,7 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart2)
                 pDerivationKeyBlob.get(),
                 usedDerivationDataLength,
                 usedDerivationData,
-                0, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+                0, // 1 => Initial Derivation, 0 => subsequent Derivation.
                 // Output
                 &usedDerivationDataLength,
                 usedDerivationData, // MAX_BUFFER
@@ -377,7 +378,7 @@ TEST_F(ErpClusterTestFixture, StaticKeyDerivation)
             derivationKey.get(),
             derivationDataLength,
             derivationData,
-            1, // 1 => Initial Derivation, 0 => subsequent Derivation. 
+            1, // 1 => Initial Derivation, 0 => subsequent Derivation.
             // Output
             &usedDerivationDataLength,
             usedDerivationData, // MAX_BUFFER
@@ -469,7 +470,7 @@ TEST_F(ErpClusterTestFixture, GenerateNONCE)
     EXPECT_EQ(ERP_ERR_NOERROR, STRIP_ERR_INDEX(teststep_GenerateNONCE(ErpClusterTestFixture::m_logonSession, 0)));
 }
 
-// Test to exercise input parameter handling 
+// Test to exercise input parameter handling
 TEST_F(ErpClusterTestFixture, Params_GenerateNONCE) {
     EXPECT_EQ(ERP_ERR_NOERROR, teststep_GenerateNONCE(ErpClusterTestFixture::m_logonSession, 0));
     // I am assuming that our tests setup will not generate blob generation keys beypnd 0x1000

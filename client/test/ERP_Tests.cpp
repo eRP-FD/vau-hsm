@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -49,7 +50,7 @@ public:
 
     void SetUp() override
     {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         HSMParameterSetFactory factory = GetParam();
         parameters = factory();
         if (!parameters.TestEnabled)
@@ -61,7 +62,7 @@ public:
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
         logonWorking();
-    } 
+    }
 
     void TearDown() override
     {
@@ -142,7 +143,7 @@ TEST_P(ErpCommonTestsFixture, GenerateNONCE)
     EXPECT_EQ(ERP_ERR_NOERROR, STRIP_ERR_INDEX(teststep_GenerateNONCE(ErpCommonTestsFixture::m_logonSession, 0)));
 }
 
-// Test to exercise input parameter handling 
+// Test to exercise input parameter handling
 TEST_P(ErpCommonTestsFixture, ParamsGenerateNONCE) {
     EXPECT_EQ(ERP_ERR_NOERROR, teststep_GenerateNONCE(ErpCommonTestsFixture::m_logonSession, 0));
     // I am assuming that our tests setup will not generate blob generation keys beypnd 0x1000
@@ -255,7 +256,7 @@ TEST_P(ErpCommonTestsFixture, PermissionGetRNDBytes) {
     EXPECT_EQ(RND_256_LEN, rndOut.RNDDataLen);
 }
 
-TEST_P(ErpCommonTestsFixture, FaultyCertificateTest1) 
+TEST_P(ErpCommonTestsFixture, FaultyCertificateTest1)
 {
     const unsigned char certData[] =
     {
@@ -310,7 +311,7 @@ TEST_P(ErpCommonTestsFixture, FaultyCertificateTest2)
         0x30, 0x1d,         // cert
         0x30, 0x09,         // tbsCertificate
         // ecPublicKey (ANSI X9.62 public key type)
-        0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,    
+        0x06, 0x07, 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01,
         0x30, 0x0a, // sigAlg
         // ecdsaWithSHA256 (ANSI X9.62 ECDSA algorithm with SHA256)
         0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02,
@@ -349,7 +350,7 @@ TEST_P(ErpCommonTestsFixture, FaultyCertificateTestInvalidASN1)
         0x02, 0x01, THE_ANSWER,   // generation
         0x04, 0x1F,         // octet string
         // ERROR: changed length from 1d to 1c
-        0x30, 0x1c,         // cert 
+        0x30, 0x1c,         // cert
         0x30, 0x0a,         // tbsCertificate
         // ecdsaWithSHA256 (ANSI X9.62 ECDSA algorithm with SHA256)
         0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02,
@@ -397,7 +398,7 @@ TEST_P(ErpCommonTestsFixture, FaultyCertificateTestInvalidASN12)
         0x06, 0x08, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02,
         0x30, 0x09, // sigAlg
         // ecPublicKey (ANSI X9.62 public key type)
-        // ERROR: Just cut if off somewhere 
+        // ERROR: Just cut if off somewhere
         0x06, 0x07, 0x2A, 0x86,// 0x48, 0xCE, 0x3D, 0x02, 0x01,
         0x03, 0x04, 0x00, 0x00, 0x00, 0x00  // sig*/
     };

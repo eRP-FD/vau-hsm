@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_TestParams.h"
@@ -14,14 +15,14 @@
 
 #include <thread>
 
-// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in 
+// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in
 // createSingleSimHSMParameterSetFactory()
 bool isSingleSimulatedHSMConfigured()
 {
     return true;
 }
 
-// return true here to enable tests for a cluster of simulated HSMs.   The IP and other parameters must be set in 
+// return true here to enable tests for a cluster of simulated HSMs.   The IP and other parameters must be set in
 // createClusteredSimHSMParameterSetFactory()
 // The hsm simulator setup for this can be found in firmware/HA/erp-hsm-ha.yaml
 bool isClusteredSimulatedHSMConfigured()
@@ -29,7 +30,7 @@ bool isClusteredSimulatedHSMConfigured()
     return false;
 }
 
-// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in 
+// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in
 // createSingleHardwareHSMParameterSetFactory()
 // The hsm simulator setup for this can be found in firmware/HA/erp-two-hsms.yaml
 bool isFailoverPairSimulatedHSMConfigured()
@@ -37,7 +38,7 @@ bool isFailoverPairSimulatedHSMConfigured()
     return false;
 }
 
-// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in 
+// return true here to enable tests for a single HW HSM.   The IP and other parameters must be set in
 // createSingleHardwareHSMParameterSetFactory()
 bool isSingleHardwareHSMConfigured()
 {
@@ -45,7 +46,7 @@ bool isSingleHardwareHSMConfigured()
     return false;
 }
 
-// return true here to enable tests for a Cluster of HW HSMs.   The IP and other parameters must be set in 
+// return true here to enable tests for a Cluster of HW HSMs.   The IP and other parameters must be set in
 // createSingleHardwareHSMParameterSetFactory()
 bool isClusteredHardwareHSMConfigured()
 {
@@ -83,14 +84,14 @@ HSMSession parametrisedLogoff(const HSMSession& sesh)
     return retVal;
 }
 
-// This utility method is designed to be a thread entry point to talk to the session 
+// This utility method is designed to be a thread entry point to talk to the session
 //   passed in and do a minimal set of functions repeated a few times then exit.
 std::thread::id threadedSessionTest(const HSMParameterSet& parameters)
 {
     static const int testLoops = 10;
 
     HSMSession thisSesh = parameters.SessionFactory();
- 
+
     thisSesh = parameters.workingLogon(thisSesh);
     // Cannot use ASSERT_EQ because it doesn't work in subsidiary functions
     EXPECT_EQ(HSMLoggedIn, thisSesh.status);
@@ -103,7 +104,7 @@ std::thread::id threadedSessionTest(const HSMParameterSet& parameters)
                   << std::this_thread::get_id()
                   << " Starting Loop Iteration: "
                   << i << std::endl;
-        
+
         EmptyOutput output = ERP_DumpHSMMemory(thisSesh);
         EXPECT_EQ(ERP_ERR_NOERROR, output.returnCode);
 

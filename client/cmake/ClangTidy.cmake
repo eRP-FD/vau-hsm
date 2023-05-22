@@ -1,6 +1,7 @@
-# (C) Copyright IBM Deutschland GmbH 2021
-# (C) Copyright IBM Corp. 2021
-# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+# (C) Copyright IBM Deutschland GmbH 2021, 2023
+# (C) Copyright IBM Corp. 2021, 2023
+#
+# non-exclusively licensed to gematik GmbH
 
 ########################################################################################################################
 
@@ -28,7 +29,7 @@ function (_private_get_clang_tidy_checks_whitelist RESULT)
 		"cppcoreguidelines-avoid-c-arrays"
 		"hicpp-avoid-c-arrays"
 		"cppcoreguidelines-pro-bounds-pointer-arithmetic"
-		
+
 		# Things that really aren't worth doing.
 		#
 		"hicpp-special-member-functions"

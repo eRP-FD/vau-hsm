@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -19,7 +20,7 @@
 /*
  * Basic tests that test the API for correct behaviour in case of valid and invalid input.
  * This mostly entails tests for expected error codes and some sanity checks.
- * Does not test more complex behaviour (e.g. in-depth crypto tests). 
+ * Does not test more complex behaviour (e.g. in-depth crypto tests).
  */
 class ErpBasicInputTestsFixture : public ErpBaseTestsFixture
 {
@@ -260,7 +261,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGenerateECCSRInputTests) // DISABLED until 
   eciesCSR_invalid = eciesCSR;
   eciesCSR_invalid.KeyPair.BlobGeneration += 999; // NOLINT
   keyOut = ERP_GenerateECIESCSR(ErpBasicInputTestsFixture::m_logonSession, eciesCSR_invalid);
-  EXPECT_NE(ERP_ERR_BAD_BLOB_GENERATION, keyOut.returnCode); 
+  EXPECT_NE(ERP_ERR_BAD_BLOB_GENERATION, keyOut.returnCode);
 
   eciesCSR_invalid = eciesCSR;
   eciesCSR_invalid.candidateCSRLength = 0;
@@ -544,7 +545,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetTEETokenInputTests) // DISABLED until Gi
 }
 
 
-TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests) 
+TEST_F(ErpBasicInputTestsFixture,ERPDeriveKeysInputTests)
 {
   /* Same function with different key prefixes
    * ERP_DeriveTaskKey, ERP_DeriveAuditKey, ERP_DeriveCommsKey
@@ -955,37 +956,37 @@ TEST_F(ErpBasicInputTestsFixture, ERPImportSingleBlobKeyInputTests)
     };
 
     BUBlobInput variedBlobIn = { backupResult.BUBlob };
-    // All of the Metadata Manipulations should fail with ERP_ERR_BAD_BLAB_AD 
+    // All of the Metadata Manipulations should fail with ERP_ERR_BAD_BLAB_AD
     //    unless the specific error is caight before the decrpytion.
     // Generation already present
-    variedBlobIn.BUBlob.Generation = THE_ANSWER;   
+    variedBlobIn.BUBlob.Generation = THE_ANSWER;
     testFn(variedBlobIn, ERP_ERR_BAD_BLOB_GENERATION);
     // Zero explicitly not allowed for backups.
     variedBlobIn.BUBlob.Generation = 0;
     testFn(variedBlobIn, ERP_ERR_BAD_BLOB_GENERATION);
-	
+
     // Generation good, but wrong for blob.
     variedBlobIn.BUBlob.Generation = TEST_HIGH_VALID_GENERATION;
     testFn(variedBlobIn, ERP_ERR_BAD_BLOB_AD);
-	
+
     // Copy the original blob back in.
     variedBlobIn.BUBlob = backupResult.BUBlob;
     memcpy(&(variedBlobIn.BUBlob.Domain[0]),"NODM",sizeof(variedBlobIn.BUBlob.Domain)); //NOLINT
     testFn(variedBlobIn, ERP_ERR_BAD_BLOB_DOMAIN);
-	
+
     // Copy the original blob back in.
     variedBlobIn.BUBlob = backupResult.BUBlob;
     variedBlobIn.BUBlob.encDataLength = 0;
     testFn(variedBlobIn, ERP_ERR_ASN1_CONTENT_ERROR);
-	
+
     variedBlobIn.BUBlob = backupResult.BUBlob;
     variedBlobIn.BUBlob.encDataLength++;
     testFn(variedBlobIn, ERP_ERR_BACKUP_WRONG_DATA_LEN);
-	
-    variedBlobIn.BUBlob = backupResult.BUBlob;	
+
+    variedBlobIn.BUBlob = backupResult.BUBlob;
     variedBlobIn.BUBlob.encDataLength--;
     testFn(variedBlobIn, ERP_ERR_BACKUP_WRONG_DATA_LEN);
-	
+
     variedBlobIn.BUBlob = backupResult.BUBlob;
     variedBlobIn.BUBlob.encDataLength = MAX_BUFFER;
     testFn(variedBlobIn, ERP_ERR_BACKUP_WRONG_DATA_LEN);
@@ -1057,7 +1058,7 @@ TEST_F(ErpBasicInputTestsFixture, ERPGetBlobContentHashInputTests)
     }
 }
 
-TEST_F(ErpBasicInputTestsFixture, ERPGetBlobContentHashWithTokenInputTests) 
+TEST_F(ErpBasicInputTestsFixture, ERPGetBlobContentHashWithTokenInputTests)
 {
     TwoBlobGetKeyInput in = { {0,0,{0}}, {0,0,{0}} };
     SHA256Output out = { 0 ,{0} };

@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #ifndef ERP_SEALED_BLOB_MANIPULATOR_H
@@ -21,7 +22,7 @@
 #ifdef _MSC_VER
     #pragma warning(push)
     #pragma warning(disable : 4200) // disable warning for zero-sized member
-#else 
+#else
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wpedantic"
 #endif
@@ -39,12 +40,12 @@ extern "C" {
   unsigned int EncodedDataLength; // is necessary?
 // NOLINTNEXTLINE
   unsigned char EncodedData[]; // Intentional Open ended array.
-} SealedBlob_t; 
-} // End extern "C" 
+} SealedBlob_t;
+} // End extern "C"
 
 #ifdef _MSC_VER
 #pragma warning(pop) // disable warning for zero-sized member
-#else 
+#else
 #pragma GCC diagnostic pop
 #endif
 

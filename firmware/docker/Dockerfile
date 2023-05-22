@@ -1,6 +1,7 @@
-# (C) Copyright IBM Deutschland GmbH 2021
-# (C) Copyright IBM Corp. 2021
-# SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+# (C) Copyright IBM Deutschland GmbH 2021, 2023
+# (C) Copyright IBM Corp. 2021, 2023
+#
+# non-exclusively licensed to gematik GmbH
 
 ########################################################################################################################
 
@@ -134,7 +135,7 @@ RUN cp makefile_ti_docker makefile && \
 #patch make.sh with proper versions from git tag for RU artifact
 RUN echo "BLOB_DOMAIN=REFZ" > .env && \
     echo "CFG=${CFG}" >> .env && \
-    echo "ERP_MDL_VERSION=${RU_ERP_MDL_VERSION}" >> .env 
+    echo "ERP_MDL_VERSION=${RU_ERP_MDL_VERSION}" >> .env
 RUN cat ./make.sh
 RUN ./make.sh
 
@@ -161,7 +162,7 @@ RUN cp make_ti_docker.sh make.sh && \
     ./make_clean.sh
 RUN echo "BLOB_DOMAIN=PROD" > .env && \
     echo "CFG=${CFG}" >> .env && \
-    echo "ERP_MDL_VERSION=${PU_ERP_MDL_VERSION}" >> .env 
+    echo "ERP_MDL_VERSION=${PU_ERP_MDL_VERSION}" >> .env
 RUN ./make.sh
 RUN curl -v -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} \
          --upload-file ../HWMake50/ERP.out         \

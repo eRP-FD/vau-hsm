@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -21,7 +22,7 @@ public:
     ErpECIESTestFixture() = default;
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
     void logonSetup() {
@@ -70,7 +71,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -101,7 +102,7 @@ TEST_F(ErpECIESTestFixture, GenerateECIESKeypair)
  }
 TEST_F(ErpECIESTestFixture, GetECIESPublicKey)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob = 
+    std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
@@ -115,7 +116,7 @@ TEST_F(ErpECIESTestFixture, GetECIESPublicKey)
 
 TEST_F(ErpECIESTestFixture, doVAUECIES)
 {
-    std::unique_ptr<ERPBlob> savedKeyPairBlob = 
+    std::unique_ptr<ERPBlob> savedKeyPairBlob =
         std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
 

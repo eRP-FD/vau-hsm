@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #ifndef ERP_DEFS_H
@@ -26,7 +27,7 @@
 // Synodic month is the lunar month is 29.531 days.The number here is actually a 30 day month.
 // Average calendar month is 30.43 days.
 // The logic here is that intended working lifetime of this is six months.
-//    Plus a month before to allow creation and deployment overhead and 
+//    Plus a month before to allow creation and deployment overhead and
 //    a month afterwards to allow imprecise retirment
 // The exact length of the month is not critical.
 #define THIRTY_DAY_MONTH_S (30*24*60*60)
@@ -63,8 +64,8 @@
 #define TPM_ECC_NIST_P384 0x0004
 #define TPM_ECC_NIST_P521 0x0005
 // TCG Standard curve to support ECDAA
-#define TPM_ECC_BN_P256 0x0010 
-#define TPM_ECC_BN_P638 0x0011 
+#define TPM_ECC_BN_P256 0x0010
+#define TPM_ECC_BN_P638 0x0011
 #define TPM_ECC_SM2_P256 0x0020
 // Brainpool
 #define TPM_ECC_BP_P256_R1 0x0030

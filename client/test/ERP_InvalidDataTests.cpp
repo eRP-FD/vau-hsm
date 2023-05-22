@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -78,7 +79,7 @@ TEST_F(erpInvalidDataTestsFixture, TrustTPMMfr)
     printf("Invalid certificate length\n");
     testFun([&](TrustTPMMfrInput& input)
     {
-        input.certLength = MfrRootCert.size() - TEST_LEN_CURTAILMENT; 
+        input.certLength = MfrRootCert.size() - TEST_LEN_CURTAILMENT;
         return E_ASN1_DATASIZE;
     });
 

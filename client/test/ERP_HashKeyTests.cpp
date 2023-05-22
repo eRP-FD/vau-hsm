@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -22,7 +23,7 @@ public:
     ErpHashKeyTestFixture() = default;
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
     void logonSetup() {
@@ -71,7 +72,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -108,7 +109,7 @@ TEST_F(ErpHashKeyTestFixture, UnwrapHashKey)
     AES256KeyOutput keyOut = { 0,{0} };
     teststep_UnwrapHashKey(ErpHashKeyTestFixture::m_logonSession, savedKeyPairBlob.get(),&keyOut);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-    const unsigned char expectedKey[] = { 
+    const unsigned char expectedKey[] = {
         0xa7, 0xab, 0xd1, 0x94, 0xe5, 0x0b, 0x14, 0x0c, 0x9b, 0xe7, 0xfe, 0xe7, 0xbb, 0x39, 0x07, 0xd9
         ,0xbe, 0xd8, 0xda, 0xdc, 0x2f, 0xc8, 0x3f, 0x9c, 0xaa, 0x41, 0x05, 0xa8, 0xc1, 0x1a, 0xc2, 0xf8
     };

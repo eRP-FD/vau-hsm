@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_ASNUtils.h"
@@ -10,7 +11,7 @@
 #include "ERP_Error.h"
 
 #ifdef _WIN32
-//  Windows warning complaining of C5105 entries in winbase.h... 
+//  Windows warning complaining of C5105 entries in winbase.h...
 #pragma warning (push)
 #pragma warning (disable: 5105)
 #endif
@@ -237,7 +238,7 @@ void HandleSingleBlobResult(unsigned char* p_answ, unsigned int p_l_answ, struct
         else {
             pRetVal->BlobOut.BlobLength = TokenOut->aBlob.size;
             memcpy(pRetVal->BlobOut.BlobData, TokenOut->aBlob.buf, TokenOut->aBlob.size);
-            // First four bytes of 
+            // First four bytes of
             pRetVal->BlobOut.BlobGeneration = TokenOut->blobGeneration;
         }
     }

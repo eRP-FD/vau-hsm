@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -22,7 +23,7 @@ public:
     ErpVAUSIGTestFixture() = default;
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
     void logonSetup() {
@@ -71,7 +72,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -131,7 +132,7 @@ TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
     // Check of expected output.
-    const unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02, 
+    const unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
         0x01, 0x06, 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07, 0x04, 0x7a, 0x30, 0x78,
         0x02, 0x01, 0x01, 0x04, 0x20, 0x52, 0xbb, 0xa0, 0x49, 0xee, 0x4f, 0x9a, 0x4d, 0xcc, 0xc5, 0x30,
         0xd4, 0x17, 0x01, 0x69, 0x09, 0x86, 0x76, 0x81, 0x47, 0x99, 0x78, 0x3d, 0xaf, 0xb0, 0x15, 0x49,

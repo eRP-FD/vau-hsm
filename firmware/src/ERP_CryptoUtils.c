@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include <cryptoserversdk/stype.h>
@@ -108,7 +109,7 @@ extern int isSupportedCurveID(ASN1_ITEM* pItem)
     return retVal;
 }
 
-// This functions treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first 
+// This functions treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first
 //   four bytes as a big endian integer in pChecksum.
 // If pKeyData or pChecksum are NULL then an E_ERP_INTERNAL_BUFFER_ERROR is returned.
 // This method may also return the error codes of the Utimaco AES module.
@@ -119,12 +120,12 @@ unsigned int GenerateAES256CheckSum(unsigned char* pKeyData, unsigned long* pChe
     if ((pKeyData == NULL) || (pCheckSum == NULL))
     {
         err = E_ERP_INTERNAL_BUFFER_ERROR;
-    } else 
+    } else
     {
         *pCheckSum = 0;   // Don't leave it uninitialised.
     }
     // 32 bytes of zero data used as plain text for KCV
-    unsigned char zeroData[] = { 
+    unsigned char zeroData[] = {
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
     // An array to hold the raw encrypted block.
@@ -270,7 +271,7 @@ unsigned int getECKeyPairBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob, ERP
     {
         err = eca_dp_get_info(pCurve, ECA_DP_OID, &oidLen, &pOidData);
         if (err != E_ERP_SUCCESS)
-        { 
+        {
             INDEX_ERR(err, 0x02);
         }
     }
@@ -358,7 +359,7 @@ unsigned int GetPKCS8PrivateKey(T_CMDS_HANDLE* p_hdl,
     ECKeyPairBlob_t* keyBlob = (ECKeyPairBlob_t*)keyPair->Data;
 
     // Data stored in keyBlob->KeyData is RFC5915 encoded private key.
-    // We just need to add a static wrapper to this to get the PKCS 
+    // We just need to add a static wrapper to this to get the PKCS
     // We parse the key structure mainly to get the curve IDs.
     size_t privKeyLength = 0;
     unsigned char* pPrivKeyData = NULL;
@@ -383,9 +384,9 @@ unsigned int GetPKCS8PrivateKey(T_CMDS_HANDLE* p_hdl,
         }
     }
 
-    // If we ever move to supporting more than one curve then we should think about some refactoring of the 
+    // If we ever move to supporting more than one curve then we should think about some refactoring of the
     //    curve operations.
-    if ((oidLength != BRAINPOOL_P256R1_ANSI_OID_LEN) || 
+    if ((oidLength != BRAINPOOL_P256R1_ANSI_OID_LEN) ||
         (0 != os_mem_cmp(BRAINPOOL_P256R1_ANSI_OID, &(pOidData[0]), BRAINPOOL_P256R1_ANSI_OID_LEN)))
     {
         err = E_ERP_CERT_UNSUPPORTED_CURVE;
@@ -461,7 +462,7 @@ extern unsigned int ECKeysFromBlob(
     { // Get the Domain Params to match the curve OID.
         err = eca_dp_find_oid(*pOidLength, *ppOidData, ppDomainParams);
         if (err != E_ERP_SUCCESS)
-        { 
+        {
             INDEX_ERR(err, 0x03);
         }
     }
@@ -496,7 +497,7 @@ extern unsigned int GetASN1PublicKeyFromBlob(const ClearBlob_t* blob,
     //            algID OBJECT IDENTIFIER, --must be id_ecPublicKey 1,2,840,10045,2,1
     //            curveID OBJECT IDENTIFIER },
     //            value BIT STRING  }-- curve - dependent encoding of ECC public key.
-    //        
+    //
 
     ASN1_ITEM* pItemTable = NULL;
     if (err == E_ERP_SUCCESS)
@@ -533,7 +534,7 @@ extern unsigned int GetASN1PublicKeyFromBlob(const ClearBlob_t* blob,
     }
     if (err == E_ERP_SUCCESS)
     {
-        ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required 
+        ASN1_ITEM* offEnd = NULL;   // Not used here, but it is required
                                 // by the recursive sub calls in the length measurement.
         *pKeyLength = getEncodedSize(pItemTable, 1, &offEnd);
         *ppKeyData = os_mem_new_tag(*pKeyLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
@@ -642,13 +643,13 @@ unsigned int DoVAUECIES(T_CMDS_HANDLE* p_hdl,
     }
     // Do the ECDH.   From the Gematik Spec description of the client side:
     // gemSpec_Krypt_V2.18.0 Übergreifende Spezifikation Seite 95 von 118
-    // 1. Client MUSS ein ephemeres ECDH-Schlüsselpaar erzeugen und mit diesem und 
+    // 1. Client MUSS ein ephemeres ECDH-Schlüsselpaar erzeugen und mit diesem und
     //    dem VAU - Schlüssel aus A_20160 - ein ECDH gemäß[NIST - 800 - 56 - A] durchführen.
     //    Das somit erzeugte gemeinsame Geheimnis ist Grundlage für die folgende Schlüsselableitung.
     // 2. Als Schlüsselableitungsfunktion MUSS er die HKDF nach[RFC - 5869] auf Basis von SHA - 256 verwenden.
     // 3. Dabei MUSS er den Ableitungsvektor "ecies-vau-transport" verwenden, d.h.in
     //    der Formulierung von[RFC - 5869] info = "ecies-vau-transport" .
-    // 4. Er MUSS mit dieser Schlüsselableitung einen AES - 128 - Bit Content - Encryption Key 
+    // 4. Er MUSS mit dieser Schlüsselableitung einen AES - 128 - Bit Content - Encryption Key
     //    für die Verwendung von AES / GCM abgeleiten
     *pAESKeyLen = AES_128_LEN/8;
     if (err == E_ERP_SUCCESS)
@@ -844,7 +845,7 @@ extern unsigned int verifyECDSAWithANSISHA256Signature(T_CMDS_HANDLE* p_hdl,
     }
 
     if (err == E_ERP_SUCCESS)
-    { 
+    {
         err = verifyECDSAWithSRValSHA256Signature(p_hdl,
             signableLength, pSignableData,
             len_r, p_r,
@@ -939,7 +940,7 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
     unsigned int err = E_ERP_SUCCESS;
 
     // Sample TPMT_PUBLIC:
-    //        Defined in TPM2.0 sepcification Part 2 - Data Structures. 
+    //        Defined in TPM2.0 sepcification Part 2 - Data Structures.
     //--------------
     //  00 23 // TPMI_ALG_PUBLIC - TPM_ALG_ECC
     //    00 0B // TPMI_ALG_HASH - name hash algorithm - SHA_256
@@ -1006,7 +1007,7 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
     if (err == E_ERP_SUCCESS)
     {
         // TPMU_PUBLIC_PARMS - TPMS_ECC_PARMS - don't accept RSA
-        // The values below are taken with permission from the source code of the IBM Attestation 
+        // The values below are taken with permission from the source code of the IBM Attestation
         // Server demo code written by Ken Goldman of IBM.   #L https://sourceforge.net/projects/ibmtpm20acs/
 //        if (attestPub->type == TPM_ALG_ECC) {
 //            b9 = attestPub->parameters.eccDetail.scheme.details.ecdsa.hashAlg != TPM_ALG_SHA256;
@@ -1030,7 +1031,7 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
     { // Accept NISTP256 (0x03) or Brainpool P256 (0x30)
         switch (pubData[offset + 7])
         {
-        case (unsigned char)TPM_ECC_NIST_P256: 
+        case (unsigned char)TPM_ECC_NIST_P256:
             *pCurveOIDLen = NIST_P256_ANSI_OID_LEN;
             *ppCurveOID = os_mem_new_tag(NIST_P256_ANSI_OID_LEN, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
             CHECK_NOT_NULL(err, ppCurveOID, 0x2a);
@@ -1107,7 +1108,7 @@ int checkBitFlagSet(unsigned char* flagBuffer, size_t flagBufferSize, unsigned i
     }
     return 1;
 }
-// Method to check that the attributes of a TPMT_PUBLIC key are suitable for use as an 
+// Method to check that the attributes of a TPMT_PUBLIC key are suitable for use as an
 //   attestation Key.
 unsigned int validateAKAttributes(unsigned char attributes[4])
 {
@@ -1128,7 +1129,7 @@ unsigned int validateAKAttributes(unsigned char attributes[4])
     return err;
  }
 
-// This method will verify all aspects of a TPM Quote except the signature and 
+// This method will verify all aspects of a TPM Quote except the signature and
 //   the contents of the PCR set and hash.   The NONCE, PCR Set and hash are returned.
 // The AKName in the quote is checked against the one passed in.
 // Output pointers refer to original input data.   Do not delete.
@@ -1167,7 +1168,7 @@ unsigned int verifyTPMQuote(T_CMDS_HANDLE* p_hdl,
     }
     //        Signing key qualified name TPM2B_NAME
     //        00 22 // size 2 bytes
-    //        // TPMU_NAME - 
+    //        // TPMU_NAME -
     //        00 0B // TPMI_ALG_HASH - TPM_ALG_SHA256 - 0x000B
     //        9A 9D 5C 78 E6 F2 9B 6A DB 8D 9F C0 16 4E B3 C4 92 0A 7C C3 FB 74 82 59 E7 06 74 40 FB E4 8E 3C
     if (err == E_ERP_SUCCESS)
@@ -1353,14 +1354,14 @@ int readBELongInt(unsigned char* buffer, unsigned long* output)
     return 0;
 }
 
-unsigned int DoKDFa(T_CMDS_HANDLE* p_hdl, 
+unsigned int DoKDFa(T_CMDS_HANDLE* p_hdl,
     const char* label,
     const unsigned char* key, size_t keyLength,
     const unsigned char* inData, size_t inDataLength,
     unsigned int outputKeyBits,
     unsigned char* pOutputData, size_t* pOutputLength)
 {
-    unsigned int err = E_ERP_SUCCESS; 
+    unsigned int err = E_ERP_SUCCESS;
     // Do KDF to get symmetric key
     unsigned long Counter = 1;
     size_t labelLength = strlen(label);
@@ -1414,7 +1415,7 @@ unsigned int AES_CFB_BLOCK(AES_KEY* p_key_buff,
     }
     unsigned char IVData[(AES_256_LEN / 8) * 2] = { 0 };
     if (p_iv_in != NULL)
-    { 
+    {
         os_mem_cpy(&(IVData[0]), p_iv_in, blockSize);
     }
     else {
@@ -1444,7 +1445,7 @@ unsigned int AES_CFB_BLOCK(AES_KEY* p_key_buff,
     return err;
 }
 
-unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl, 
+unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
     const char* label, // Input: "IDENTITY", "STORAGE" or "INTEGRITY"
     const unsigned char* Z_ECDHSharedSecret, size_t Z_ECDHSharedSecretLength, // Input: Buffer and length for Z, the ECDH-derived  X coordinate
     unsigned char * xEphem, // input: X affine coordinate of ephemeral public key
@@ -1458,7 +1459,7 @@ unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
     size_t labelLength = strlen(label);
     unsigned char * pHMACInput = os_mem_new_tag(sizeof(unsigned long) + (coordSize*3) + labelLength + 1, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
     CHECK_NOT_NULL(err, pHMACInput, 0x2d);
-    
+
     int offset = 0;
     if (err == E_ERP_SUCCESS)
     {
@@ -1484,7 +1485,7 @@ unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
     return err;
 }
 
-// Method to calculate the TPM credential challenge.   The challenge Data is passed in in plaintext and 
+// Method to calculate the TPM credential challenge.   The challenge Data is passed in in plaintext and
 //    the credential and secret data is calculated for the TPM to be able to decrypt it.
 // input: clear response blob containing an AKChallenge with the plaintext credential
 // input: clear trusted EK Certificate Blob containing the EK public key.
@@ -1492,7 +1493,7 @@ unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
 // input: AK Public key in ANSI X9.62 format.
 // *** Credential and secret if allocated by this method must be deleted by the caller. ***
 //
-// Annoyingly this method uses the name "secret" twice.   Once for the buffer that is returned to the TPM and 
+// Annoyingly this method uses the name "secret" twice.   Once for the buffer that is returned to the TPM and
 //   once for the ECDH shared secret.   They are two different entities!
 extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
     const ClearBlob_t* responseBlob,
@@ -1536,7 +1537,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
         pEKPubX = &(pEKECPointData[0x1]);
     }
 
-    // AK Public key in TPMT_PUBLIC has already been formally checked in caller method, including 
+    // AK Public key in TPMT_PUBLIC has already been formally checked in caller method, including
     // Relation between AK Public and AKName.
 
     // Generate ephemeral ECC Keypair.
@@ -1637,7 +1638,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
         err = DoKDFa(p_hdl,
             "STORAGE",
             &(seedData[0]), seedLength,
-            pAKName, TPM_NAME_LEN, 
+            pAKName, TPM_NAME_LEN,
             outputKeyLenBits,
             &(AES128Key[0]), &AES128KeyLength);
         // We only want the first half of this,
@@ -1664,7 +1665,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
         if (err == E_ERP_SUCCESS)
         {
             challenge = (AKChallengeBlob_t*)responseBlob->Data;
-            encCredLength = challenge->DataLength;   
+            encCredLength = challenge->DataLength;
             // At least enough for result in complete blocks.
             pEncCredData = os_mem_new_tag(encCredLength + (AES_128_LEN/8), OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
             CHECK_NOT_NULL(err, pEncCredData, 0x30);
@@ -1706,7 +1707,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
         CHECK_NOT_NULL(err, pIntegrityInput, 0x32);
         if (err == E_ERP_SUCCESS)
         {
-            
+
             int offset = 0;
             os_mem_cpy(pIntegrityInput + offset, pEncCredData, encCredLength);
             offset += encCredLength;

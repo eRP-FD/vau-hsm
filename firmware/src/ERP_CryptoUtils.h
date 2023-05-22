@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  *
  * Description: Header file for cryptographic utility methods.
  **************************************************************************************************/
@@ -124,7 +125,7 @@ extern unsigned int verifyECDSAWithTPMTSHA256Signature(T_CMDS_HANDLE* p_hdl,
 // input: key name including 2 byte hash algorithm identifier - must be 0x000b
 unsigned int CheckTPMNameHash(T_CMDS_HANDLE * p_hdl, size_t pubLength, unsigned char * pubData, unsigned char * nameAK);
 
-// Method to calculate the TPM credential challenge.   The challenge Data is passed in in plaintext and 
+// Method to calculate the TPM credential challenge.   The challenge Data is passed in in plaintext and
 //    the credential and secret data is calculated for the TPM to be able to decrypt it.
 // input: clear response blob containing an AKChallenge with the plaintext credential
 // input: clear trusted EK Certificate Blob containing the EK public key.
@@ -161,17 +162,17 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
 // If there is an error then it will return -1
 int checkBitFlagSet(unsigned char* flagBuffer, size_t flagBufferSize, unsigned int bitFlagIndex);
 
-// Method to check that the attributes of a TPMT_PUBLIC key are suitable for use as an 
+// Method to check that the attributes of a TPMT_PUBLIC key are suitable for use as an
 //   attestation Key.
 unsigned int validateAKAttributes(unsigned char attributes[4]);
 
-// This method will verify all aspects of a TPM Quote except the signature and 
+// This method will verify all aspects of a TPM Quote except the signature and
 //   the contents of the PCR set and hash.   The NONCE, PCR Set and hash are returned.
 // The AKName in the quote is checked against the one passed in.
 // Output pointers refer to original input data.   Do not delete.
 unsigned int verifyTPMQuote(T_CMDS_HANDLE*  p_hdl,
     unsigned char* pQuoteData, size_t quoteLength,
-    unsigned char* pAKName, 
+    unsigned char* pAKName,
     unsigned char** ppQualifiedSignerName,
     unsigned char** ppNONCE,
     unsigned char** ppPCRFlags,
@@ -182,14 +183,14 @@ unsigned int verifyTPMQuote(T_CMDS_HANDLE*  p_hdl,
 // output: *ppSigR and *ppSigS are pointers into the original buffer.
 unsigned int parseTPMT_Signature(size_t sigLength, unsigned char* pSig, unsigned char** ppSigR, unsigned char** ppSigS);
 
-unsigned int DoKDFa(T_CMDS_HANDLE* p_hdl, 
+unsigned int DoKDFa(T_CMDS_HANDLE* p_hdl,
     const char* label,
     const unsigned char* key, size_t keyLength,
     const unsigned char* inData, size_t inDataLength,
     unsigned int outputKeyBits,
     unsigned char* pOutputData, size_t* pOutputLength);
 
-unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl, 
+unsigned int DoKDFe(T_CMDS_HANDLE* p_hdl,
     const char* label, // Input: "IDENTITY", "STORAGE" or "INTEGRITY"
     const unsigned char* Z_ECDHSharedSecret, size_t Z_ECDHSharedSecretLength, // Input: Buffer and length for Z, the ECDH-derived  X coordinate
     unsigned char* xEphem, // input: X affine coordinate of ephemeral public key
@@ -221,7 +222,7 @@ unsigned int x509ECDSASign(T_CMDS_HANDLE *p_hdl,
 // This function does not do error checking on its' input - it is assumed that the caller did that.
 unsigned int varyNONCE(const char * variation, unsigned char * nonceDataIn, unsigned char * variedNONCEOut);
 
-// This function treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first 
+// This function treats the key data as an AES 256 key and encrypts the value 32bytes*0x00 and returns the first
 //   four bytes as a big endian integer in pChecksum.
 // If pKeyData or pChecksum are NULL then an E_ERP_INTERNAL_BUFFER_ERROR is returned.
 // This method may also return the error codes of the Utimaco AES module.

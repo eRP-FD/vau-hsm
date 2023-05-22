@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #ifndef ERP_ERROR_H_
@@ -45,7 +46,7 @@
 #define ERP_ERR_NOT_IMPLEMENTED_YET       0xB101000C      // Devtime only - method not yet implemented.
 #define ERP_ERR_BAD_BLOB_GENERATION       0xB101000D      // Blob Generation is not ok for the operation.
 #define ERP_ERR_AES_KEY_ERROR             0xB101000E      // There is an error with using an AES KEY
-#define ERP_ERR_KEY_USAGE_ERROR           0xB101000F      // A key is not allowed to be used for the intended usage 
+#define ERP_ERR_KEY_USAGE_ERROR           0xB101000F      // A key is not allowed to be used for the intended usage
 #define ERP_ERR_BAD_BLOB_DOMAIN           0xB1010010      // A Blob is for a different domain to this version of the firmware.
 #define ERP_ERR_BAD_BLOB_AD               0xB1010011      // A Sealed Blob has failed its' Associated Data Check.
 #define ERP_ERR_WRONG_BLOB_TYPE           0xB1010012      // A Sealed Blob is not of the correct type for the operation.
@@ -69,7 +70,7 @@
 #define ERP_ERR_BAD_TPMT_PUBLIC_ALGORITHM 0xB1010024      // A TPMT_PUBLIC Key has the wrong algorithm.   Should be 0x023 TPMI_ALG_ECC.
 #define ERP_ERR_BAD_TPMT_PUBLIC_FORMAT    0xB1010025      // A TPMT_PUBLIC Key is badly formatted.
 #define ERP_ERR_FAIL_AK_CREDENTIAL_MATCH  0xB1010026      // The returned plain text AK Challenge credential does not match the challenge.
-#define ERP_ERR_BAD_BLOB_TIME             0xB1010027      // A Blob has an invalid time, e.g. later than now? 
+#define ERP_ERR_BAD_BLOB_TIME             0xB1010027      // A Blob has an invalid time, e.g. later than now?
 #define ERP_ERR_TPM_UNSUPPORTED_CURVE     0xB1010028      // An ECC Curve is not supported by the TPM.
 #define ERP_ERR_BAD_TPMT_SIGNATURE_LENGTH 0xB1010029      // The length of the TPMT_SIGNATURE is wrong.
 #define ERP_ERR_BAD_TPMT_SIGNATURE_FORMAT 0xB1010030      // The format of the TPMT_SIGNATURE is wrong.
@@ -94,7 +95,7 @@
 #define ERP_ERR_BACKUP_WRONG_DATA_LEN     0xB1010043      // The length of the encoded Data field in a backup blob is wrong.
 #define ERP_ERR_BACKUP_WRONG_BLOB_KEY_KCV 0xB1010044      // The KCV of the decoded blob key in the backup does not match the KCV in the metadata.
 // END FIRMWARE ERROR CODES
- 
+
 // Codes from Utimaco:
 #define E_ASN1_ALL            0xB0910000      /* BIT MASK for all Utimaco ASN Error codes.                         */
 #define E_ASN1_MEM            0xB0910001      /* Memory Error                           */
@@ -119,7 +120,7 @@
   // error codes that are not present in the client code
 #define E_AES_GCM_AUTH_TAG_FAILED 0xB08B000E  /* Tag verification on CCM/GCM decrypt failed */
 
-// If INDEX_ERRORS is defined in the firmware build then error codes will have been modified in the 
+// If INDEX_ERRORS is defined in the firmware build then error codes will have been modified in the
 //    third byte to uniqely identify their source location.
 // This macro will strip the index out allowing direct comparisons with the above codes.
 #define ERR_INDEX_MASK 0xFFFF00FF

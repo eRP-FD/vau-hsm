@@ -1,7 +1,8 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2022
- * (C) Copyright IBM Corp. 2022
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #include "ERP_Client.h"
@@ -22,7 +23,7 @@ public:
     ErpPseudonameKeyTestFixture() = default;
 
     void connect() {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         m_logonSession = ERP_Connect(devIP.c_str(), TEST_CONNECT_TIMEOUT_MS, TEST_READ_TIMEOUT_MS);
     }
     void logonSetup() {
@@ -71,7 +72,7 @@ public:
         }
     }
     void SetUp() override {
-        // This method is intended to be invoked for each test just before the test starts 
+        // This method is intended to be invoked for each test just before the test starts
         connect();
         EXPECT_EQ(HSMAnonymousOpen, m_logonSession.status);
         logonSetup();
@@ -109,9 +110,9 @@ TEST_F(ErpPseudonameKeyTestFixture, UnwrapPseudonameKey)
     teststep_UnwrapPseudonameKey(ErpPseudonameKeyTestFixture::m_logonSession, savedKeyPairBlob.get(), &keyOut);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
     const unsigned char expectedKey[] = {
-        0xd3, 0x76, 0x59, 0xff, 0x63, 0x98, 0x67, 0x84, 
-        0x67, 0xf8, 0x71, 0xea, 0xd9, 0xde, 0x77, 0xb1, 
-        0x29, 0xe3, 0xd3, 0xee, 0x57, 0xd4, 0x96, 0xfa, 
+        0xd3, 0x76, 0x59, 0xff, 0x63, 0x98, 0x67, 0x84,
+        0x67, 0xf8, 0x71, 0xea, 0xd9, 0xde, 0x77, 0xb1,
+        0x29, 0xe3, 0xd3, 0xee, 0x57, 0xd4, 0x96, 0xfa,
         0xcd, 0x38, 0xe4, 0x43, 0x6d, 0x9b, 0xfe, 0xea
     };
     ASSERT_TRUE(0 == memcmp(&(keyOut.Key[0]), &(expectedKey[0]), 32));
@@ -120,16 +121,16 @@ TEST_F(ErpPseudonameKeyTestFixture, UnwrapPseudonameKey)
         std::vector<std::uint8_t>(&(keyOut.Key[0]), &(keyOut.Key[0]) + AES_256_LEN));
 }
 
-// The intent of this test is to allow triggering of a single memory dump manually when using 
+// The intent of this test is to allow triggering of a single memory dump manually when using
 //   the test suite for memory leak hunting.   i.e. run before and after a suspect other test.
 TEST_F(ErpPseudonameKeyTestFixture, DumpMemoryTrace)
 {
     teststep_DumpHSMMemory(ErpPseudonameKeyTestFixture::m_logonSession);
 }
 
-// The intent of this test is that it be run and then the HSM Memory dumps are inspected to see if the 
+// The intent of this test is that it be run and then the HSM Memory dumps are inspected to see if the
 //   number of allocated memory blocks is growing.
-// This has actually grown to include other operations than psuedoname since the parameterised test suite in ERP_Tests.cpp 
+// This has actually grown to include other operations than psuedoname since the parameterised test suite in ERP_Tests.cpp
 //   had a problem causing MSVS Test to crash.
 TEST_F(ErpPseudonameKeyTestFixture, LoadLoopTests)
 {

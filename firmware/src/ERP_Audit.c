@@ -1,13 +1,14 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  *
  * Description: Audit log code for the IBM eRezept VAU HSM Custom firmware.
  **************************************************************************************************/
 
 // Needed to avoid bug warning in winnt.h
-#define no_init_all 
+#define no_init_all
 
 #include <cryptoserversdk/memutil.h>
 #include <cryptoserversdk/os_mem.h>
@@ -155,7 +156,7 @@ unsigned int auditErr(unsigned int err)
         case E_ERP_NOT_IMPLEMENTED_YET: //       0xB101000C      // Devtime only - method not yet implemented.
         case E_ERP_BAD_BLOB_GENERATION: //       0xB101000D      // Blob Generation is not ok for the operation.
         case E_ERP_AES_KEY_ERROR: //             0xB101000E      // There is an error with using an AES KEY
-        case E_ERP_KEY_USAGE_ERROR: //           0xB101000F      // A key is not allowed to be used for the intended usage 
+        case E_ERP_KEY_USAGE_ERROR: //           0xB101000F      // A key is not allowed to be used for the intended usage
         case E_ERP_BAD_BLOB_DOMAIN: //           0xB1010010      // A Blod is for a different domain to this version of the firmware.
         case E_ERP_BAD_BLOB_AD: //               0xB1010011      // A Sealed Blob has failed its' Associated Data Check.
         case E_ERP_WRONG_BLOB_TYPE: //           0xB1010012      // A Sealed Blob is not of the correct type for the operation.
@@ -178,7 +179,7 @@ unsigned int auditErr(unsigned int err)
         case  E_ERP_BAD_TPMT_PUBLIC_ALGORITHM: // 0xB1B10024      // A TPMT_PUBLIC Key has the wrong algorithm.   Should be 0x023 TPMI_ALG_ECC.
         case  E_ERP_BAD_TPMT_PUBLIC_FORMAT: //    0xB1B10025      // A TPMT_PUBLIC Key is badly formatted.
         case  E_ERP_FAIL_AK_CREDENTIAL_MATCH: //  0xB1B10026      // The returned plain text AK Challenge credential does not match the challenge.
-        case  E_ERP_BAD_BLOB_TIME: //             0xB1B10027      // A Blob has an invalid time, e.g. later than now? 
+        case  E_ERP_BAD_BLOB_TIME: //             0xB1B10027      // A Blob has an invalid time, e.g. later than now?
         case  E_ERP_TPM_UNSUPPORTED_CURVE: //     0xB1B10028      // An ECC Curve is not supported by the TPM.
         case  E_ERP_BAD_TPMT_SIGNATURE_LENGTH: // 0xB1B10029      // The length of the TPMT_SIGNATURE is wrong.
         case  E_ERP_BAD_TPMT_SIGNATURE_FORMAT: // 0xB1B10030      // The format of the TPMT_SIGNATURE is wrong.
@@ -212,7 +213,7 @@ unsigned int auditErrWithIDAndMessage(unsigned int err, ERP_AuditID_t id, const 
     #define TRUNC_LEN (ERP_AUDIT_MAX_MESSAGE + 16)
 
     char MsgBuffer[TRUNC_LEN] = "";
-    
+
     // First the basic message for the id.
     os_str_cpy(&(MsgBuffer[0]), AuditMessages[id]);
     // Messages in table must be less than max message len.
@@ -224,7 +225,7 @@ unsigned int auditErrWithIDAndMessage(unsigned int err, ERP_AuditID_t id, const 
     }
     if (message != NULL)
     {
-        // Strip the const on message here.   Just because the os_str method 
+        // Strip the const on message here.   Just because the os_str method
         //    doesn't take const doesn't mean we shouldn't use it ourselves.
         msgLen += os_str_snprintf(&(MsgBuffer[msgLen]), ERP_AUDIT_MAX_MESSAGE - msgLen, (char*) message);
     }
@@ -235,6 +236,6 @@ unsigned int auditErrWithIDAndMessage(unsigned int err, ERP_AuditID_t id, const 
     }
     os_audit_write(getAuditClass(id), "%s", &(MsgBuffer[0]));
 
-    // Return the original error. 
+    // Return the original error.
     return err;
 }

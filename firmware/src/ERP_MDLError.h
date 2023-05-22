@@ -1,13 +1,14 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021
- * (C) Copyright IBM Corp. 2021
- * SPDX-License-Identifier: CC BY-NC-ND 3.0 DE
+ * (C) Copyright IBM Deutschland GmbH 2021, 2023
+ * (C) Copyright IBM Corp. 2021, 2023
+ *
+ * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
 
 #ifndef ERP_MDL_ERROR_H
 #define ERP_MDL_ERROR_H
 
-// This file is duplicated in the Client subproject - make sure that changes introduced are copied into both 
+// This file is duplicated in the Client subproject - make sure that changes introduced are copied into both
 // destinations.
 
 //-----------------------------------------------------------------------------
@@ -36,7 +37,7 @@
 #define E_ERP_NOT_IMPLEMENTED_YET       0xB101000C      // Devtime only - method not yet implemented.
 #define E_ERP_BAD_BLOB_GENERATION       0xB101000D      // Blob Generation is not ok for the operation.
 #define E_ERP_AES_KEY_ERROR             0xB101000E      // There is an error with using an AES KEY
-#define E_ERP_KEY_USAGE_ERROR           0xB101000F      // A key is not allowed to be used for the intended usage 
+#define E_ERP_KEY_USAGE_ERROR           0xB101000F      // A key is not allowed to be used for the intended usage
 #define E_ERP_BAD_BLOB_DOMAIN           0xB1010010      // A Blob is for a different domain to this version of the firmware.
 #define E_ERP_BAD_BLOB_AD               0xB1010011      // A Sealed Blob has failed its' Associated Data Check.
 #define E_ERP_WRONG_BLOB_TYPE           0xB1010012      // A Sealed Blob is not of the correct type for the operation.
@@ -60,7 +61,7 @@
 #define E_ERP_BAD_TPMT_PUBLIC_ALGORITHM 0xB1010024      // A TPMT_PUBLIC Key has the wrong algorithm.   Should be 0x023 TPMI_ALG_ECC.
 #define E_ERP_BAD_TPMT_PUBLIC_FORMAT    0xB1010025      // A TPMT_PUBLIC Key is badly formatted.
 #define E_ERP_FAIL_AK_CREDENTIAL_MATCH  0xB1010026      // The returned plain text AK Challenge credential does not match the challenge.
-#define E_ERP_BAD_BLOB_TIME             0xB1010027      // A Blob has an invalid time, e.g. later than now? 
+#define E_ERP_BAD_BLOB_TIME             0xB1010027      // A Blob has an invalid time, e.g. later than now?
 #define E_ERP_TPM_UNSUPPORTED_CURVE     0xB1010028      // An ECC Curve is not supported by the TPM.
 #define E_ERP_BAD_TPMT_SIGNATURE_LENGTH 0xB1010029      // The length of the TPMT_SIGNATURE is wrong.
 #define E_ERP_BAD_TPMT_SIGNATURE_FORMAT 0xB1010030      // The format of the TPMT_SIGNATURE is wrong.
