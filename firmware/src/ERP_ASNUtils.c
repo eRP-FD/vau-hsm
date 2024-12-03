@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -1032,22 +1032,51 @@ extern unsigned int parseASN1PublicKey(
     unsigned int err = E_ERP_SUCCESS;
     unsigned int TableLength = 5;
     ASN1_ITEM* Items = NULL;
+    CurveId_t curveId = CurveId_Unknown;
 
     err = decodeASNList(keyLength, pKeyData, &Items, TableLength, 2);
 
+
     if (err == E_ERP_SUCCESS)
     {
-        if ((Items[1].tag != ASN_SEQUENCE) ||
+        curveId = getCurveID(&(Items[3]));
+        switch (curveId)
+        {
+        case CurveId_NistP256:
+        case CurveId_Brainpoolp256r1:
+            if (Items[4].len != 0x42) {
+                err = E_ERP_ASN1_CONTENT_ERROR;
+            }
+            break;
+        case CurveId_Secp384r1:
+            if (Items[4].len != 0x62) {
+                err = E_ERP_ASN1_CONTENT_ERROR;
+            }
+            break;
+        case CurveId_Secp521r1:
+            if (Items[4].len != 0x86) {
+                err = E_ERP_ASN1_CONTENT_ERROR;
+            }
+            break;
+        case CurveId_Unknown:
+        default:
+            err = E_ERP_CERT_UNSUPPORTED_CURVE;
+            break;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        if (((Items[1].tag != ASN_SEQUENCE) ||
             (Items[1].nitems != 2) ||
             (Items[2].tag != ASN_OBJECT_ID) ||
             (Items[3].tag != ASN_OBJECT_ID) ||
-            (Items[4].tag != ASN_BIT_STRING) ||
-            (Items[4].len != 0x42))
+            (Items[4].tag != ASN_BIT_STRING)))
         {
             err = E_ERP_ASN1_CONTENT_ERROR;
             INDEX_ERR(err, 0x0e);
         }
     }
+
     if (err == E_ERP_SUCCESS)
     {
         if (Items[2].len != ID_EC_PUBLICKEY_ANSI_OID_LEN)
@@ -1065,21 +1094,34 @@ extern unsigned int parseASN1PublicKey(
         }
     }
     if (err == E_ERP_SUCCESS)
-    { // Second oid is curve ID for a curve that we support.
-        if (0 == isSupportedCurveID(&(Items[3])))
-        {
-            err = E_ERP_CERT_UNSUPPORTED_CURVE;
-        }
-    }
-    if (err == E_ERP_SUCCESS)
     { // If we get here then we can pick out the values for the return data.
-
-        // For now, both curves that we support have 256 bit coordinates.
-        *pCoordinateSize = 0x20;
         *pCurveOIDLen = Items[3].len;
         *ppCurveOID = &(Items[3].p_data[0]);
-        *ppXCoord = &(Items[4].p_data[0x2]);
-        *ppYCoord = &(Items[4].p_data[0x22]);
+        // 256 bit coordinates
+        switch (curveId)
+        {
+        case CurveId_NistP256:
+        case CurveId_Brainpoolp256r1:
+            *pCoordinateSize = 0x20;
+            *ppXCoord = &(Items[4].p_data[0x2]);
+            *ppYCoord = &(Items[4].p_data[0x22]);
+            break;
+        case CurveId_Secp384r1:
+            *pCoordinateSize = 0x30;
+            *ppXCoord = &(Items[4].p_data[0x2]);
+            *ppYCoord = &(Items[4].p_data[0x32]);
+            break;
+        case CurveId_Secp521r1:
+            *pCoordinateSize = 0x42;
+            *ppXCoord = &(Items[4].p_data[0x2]);
+            *ppYCoord = &(Items[4].p_data[0x44]);
+            break;
+
+        case CurveId_Unknown:
+        default:
+            err = E_ERP_CERT_UNSUPPORTED_CURVE;
+            break;
+        }
     }
 
     // Subsidiary structures in Itemlist from der_decode point into the original buffer
@@ -1294,6 +1336,43 @@ extern unsigned int parseDoECIESAES128Request(
     {
         *pClientPubKeyLength = 0;
         err = getASN1OCTETSTRING(&Items[7], pClientPubKeyLength, ppClientPubKeyData);
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
+unsigned int parseSignVAUAUTTokenRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    SealedBlob_t** ppAutKeyPairBlob,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 8;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 3);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the tee token.
+        err = getASN1SealedBlob(&Items[1], ppTEETokenBlob);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the Aut key Pair token.
+        err = getASN1SealedBlob(&Items[4], ppAutKeyPairBlob);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        *pPayloadLen = 0;
+        err = getASN1OCTETSTRING(&Items[7], pPayloadLen, ppPayloadData);
     }
 
     // Subsidiary structures in Itemlist from der_decode point into the original buffer
@@ -1904,12 +1983,15 @@ unsigned int parsex509ECCertificate(
     unsigned char** ppECPointData,
     size_t * pCurveIDLen, // OID of curve.
     unsigned char **ppCurveID,
-    unsigned int * pbIsCA
+    unsigned int * pbIsCA,
+    SignatureAlgorithm_t * signatureAlgorithm
 )
 {
     unsigned int err = E_ERP_SUCCESS;
     unsigned int TableLength = 0;
     ASN1_ITEM* Items = NULL;
+    CurveId_t curveId = CurveId_Unknown;
+    SignatureAlgorithm_t pubKeySignatureAlgorithm = SIGNATURE_ALGORITHM_unsupported;
 
     // First call will tell us how big our table structure needs to be.
     err = asn1_decode(pCertData, // input Data
@@ -1954,11 +2036,32 @@ unsigned int parsex509ECCertificate(
         }
     }
 
-    ASN1_ITEM* pSubjectKeyAlgID = NULL;
+    ASN1_ITEM* pCert = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Find location of start of Certificate
+        LOCAL_STAT char searchPath[] = { 1,0 };
+        err = asn1_find_item(&(Items[0]), &(searchPath[0]),NULL, &pCert);
+    }
+    ASN1_ITEM* pPubkeyAlgorithm = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Find location of start of AlgorithmIdentifier
+        LOCAL_STAT char searchPath[] = { 3,0 };
+        err = asn1_find_item(pCert, &(searchPath[0]),NULL, &pPubkeyAlgorithm);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        if ((pPubkeyAlgorithm->tag != ASN_SEQUENCE) ||
+            (pPubkeyAlgorithm->nitems != 1) ||
+            ((pPubkeyAlgorithm + 1)->tag != ASN_OBJECT_ID))
+        {
+            err = E_ERP_CERT_BAD_SUBJECT_ALG;
+        }
+    }
     if (err == E_ERP_SUCCESS)
     { // Check the subject public key algorithm
-        err = asn1_find_object((unsigned char *)&(ID_ECDSA_WITH_SHA256_ANSI_OID[0]),ID_ECDSA_WITH_SHA256_ANSI_OID_LEN,&(Items[1]), &pSubjectKeyAlgID);
-        if (err != E_ERP_SUCCESS)
+        pubKeySignatureAlgorithm = getSignatureAlgorithm(pPubkeyAlgorithm + 1);
+        if (pubKeySignatureAlgorithm == SIGNATURE_ALGORITHM_unsupported)
         {
             err = E_ERP_CERT_BAD_SUBJECT_ALG;
         }
@@ -1966,7 +2069,7 @@ unsigned int parsex509ECCertificate(
 
     ASN1_ITEM* pPublicKey = NULL;
     if (err == E_ERP_SUCCESS)
-    { // Check the signature public key algorithm
+    { // Check the subject public key
         err = asn1_find_object((unsigned char*)&(ID_EC_PUBLICKEY_ANSI_OID[0]), ID_EC_PUBLICKEY_ANSI_OID_LEN, &(Items[1]), &pPublicKey);
         if (err != E_ERP_SUCCESS)
         {
@@ -1995,7 +2098,8 @@ unsigned int parsex509ECCertificate(
             err = E_ERP_CERT_BAD_SUBJECT_ENCODING;
         }
         else {
-            if (0 == isSupportedCurveID(pCurveID))
+            curveId = getCurveID(pCurveID);
+            if (CurveId_Unknown == curveId)
             {
                 err = E_ERP_CERT_UNSUPPORTED_CURVE;
             }
@@ -2007,7 +2111,7 @@ unsigned int parsex509ECCertificate(
         *ppCurveID = pCurveID->p_data;
         *pCurveIDLen = pCurveID->len;
     }
-    // Set PublicKey Return values the first is the whole c509 public key structure
+    // Set PublicKey Return values the first is the whole x509 public key structure
     if (err == E_ERP_SUCCESS)
     {
         *ppx509ECKeyData = pPublicKey->p_data - pPublicKey->raw_off;
@@ -2071,11 +2175,16 @@ unsigned int parsex509ECCertificate(
     {
         if ((pSignatureAlg->tag != ASN_SEQUENCE) ||
             (pSignatureAlg->nitems != 1) ||
-            ((pSignatureAlg+1)->tag != ASN_OBJECT_ID) ||
-            ((pSignatureAlg+1)->len != ID_ECDSA_WITH_SHA256_ANSI_OID_LEN) ||
-            (0 != os_mem_cmp((pSignatureAlg+1)->p_data,&(ID_ECDSA_WITH_SHA256_ANSI_OID[0]),ID_ECDSA_WITH_SHA256_ANSI_OID_LEN)))
+            ((pSignatureAlg+1)->tag != ASN_OBJECT_ID))
         {
             err = E_ERP_CERT_BAD_SIGNATURE_ALG;
+        }
+        else {
+            *signatureAlgorithm = getSignatureAlgorithm(pSignatureAlg+1);
+            if (*signatureAlgorithm == SIGNATURE_ALGORITHM_unsupported)
+            {
+                err = E_ERP_CERT_BAD_SIGNATURE_ALG;
+            }
         }
     }
     ASN1_ITEM* pSignatureBody = NULL;
@@ -2196,6 +2305,7 @@ unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPai
         switch (keyPair->BlobType)
         {
         case ECIES_KeyPair:
+        case AUT_KeyPair:
         {
             // "E-Rezept vertrauenswürdige Ausführungsumgebung and oid_erezept" in UTF8.
             const unsigned char erpVAU[] = // "E-Rezept vertrauenswürdige Ausführungsumgebung";
@@ -2244,7 +2354,7 @@ unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPai
 //   with the public key from the keypair and resign with the private key from the keypair.
 // The candidate CSR must be complete with a public key and signature, though the content of
 //    the public ky and the validity of the signature do not matter.
-// Admission Extensions will be checkd for VAUSIG and ECIES keypairs
+// Admission Extensions will be checked for VAUSIG, ECIES, AUT keypairs
 // A new buffer will be allocated for the modified CSR which must be freed by the caller.
 unsigned int x509ECCSRReplacePublicKeyAndSign(
     T_CMDS_HANDLE* p_hdl,
@@ -2344,7 +2454,7 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
             err = E_ERP_CERT_BAD_SUBJECT_ENCODING;
         }
         else {
-            if (0 == isSupportedCurveID(pCurveID))
+            if (CurveId_Unknown == getCurveID(pCurveID))
             {
                 err = E_ERP_CERT_UNSUPPORTED_CURVE;
             }
@@ -2370,7 +2480,7 @@ unsigned int x509ECCSRReplacePublicKeyAndSign(
 
     size_t x509ECKeyLength = 0;
     unsigned char* px509ECKeyData = NULL;
-    // Set PublicKey Return values the first is the whole c509 public key structure
+    // Set PublicKey Return values the first is the whole x509 public key structure
     if (err == E_ERP_SUCCESS)
     {   // pPublicKey is a SEQUENCE
         px509ECKeyData = pPublicKey->p_data - pPublicKey->raw_off;

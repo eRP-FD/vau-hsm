@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  *
@@ -104,6 +104,7 @@ typedef enum ERPBlobType {
     , Hash_Key          = 7 // A symmetric key used to calculate keyed hashes.
     , ECIES_KeyPair     = 8 // EC Keypair used for ECIES VAU communications encryption
     , VAUSIG_KeyPair    = 10 // EC Keypair used for VAU Signature operations.
+    , AUT_KeyPair       = 14 // EC Keypair used for AUT Signature operations.
     // Transient Blobs:
     , NONCE_Blob        = 9 // A NONCE to be used to prevent replay attacks.
     , AKChallenge       = 3 // A credential that must be decrypted during the AK attestation.

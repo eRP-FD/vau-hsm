@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -50,5 +50,8 @@
 #define ERP_SFC_WRAP_PAYLOAD             33
 #define ERP_SFC_WRAP_PAYLOAD_WITH_TOKEN  34
 #define ERP_SFC_UNWRAP_PAYLOAD           35
+#define ERP_SFC_GENERATE_AUT_KEYPAIR     36
+#define ERP_SFC_GENERATE_AUT_CSR         37
+#define ERP_SFC_SIGN_AUT_TOKEN           38
 
 #endif

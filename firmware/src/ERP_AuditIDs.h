@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  *
@@ -65,7 +65,8 @@ typedef enum ERP_AuditID {
     ERP_AUDIT_Wrap_Raw_Payload                                      = 51,
     ERP_AUDIT_Failed_Wrap_Raw_Payload                               = 52,
     ERP_AUDIT_Failed_Unwrap_Raw_Payload                             = 53,
-    ERP_AUDIT_LastUsedId                                            = 54 // Used for programmatic reasons.
+    ERP_AUDIT_Failed_SignVAUAUTToken                                = 54,
+    ERP_AUDIT_LastUsedId                                            = 55 // Used for programmatic reasons.
 }ERP_AuditID_t;
 
 // Used for successful setup operations

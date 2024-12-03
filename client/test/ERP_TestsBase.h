@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -49,6 +49,7 @@ public:
     static std::unique_ptr<ERPBlob> savedTrustedAK;
     static std::unique_ptr<ERPBlob> teeToken;
     static std::unique_ptr<ERPBlob> savedECIESKeyPairBlob;
+    static std::unique_ptr<ERPBlob> savedVAUAUTKeyPairBlob;
     static std::unique_ptr<ERPBlob> savedEnrollmentNONCE;
     static std::unique_ptr<ERPBlob> savedAttestationNONCE;
     static std::unique_ptr<ERPBlob> savedTrustedQuote;

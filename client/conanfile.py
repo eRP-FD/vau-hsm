@@ -2,8 +2,8 @@
 
 ###################################################################################################
 
-# (C) Copyright IBM Deutschland GmbH 2021, 2023
-# (C) Copyright IBM Corp. 2021, 2023
+# (C) Copyright IBM Deutschland GmbH 2021, 2024
+# (C) Copyright IBM Corp. 2021, 2024
 #
 # non-exclusively licensed to gematik GmbH
 
@@ -33,9 +33,6 @@ class HsmClientPackage(ConanFile):
     _verbose_cmake_argument = 'VERBOSE'
 
     _cmake = None
-
-    _test_build_requires = ['gtest/1.11.0',
-                            'openssl/1.1.1k']
 
     # Conan properties, used by the Conan SDK
 
@@ -74,10 +71,6 @@ class HsmClientPackage(ConanFile):
                        'src/*',
                        'test/*']
 
-    build_requires = ['asn1c/0.9.29']
-
-    requires = ['csxapi/1.0']
-
     def _get_cmake(self):
         if self._cmake:
             return self._cmake
@@ -112,8 +105,11 @@ class HsmClientPackage(ConanFile):
             self.version = git.run('describe --tags --abbrev=0 --match "v-[0-9\.]*"')[2:]
 
     def requirements(self):
+        self.requires("csxapi/1.0")
+        self.requires("asn1c/cci.20200522")
         if self.options.with_tests:
-            self.build_requires += self._test_build_requires
+            self.requires("gtest/1.15.0")
+            self.requires("openssl/1.1.1k")
 
     def build(self):
         # build the source code

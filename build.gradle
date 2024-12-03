@@ -1,5 +1,16 @@
 plugins {
-    id 'pl.allegro.tech.build.axion-release' version '1.12.1'
+    id 'pl.allegro.tech.build.axion-release' version '1.15.0'
+    id 'org.cyclonedx.bom' version '1.4.0'
+    id 'org.sonarqube' version '5.0.0.4638'
 }
+
+sonarqube {
+    properties {
+        property "sonar.java.source", "."
+        property "sonar.sourceEncoding", "UTF-8"
+    }
+}
+
+group = 'com.ibm.erp'
 
 apply from: 'gradle/release.gradle'

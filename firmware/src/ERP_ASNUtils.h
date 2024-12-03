@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -241,6 +241,15 @@ extern unsigned int parseDoECIESAES128Request(
     unsigned int* pClientPubKeyLength,
     unsigned char** ppClientPubKeyData);
 
+unsigned int parseSignVAUAUTTokenRequest(
+    int l_cmd,
+    unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    SealedBlob_t** ppAutKeyPairBlob,
+    unsigned int* pPayloadLen,
+    unsigned char** ppPayloadData);
+
 // Method to validate an x509 ANSI X9.62 encoded public key.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
 //   pointing into the original data buffer so do not delete the input buffer until you are
@@ -367,7 +376,8 @@ unsigned int parsex509ECCertificate(
     unsigned char** ppECPointData,
     size_t* pCurveIDLen, // OID of curve.
     unsigned char** ppCurveID,
-    unsigned int * pbIsCA
+    unsigned int * pbIsCA,
+    SignatureAlgorithm_t * signatureAlgorithm
 );
 
 unsigned int parseWrapRawPayloadRequest(
@@ -402,7 +412,7 @@ unsigned int checkX509Admissions(ASN1_ITEM* pAdmissionsItem, ClearBlob_t* keyPai
 //   with the public key from the keypair and resign with the private key from the keypair.
 // The candidate CSR must be complete with a public key and signature, though the content of
 //    the public ky and the validity of the signature do not matter.
-// Admission Extensions will be checkd for VAUSIG and ECIES keypairs
+// Admission Extensions will be checked for VAUSIG, ECIES, AUT keypairs
 // A new buffer will be allocated for the modified CSR which must be freed by the caller.
 // return:  error status.
 unsigned int x509ECCSRReplacePublicKeyAndSign(

@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -639,6 +639,21 @@ TEST_F(ErpAttestationTestFixture, HWTPMCertificates)
         pEKCert.size(),
         pEKCert.data());
     ASSERT_EQ(ERP_ERR_NOERROR, err);
+
+    // test intermediate CA with 384 bits key size and SHA-384
+    {
+        auto RootCert384bits = readERPResourceFile("NPCTxxxECC384LeafCA022111.cer");
+        auto pTrusted384bits = getEmptyBlob(Gen);
+        err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrusted384bits.get(), RootCert384bits);
+        ASSERT_EQ(ERP_ERR_NOERROR, err);
+    }
+    // test root CA with 521 bits key size and SHA-512
+    {
+        auto RootCert521bits = readERPResourceFile("NPCTxxxECC521RootCA.cer");
+        auto pTrusted521bits = getEmptyBlob(Gen);
+        err = teststep_TrustTPMMfr(ErpAttestationTestFixture::m_logonSession, Gen, pTrusted521bits.get(), RootCert521bits);
+        ASSERT_EQ(ERP_ERR_NOERROR, err);
+    }
 }
 
 TEST_F(ErpAttestationTestFixture, VsdmTestKeys)

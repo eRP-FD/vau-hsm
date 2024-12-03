@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  *
@@ -484,7 +484,7 @@ extern int ERP_GenerateECKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char*
 
 // Shared implementation for multiple externally callable FWAPI Commands
 // Generate CSR for an EC Keypair
-// Input: ECIES or VAUSIG KeyPair Blob
+// Input: ECIES, VAUSIG, or AUT KeyPair Blob
 // Input: Candidate CSR with all valid fields, except public key and signature
 //    which must be present and formally correct, but the content data is irrelevant.
 //    The Signature does not need to be valid either.
@@ -570,6 +570,32 @@ extern int ERP_GenerateVAUSIGCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char*
 {
     return ERP_GenerateECCSR(p_hdl, l_cmd, p_cmd, VAUSIG_KeyPair, ERP_AUDIT_Failed_EC_CSR_Generation);
 }
+
+// Externally callable FWAPI Command
+// Command to generate a new EC Signature KeyPair for VAU Signing operations
+// Input: unsigned int Desired Generation - if zero, then the highest available Generation
+//           in the HSM is used.   Otherwise the input value must
+//           match an existing Blob Key Generation present in the HSM.
+// Output: ECIES KeyPair Blob
+// Return: Success or Error code.
+extern int ERP_GenerateAUTKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    return ERP_GenerateECKeyPair(p_hdl, l_cmd, p_cmd, AUT_KeyPair, ERP_AUDIT_Failed_EC_KeyPair_Generation);
+}
+
+// Externally callable FWAPI Command
+// Generate CSR for a AUT Keypair
+// Input: AUT KeyPair Blob
+// Input: Candidate CSR with all valid fields, except public key and signature
+//    which must be present and formally correct, but the content data is irrelevant.
+//    The Signature does not need to be valid either.
+// Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
+extern int ERP_GenerateAUTCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    return ERP_GenerateECCSR(p_hdl, l_cmd, p_cmd, AUT_KeyPair, ERP_AUDIT_Failed_EC_CSR_Generation);
+}
+
 
 // Externally callable FWAPI Command
 // Command to generate a new ECIES KeyPair for ECIES key exchange with an existing Generation
@@ -683,6 +709,7 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     size_t curveIDLen = 0;
     unsigned char* pCurveID = NULL;
     unsigned int bIsCA = 0;
+    SignatureAlgorithm_t signatureAlgorithm = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -692,7 +719,7 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
                     &x509ECKeyLength, &px509ECKeyData,
                     &ecPointLength, &pECPointData,
                     &curveIDLen, &pCurveID,
-                    &bIsCA);
+                    &bIsCA, &signatureAlgorithm);
     }
     if (err == E_ERP_SUCCESS)
     {
@@ -706,18 +733,6 @@ int ERP_TrustTPMMfr(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
         if (bIsCA == 0)
         {
             err = E_ERP_CERT_WRONG_ISCA_VALUE;
-        }
-    }
-    if (err == E_ERP_SUCCESS)
-    {
-        // Certificate is self-signed (Root)
-        err = verifyECDSAWithANSISHA256Signature(p_hdl,
-            signableLength, pSignableData,
-            signatureLength, pSignatureData,
-            x509ECKeyLength, px509ECKeyData);
-        if (err == E_ECDSA_VERIFY_FAILED)
-        {
-            err = E_ERP_CERT_WRONG_ROOT_STATUS;
         }
     }
     ClearBlob_t* clear = NULL;
@@ -809,6 +824,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     size_t EKCurveIDLen = 0;
     unsigned char* pEKCurveID = NULL;
     unsigned int bIsEKCA = 0;
+    SignatureAlgorithm_t signatureAlgorithmEK = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -818,7 +834,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
             &EKx509ECKeyLength, &pEKx509ECKeyData,
             &EKECPointLength, &pEKECPointData,
             &EKCurveIDLen, &pEKCurveID,
-            &bIsEKCA);
+            &bIsEKCA, &signatureAlgorithmEK);
     }
     // - Extract TPM MFR cert from blob.
     ClearBlob_t* clearTPMMfrRoot = NULL;
@@ -843,6 +859,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     size_t MfrCurveIDLen = 0;
     unsigned char* pMfrCurveID = NULL;
     unsigned int bIsMfrCA = 0;
+    SignatureAlgorithm_t signatureAlgorithmMfr = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -852,7 +869,7 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
             &Mfrx509ECKeyLength, &pMfrx509ECKeyData,
             &MfrECPointLength, &pMfrECPointData,
             &MfrCurveIDLen, &pMfrCurveID,
-            &bIsMfrCA);
+            &bIsMfrCA, &signatureAlgorithmMfr);
     }
     // ERP-5568 - Additional EK Certificate checks.
     // Check that: Algorithm is ECDSA.   Already checked in parse method.
@@ -879,9 +896,10 @@ int ERP_EnrollTPMEK(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)      
     // - Check signature of EK Cert against the TPM Mfr Root CA cert.
     if (err == E_ERP_SUCCESS)
     {
-        err = verifyECDSAWithANSISHA256Signature(p_hdl,
+        err = verifyECDSAWithANSISHA2Signature(p_hdl,
             EKSignableLength, pEKSignableData,
             EKSignatureLength, pEKSignatureData,
+            signatureAlgorithmEK,
             Mfrx509ECKeyLength, pMfrx509ECKeyData);
     }
 
@@ -1837,7 +1855,8 @@ extern int ERP_GetECPublicKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_
     if (err == E_ERP_SUCCESS)
     {
         if ((clearKeyPair->BlobType != ECIES_KeyPair) &&
-            (clearKeyPair->BlobType != VAUSIG_KeyPair))
+            (clearKeyPair->BlobType != VAUSIG_KeyPair) &&
+            (clearKeyPair->BlobType != AUT_KeyPair))
         {
             err = E_ERP_KEY_USAGE_ERROR;
         }
@@ -2601,6 +2620,74 @@ extern int ERP_GetBlobContentHashWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsi
     FREE_IF_NOT_NULL(clearTEEToken);
     FREE_IF_NOT_NULL(pInputBlob);
     FREE_IF_NOT_NULL(clearInput);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return err;
+}
+
+
+// For Working users with a TEE Token: Calculate and return the ECDSA-SHA256 signature of the contents of a payload
+// Requires: 00000020 ERP Working permission with a valid TEE Token.
+// The Generation of the blob must be present in the HSM.
+// input: Derivation key Blob.
+// input: VAUAUT KeyPair Blob
+// input: Data to be signed
+// output: Signature, concatenated uncompressed (r, s) values
+extern int ERP_SignVAUAUTToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_SignVAUAUTToken;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    SealedBlob_t* pAutKeyPairBlob = NULL;
+    unsigned int signableLength = 0;
+    unsigned char* pSignableData = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        // To avoid lots of copying and reallocating, the pointers returned by this method are all
+        //   referring directly to the elements of the ASN1_ITEM array returned by pItems.
+        //   So, to delete them all, we need to call deleteASNItemList with pItems when we are finished.
+        // Exception to the above:   Any SealedBlobs returned by this method will be in newly allocated
+        //   buffers and must be freed by the caller.
+        err = parseSignVAUAUTTokenRequest(l_cmd, p_cmd,
+            &pTEETokenBlob,
+            &pAutKeyPairBlob,
+            &signableLength, &pSignableData);
+    }
+
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    { // Note that this method will check expiry of the token.
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clearAutKeyPair = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, AUT_KeyPair, pAutKeyPairBlob, &clearAutKeyPair);
+    }
+    size_t signatureLength = 0;
+    unsigned char* pSignatureData = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = signECDSAWithRawSigSHA256Signature(p_hdl, signableLength, pSignableData, &signatureLength, &pSignatureData, clearAutKeyPair);
+    }
+
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSimpleOctetStringOutput(p_hdl, signatureLength, pSignatureData);
+    }
+
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+    FREE_IF_NOT_NULL(pAutKeyPairBlob);
+    FREE_IF_NOT_NULL(clearAutKeyPair);
+    FREE_IF_NOT_NULL(pSignatureData);
     if (err != E_ERP_SUCCESS)
     {
         auditErrWithID(err, auditID);

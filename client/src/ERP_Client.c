@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -42,6 +42,7 @@
 #include <asn1_hsmclient/WrapRawPayloadRequest.h>
 #include <asn1_hsmclient/WrapRawPayloadWithTokenRequest.h>
 #include <asn1_hsmclient/UnwrapRawPayloadRequest.h>
+#include <asn1_hsmclient/SignVAUAUTTokenRequest.h>
 #include <asn1_hsmclient/X509CSR.h>
 
 #ifdef _WIN32
@@ -1152,6 +1153,13 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateVAUSIGKeyPair(
     return ERP_GenerateECKeyPair(sesh, input, ERP_SFC_GENERATE_VAUSIG_KEYPAIR);
 }
 
+ERP_API_FUNC SingleBlobOutput ERP_GenerateAUTKeyPair(
+    HSMSession sesh,            // HSM Session
+    UIntInput input) // input for command.   Desired Generation
+{
+    return ERP_GenerateECKeyPair(sesh, input, ERP_SFC_GENERATE_AUT_KEYPAIR);
+}
+
 ERP_API_FUNC x509CSROutput ERP_Generate_EC_CSR(
     HSMSession sesh,            // HSM Session
     GetVAUCSRInput input, // input for command.
@@ -1275,6 +1283,13 @@ ERP_API_FUNC x509CSROutput ERP_GenerateVAUSIGCSR(
     GetVAUCSRInput input) // input for command.
 {
     return ERP_Generate_EC_CSR(sesh, input, ERP_SFC_GENERATE_VAUSIG_CSR);
+}
+
+ERP_API_FUNC x509CSROutput ERP_GenerateAUTCSR(
+    HSMSession sesh,            // HSM Session
+    GetVAUCSRInput input) // input for command.
+{
+    return ERP_Generate_EC_CSR(sesh, input, ERP_SFC_GENERATE_AUT_CSR);
 }
 
 ERP_API_FUNC SingleBlobOutput ERP_TrustTPMMfr(
@@ -3533,6 +3548,113 @@ out:
     {
         asn_DEF_UnwrapRawPayloadRequest.op->free_struct(
             &asn_DEF_UnwrapRawPayloadRequest, request, ASFM_FREE_EVERYTHING);
+    }
+    if (p_answ != NULL)
+    {
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        free(pCmdData);
+    }
+
+    return retval;
+}
+
+
+ERP_API_FUNC AutSignatureOutput ERP_SignVAUAUTToken(
+    HSMSession sesh,
+    AutSignatureInput input)
+{
+    AutSignatureOutput retval = {ERP_ERR_NOERROR, 0, {0} };
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    unsigned char* pCmdData = NULL;
+    ERPOctetString_t* response = NULL;
+    size_t cmdLength = 0;
+
+    // send SignVAUAUTTokenRequest
+    SignVAUAUTTokenRequest_t* request = (SignVAUAUTTokenRequest_t *)calloc(sizeof(SignVAUAUTTokenRequest_t), 1);
+    if (request == NULL)
+    {
+        retval.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+    retval.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->tokenTEE), &(input.TEEToken));
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    retval.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->keyPair), &(input.AutKeyPair));
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    if (input.signableLength > sizeof(input.signableData))
+    {
+        retval.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    retval.returnCode = asn_buffer2OctetString(&(request->signableData), input.signableData, input.signableLength);
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_enc_rval_t er; /* Encoder return value */
+    er = der_encode_dynamic_buffer(&asn_DEF_SignVAUAUTTokenRequest, request,
+                                   &cmdLength, &pCmdData);
+
+    if (er.encoded == -1)
+    {
+        retval.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    // recieve ERPOctetString
+    retval.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_SIGN_AUT_TOKEN,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+    if (retval.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    asn_dec_rval_t rval;
+    rval = asn_DEF_ERPOctetString.op->ber_decoder(0,
+            &asn_DEF_ERPOctetString,
+            (void**)&response,
+            p_answ, p_l_answ,
+            0);
+
+    if (rval.code != RC_OK)
+    {
+        retval.returnCode = ERP_ERR_ASN1DECODING_ERROR;
+        goto out;
+    }
+    if (response->octets.size > MAX_BUFFER)
+    {
+        retval.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    retval.signatureLength = response->octets.size;
+    memcpy(retval.signatureData,
+           response->octets.buf,
+           response->octets.size);
+
+out:
+    if (response != NULL)
+    {
+        asn_DEF_ERPOctetString.op->free_struct(
+            &asn_DEF_ERPOctetString, response, 0);
+    }
+    if (request != NULL)
+    {
+        asn_DEF_SignVAUAUTTokenRequest.op->free_struct(
+            &asn_DEF_SignVAUAUTTokenRequest, request, ASFM_FREE_EVERYTHING);
     }
     if (p_answ != NULL)
     {

@@ -15,12 +15,12 @@
 #include <memory>
 #include <vector>
 
-class ErpVAUSIGTestFixture : public ::testing::Test {
+class ErpAUTTestFixture : public ::testing::Test {
 public:
     HSMSession m_logonSession = { 0, 0, 0, HSMUninitialised, 0, ERP_ERR_NOERROR, 0 };
     static const std::string devIP;
 
-    ErpVAUSIGTestFixture() = default;
+    ErpAUTTestFixture() = default;
 
     void connect() {
         // This method is intended to be invoked for each test just before the test starts
@@ -90,84 +90,118 @@ public:
     }
 };
 
-const std::string ErpVAUSIGTestFixture::devIP = SINGLE_SIM_HSM;
+const std::string ErpAUTTestFixture::devIP = SINGLE_SIM_HSM;
 
-TEST_F(ErpVAUSIGTestFixture, GenerateVAUSIGKeypair)
+TEST_F(ErpAUTTestFixture, GenerateAUTKeypair)
 {
     unsigned int Gen = THE_ANSWER;
     UIntInput in = { Gen };
-    SingleBlobOutput out = ERP_GenerateVAUSIGKeyPair(ErpVAUSIGTestFixture::m_logonSession, in);
+    SingleBlobOutput out = ERP_GenerateAUTKeyPair(ErpAUTTestFixture::m_logonSession, in);
     // If we want to use this blob in later test runs then we need to copy it to the saved directory
-    writeBlobResourceFile("VAUSIGKeyPair.blob", &(out.BlobOut));
+    writeBlobResourceFile("AUTKeyPair.blob", &(out.BlobOut));
     EXPECT_EQ(ERP_ERR_NOERROR, out.returnCode);
 }
 
-TEST_F(ErpVAUSIGTestFixture, GetVAUSIGPublicKey)
+TEST_F(ErpAUTTestFixture, GetAUTPublicKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AUTKeyPairSaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
     SingleBlobInput get = { {0,0,{0}} };
     get.BlobIn = *savedKeyPairBlob;
-    PublicKeyOutput keyOut = ERP_GetECPublicKey(ErpVAUSIGTestFixture::m_logonSession, get);
+    PublicKeyOutput keyOut = ERP_GetECPublicKey(ErpAUTTestFixture::m_logonSession, get);
     EXPECT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
-    writeERPResourceFile("VAUSIGPublicKey.bin",
+    writeERPResourceFile("AUTPublicKey.bin",
         std::vector<std::uint8_t>(&(keyOut.keyData[0]), &(keyOut.keyData[0]) + keyOut.keyLength));
 }
 
-TEST_F(ErpVAUSIGTestFixture, getVAUSIGPrivateKey)
+
+TEST_F(ErpAUTTestFixture, generateAUTCSR)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AUTKeyPairSaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
-    TwoBlobGetKeyInput vauSIG = { {0,0,{0}}, {0,0,{0}} };
-    vauSIG.Key = *savedKeyPairBlob;
-    // Take the TEEToken from a previous test run:
-    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
-    ASSERT_NE(nullptr, teeToken);
-    vauSIG.TEEToken = *teeToken;
-    PrivateKeyOutput keyOut = ERP_GetVAUSIGPrivateKey(ErpVAUSIGTestFixture::m_logonSession, vauSIG);
+    GetVAUCSRInput autCSR = { {0,0,{0}} ,0, {0} };
+    autCSR.KeyPair = *savedKeyPairBlob;
+    // At the moment these candidate CSRs are from the ePA TU authn.
+    auto candidateCSR = readERPResourceFile("candidateAUT.csr");
+    ASSERT_GT(candidateCSR.size(), 0);
+    autCSR.candidateCSRLength = candidateCSR.size();
+    memcpy(&(autCSR.candidateCSR[0]), candidateCSR.data(), candidateCSR.size());
+    x509CSROutput keyOut = ERP_GenerateAUTCSR(ErpAUTTestFixture::m_logonSession, autCSR);
     ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
 
-    // Check of expected output.
-    const unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-        0x01, 0x06, 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07, 0x04, 0x7a, 0x30, 0x78,
-        0x02, 0x01, 0x01, 0x04, 0x20, 0x52, 0xbb, 0xa0, 0x49, 0xee, 0x4f, 0x9a, 0x4d, 0xcc, 0xc5, 0x30,
-        0xd4, 0x17, 0x01, 0x69, 0x09, 0x86, 0x76, 0x81, 0x47, 0x99, 0x78, 0x3d, 0xaf, 0xb0, 0x15, 0x49,
-        0x33, 0xcb, 0xa2, 0x9c, 0x96, 0xa0, 0x0b, 0x06, 0x09, 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01,
-        0x01, 0x07, 0xa1, 0x44, 0x03, 0x42, 0x00, 0x04, 0x47, 0x32, 0x18, 0x41, 0x69, 0xd6, 0xe1, 0x6b,
-        0x56, 0xfb, 0x5b, 0x0e, 0xc6, 0xb7, 0xe9, 0xac, 0x34, 0xc8, 0x9c, 0x7e, 0x83, 0x63, 0x72, 0xe8,
-        0xa6, 0x63, 0xe3, 0x0f, 0xe7, 0x51, 0xd3, 0xb2, 0x4b, 0xfb, 0x79, 0xb1, 0x6d, 0x5e, 0x18, 0xa3,
-        0x67, 0x46, 0x30, 0x3c, 0xae, 0x2b, 0xea, 0xfe, 0x76, 0xd4, 0x19, 0xd3, 0x3b, 0xbe, 0xbf, 0x44,
-        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
-    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
-    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
+    writeERPResourceFile("generatedAUT.csr",
+        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
 }
 
-TEST_F(ErpVAUSIGTestFixture, generateVAUSIGCSR)
+TEST_F(ErpAUTTestFixture, signWithAutKey)
 {
     std::unique_ptr<ERPBlob> savedKeyPairBlob =
-        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/VAUSIGKeyPairSaved_UT.blob"));
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AUTKeyPairSaved.blob"));
+    ASSERT_NE(nullptr, savedKeyPairBlob);
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    AutSignatureInput in = {};
+    in.TEEToken = *teeToken;
+    in.AutKeyPair = *savedKeyPairBlob;
+    const char inputData[] = "hello";
+    memcpy(in.signableData, inputData, sizeof(inputData));
+    in.signableLength = sizeof(inputData);
+    AutSignatureOutput out = ERP_SignVAUAUTToken(ErpAUTTestFixture::m_logonSession, in);
+    ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
+    ASSERT_EQ(64, out.signatureLength);
+}
+
+
+// The intent of this test is that it be run and then the HSM Memory dumps are inspected to see if the
+//   number of allocated memory blocks is growing.
+TEST_F(ErpAUTTestFixture, LoadLoopTests)
+{
+    const unsigned int Gen = THE_ANSWER;
+
+    GetVAUCSRInput autCSR = { {0,0,{0}} ,0, {0} };
+    // At the moment these candidate CSRs are from the ePA authn.
+    auto candidateCSR = readERPResourceFile("candidateAUT.csr");
+    ASSERT_GT(candidateCSR.size(), 0);
+    autCSR.candidateCSRLength = candidateCSR.size();
+    memcpy(&(autCSR.candidateCSR[0]), candidateCSR.data(), candidateCSR.size());
+
+    std::unique_ptr<ERPBlob> savedKeyPairBlob =
+        std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AUTKeyPairSaved.blob"));
     ASSERT_NE(nullptr, savedKeyPairBlob);
 
-    GetVAUCSRInput vauCSR = { {0,0,{0}} ,0, {0} };
-    vauCSR.KeyPair = *savedKeyPairBlob;
-    // At the moment these candidate CSRs are from the ePA TU authn.
-    auto candidateCSR = readERPResourceFile("candidateVAUSIG.csr");
-    ASSERT_GT(candidateCSR.size(), 0);
-    vauCSR.candidateCSRLength = candidateCSR.size();
-    memcpy(&(vauCSR.candidateCSR[0]), candidateCSR.data(), candidateCSR.size());
-    x509CSROutput keyOut = ERP_GenerateVAUSIGCSR(ErpVAUSIGTestFixture::m_logonSession, vauCSR);
-    ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
+    autCSR.KeyPair = *savedKeyPairBlob;
 
-    // TODO(chris) - set up check of expected output.
-//    unsigned char expectedKey[] = { 0x30, 0x81, 0x95, 0x02, 0x01, 0x00, 0x30, 0x14, 0x06, 0x07, 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x02,
-//        0xdf, 0xd6, 0x5f, 0xf9, 0x73, 0xef, 0x0f, 0x9e };
-//    ASSERT_EQ(sizeof(expectedKey), keyOut.keyLength);
-//    ASSERT_TRUE(0 == memcmp(&(keyOut.keyData[0]), &(expectedKey[0]), sizeof(expectedKey)));
-    // TODO(chris) check CSR Signature?
-    writeERPResourceFile("generatedVAUSIG.csr",
-        std::vector<std::uint8_t>(&(keyOut.CSRData[0]), &(keyOut.CSRData[0]) + keyOut.CSRDataLength));
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    AutSignatureInput in = {};
+    in.TEEToken = *teeToken;
+    in.AutKeyPair = *savedKeyPairBlob;
+    const char inputData[] = "hello";
+    memcpy(in.signableData, inputData, sizeof(inputData));
+    in.signableLength = sizeof(inputData);
+
+    ERP_DumpHSMMemory(m_logonSession);
+    for (int i = 0; i < BIG_LOOP; i++)
+    {
+        // ERP_GenerateAUTCSR
+        {
+            x509CSROutput keyOut = ERP_GenerateAUTCSR(ErpAUTTestFixture::m_logonSession, autCSR);
+            ASSERT_EQ(ERP_ERR_NOERROR, keyOut.returnCode);
+        }
+
+        // ERP_SignVAUAUTToken
+        {
+            AutSignatureOutput out = ERP_SignVAUAUTToken(ErpAUTTestFixture::m_logonSession, in);
+            ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
+        }
+        // ERP_GenerateAUTKeyPair
+        {
+            UIntInput inGen = { Gen };
+            SingleBlobOutput out = ERP_GenerateAUTKeyPair(ErpAUTTestFixture::m_logonSession, inGen);
+            ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
+        }
+    }
+    ERP_DumpHSMMemory(m_logonSession);
 }

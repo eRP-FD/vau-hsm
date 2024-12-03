@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -395,6 +395,93 @@ TEST_F(ErpPermissionTestsFixture, PermissionGetVAUSIGPrivateKey)
     testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
 }
 
+//ERP_GenerateAUTCSR
+TEST_F(ErpPermissionTestsFixture, PermissionGenerateAUTCSR)
+{
+    UIntInput in = {
+        generationSaved
+    };
+
+    SingleBlobOutput outKP = ERP_GenerateVAUSIGKeyPair(m_logonSession, in);
+    ASSERT_EQ(ERP_ERR_NOERROR, outKP.returnCode);
+
+    auto savedCSR = readERPResourceFile("candidateAUT.csr");
+
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        GetVAUCSRInput inCsr = {
+                outKP.BlobOut,
+                0,
+                "\0"
+        };
+
+        inCsr.candidateCSRLength = savedCSR.size();
+        memcpy(&(inCsr.candidateCSR[0]), savedCSR.data(), savedCSR.size());
+
+        auto out = ERP_GenerateAUTCSR(m_logonSession, inCsr);
+
+        EXPECT_EQ(expErr, out.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_NOERROR);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_NOERROR);
+    testFn({users::Update}, ERP_ERR_NOERROR);
+    testFn({users::Working}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+
+}
+
+//ERP_GenerateAUTKeyPair
+TEST_F(ErpPermissionTestsFixture, PermissionGenerateAUTKeyPair)
+{
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+
+        UIntInput in = {
+                generation
+        };
+        auto out = ERP_GenerateAUTKeyPair(m_logonSession, in);
+        EXPECT_EQ(expErr, out.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_NOERROR);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_NOERROR);
+    testFn({users::Update}, ERP_ERR_NOERROR);
+    testFn({users::Working}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
+
+//ERP_SignVAUAUTToken
+TEST_F(ErpPermissionTestsFixture, PermissionSignVAUAUTToken)
+{
+    AutSignatureInput in = {
+        *(teeToken.get()),
+        *savedVAUAUTKeyPairBlob,
+        0,
+        ""
+    };
+    auto testFn = [&](const std::vector<ErpBaseTestsFixture::users> &setOfUsers, unsigned int expErr) {
+        logon(setOfUsers);
+        auto out = ERP_SignVAUAUTToken(m_logonSession, in);
+        EXPECT_EQ(expErr, out.returnCode);
+    };
+
+    testFn({}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Setup}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Set1, users::Set2}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Update}, ERP_ERR_PERMISSION_DENIED);
+    testFn({users::Working}, ERP_ERR_NOERROR);
+    testFn({users::Working, users::Setup}, ERP_ERR_NOERROR);
+}
 
 //ERP_UnwrapHashKey
 TEST_F(ErpPermissionTestsFixture, PermissionUnwrapHashKey)

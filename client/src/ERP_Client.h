@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -56,7 +56,8 @@ typedef enum HSMSessionStatus_t{
     HSMAnonymousOpen,
     HSMLoggedIn,
     HSMLoginFailed,
-    HSMError } HSMSessionStatus;
+    HSMError
+} HSMSessionStatus;
 
 typedef struct HSMSession_s{
     int h_cs;        // Connection Handle
@@ -348,6 +349,19 @@ typedef struct WrappedRawPayloadInput_s {
     ERPBlob wrappedRawPayload;
 } WrappedPayloadInput;
 
+typedef struct {
+    ERPBlob TEEToken;
+    ERPBlob AutKeyPair;
+    size_t signableLength;
+    uint8_t signableData[MAX_BUFFER];
+} AutSignatureInput;
+
+typedef struct {
+    unsigned int returnCode;    // Return code from firmware call -> 0 == good.
+    size_t signatureLength;
+    uint8_t signatureData[MAX_BUFFER];
+} AutSignatureOutput;
+
 #ifdef __cplusplus
 #define ERP_API_FUNC extern "C"
 #else
@@ -476,6 +490,14 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateVAUSIGKeyPair(
     UIntInput input); // input for command.   Desired Generation
 
 ERP_API_FUNC x509CSROutput ERP_GenerateVAUSIGCSR(
+    HSMSession sesh,            // HSM Session
+    GetVAUCSRInput input); // input for command.
+
+ERP_API_FUNC SingleBlobOutput ERP_GenerateAUTKeyPair(
+    HSMSession sesh,            // HSM Session
+    UIntInput input); // input for command.   Desired Generation
+
+ERP_API_FUNC x509CSROutput ERP_GenerateAUTCSR(
     HSMSession sesh,            // HSM Session
     GetVAUCSRInput input); // input for command.
 
@@ -819,7 +841,6 @@ ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
  * Unwrap the given rawPayload
  * @pre Requires: 00000020 ERP Working and a currently valid TEEToken.
  * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn with 20000000 Admin permission.
- * @param input.TEEToken                        currently valid TEE Token
  * @param input.wrappedRawPayload               Wrapped rawPayload as returned by ERP_WrapPayload
  * @return RawPayloadOutput.returnCode          0 for no error, error code otherwise
  *         RawPayloadOutput.payloadLen          length of the rawPayload
@@ -828,5 +849,23 @@ ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
 ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
     HSMSession sesh,
     WrappedPayloadInput input);
+
+
+/**
+ * Sign a payload using the VAUAUT keypair using ECDSA SHA-256
+ * @pre Requires: 00000020 ERP Working and a currently valid TEEToken.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn erp working
+ * @param input.TEEToken                        currently valid TEE Token
+ * @param input.AutKeyPair                      AUT key pair
+ * @param input.signableLength                  length of data to be signed
+ * @param input.signableData                     Data to be signed
+ * @return AutSignatureOutput.returnCode        0 for no error, error code otherwise
+ *         AutSignatureOutput.signatureLength   length of the signature Data
+ *         AutSignatureOutput.signatureData     signature Data
+ */
+ERP_API_FUNC AutSignatureOutput ERP_SignVAUAUTToken(
+    HSMSession sesh,
+    AutSignatureInput input);
+
 
 #endif

@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -14,10 +14,27 @@
 #define ERP_UPDATE_PERMISSION 3
 // All of these in bits...
 #define SHA_256_LEN 256
+#define SHA_384_LEN 384
+#define SHA_512_LEN 512
 #define AES_256_LEN 256
 #define AES_128_LEN 128
 #define NONCE_LEN 256
 #define MAX_RND_BYTES 320
+
+typedef enum SignatureAlgorithm {
+    SIGNATURE_ALGORITHM_unsupported = 0,
+    SIGNATURE_ALGORITHM_ecdsaWithSHA256 = 1,
+    SIGNATURE_ALGORITHM_ecdsaWithSHA384,
+    SIGNATURE_ALGORITHM_ecdsaWithSHA512,
+} SignatureAlgorithm_t;
+
+typedef enum CurveId {
+    CurveId_Unknown = 0,
+    CurveId_NistP256,
+    CurveId_Brainpoolp256r1,
+    CurveId_Secp384r1,
+    CurveId_Secp521r1,
+} CurveId_t;
 
 // Size of EC point coordinate in bits
 #define EC_COORD_SIZE 0x100

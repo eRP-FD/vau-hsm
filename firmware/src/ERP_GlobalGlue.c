@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -134,6 +134,9 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_WrapRawPayload         // SFC = 33
     ,ERP_WrapRawPayloadWithToken// SFC = 34
     ,ERP_UnwrapRawPayload       // SFC = 35
+    ,ERP_GenerateAUTKeyPair     // SFC = 36
+    ,ERP_GenerateAUTCSR         // SFC = 37
+    ,ERP_SignVAUAUTToken        // SFC = 38
 };
 
 MDL_GLOBAL DB* p_BlobKDB;

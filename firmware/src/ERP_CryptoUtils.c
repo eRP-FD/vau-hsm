@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -23,10 +23,18 @@ MDL_CONST unsigned char NIST_P256_ANSI_OID[] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0
 MDL_CONST size_t NIST_P256_ANSI_OID_LEN = sizeof(NIST_P256_ANSI_OID);
 MDL_CONST unsigned char BRAINPOOL_P256R1_ANSI_OID[] = { 0x2b, 0x24, 0x03, 0x03, 0x02, 0x08, 0x01, 0x01, 0x07 };
 MDL_CONST size_t BRAINPOOL_P256R1_ANSI_OID_LEN = sizeof(BRAINPOOL_P256R1_ANSI_OID);
+MDL_CONST unsigned char SECP384R1_ANSI_OID[] = { 0x2B, 0x81, 0x04, 0x00, 0x22 };
+MDL_CONST size_t SECP384R1_ANSI_OID_LEN = sizeof(SECP384R1_ANSI_OID);
+MDL_CONST unsigned char SECP521R1_ANSI_OID[] = { 0x2B, 0x81, 0x04, 0x00, 0x23 };
+MDL_CONST size_t SECP521R1_ANSI_OID_LEN = sizeof(SECP521R1_ANSI_OID);
 MDL_CONST unsigned char ID_EC_PUBLICKEY_ANSI_OID[] = { 0x2A, 0x86, 0x48, 0xCE, 0x3D, 0x02, 0x01 };
 MDL_CONST size_t ID_EC_PUBLICKEY_ANSI_OID_LEN = sizeof(ID_EC_PUBLICKEY_ANSI_OID);
 MDL_CONST unsigned char ID_ECDSA_WITH_SHA256_ANSI_OID[] = { 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x02 };
 MDL_CONST size_t ID_ECDSA_WITH_SHA256_ANSI_OID_LEN = sizeof(ID_ECDSA_WITH_SHA256_ANSI_OID);
+MDL_CONST unsigned char ID_ECDSA_WITH_SHA384_ANSI_OID[] = { 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x03 }; // 1.2.840.10045.4.3.3
+MDL_CONST size_t ID_ECDSA_WITH_SHA384_ANSI_OID_LEN = sizeof(ID_ECDSA_WITH_SHA384_ANSI_OID);
+MDL_CONST unsigned char ID_ECDSA_WITH_SHA512_ANSI_OID[] = { 0x2a, 0x86, 0x48, 0xce, 0x3d, 0x04, 0x03, 0x04 }; // 1.2.840.10045.4.3.4
+MDL_CONST size_t ID_ECDSA_WITH_SHA512_ANSI_OID_LEN = sizeof(ID_ECDSA_WITH_SHA512_ANSI_OID);
 MDL_CONST unsigned char ID_X509_ADMISSIONS_ANSI_OID[] = { 0x2B, 0x24, 0x08, 0x03, 0x03 };
 MDL_CONST size_t ID_X509_ADMISSIONS_ANSI_OID_LEN = sizeof(ID_X509_ADMISSIONS_ANSI_OID);
 MDL_CONST unsigned char ID_ERP_VAU_ANSI_OID[] = { 0x2A, 0x82, 0x14, 0x00, 0x4C, 0x04, 0x82, 0x03 }; // 1.2.276.0.76.4.259
@@ -87,24 +95,52 @@ int _Bin2Hex(unsigned char* binIn, unsigned int inLen, char* hexOut, unsigned in
 }
 
 // Utility method to return >0 if the curve OBJECT IDENTIFIER in item is one that we support.
-extern int isSupportedCurveID(ASN1_ITEM* pItem)
-{   // Currently only support NIST Prime256 or BrainpoolP256R1
-    int retVal = 0;
+extern CurveId_t getCurveID(ASN1_ITEM* pItem)
+{   // Currently only support NIST Prime256, BrainpoolP256R1, secp384, secp581
+    CurveId_t retVal = CurveId_Unknown;
+    if (pItem->tag != ASN_OBJECT_ID) {
+        return retVal;
+    }
+
     if (pItem->len == NIST_P256_ANSI_OID_LEN)
     {
         if (0 == os_mem_cmp(NIST_P256_ANSI_OID, &(pItem->p_data[0]), NIST_P256_ANSI_OID_LEN))
         {
-            retVal = 1;
+            retVal = CurveId_NistP256;
         }
     }
-    else {
-        if (pItem->len == BRAINPOOL_P256R1_ANSI_OID_LEN)
+    else if (pItem->len == BRAINPOOL_P256R1_ANSI_OID_LEN)
+    {
+        if (0 == os_mem_cmp(BRAINPOOL_P256R1_ANSI_OID, &(pItem->p_data[0]), BRAINPOOL_P256R1_ANSI_OID_LEN))
         {
-            if (0 == os_mem_cmp(BRAINPOOL_P256R1_ANSI_OID, &(pItem->p_data[0]), BRAINPOOL_P256R1_ANSI_OID_LEN))
-            {
-                retVal = 1;
-            }
+            retVal = CurveId_Brainpoolp256r1;
         }
+    }
+    else if (pItem->len == SECP384R1_ANSI_OID_LEN && (0 == os_mem_cmp(SECP384R1_ANSI_OID, &(pItem->p_data[0]), SECP384R1_ANSI_OID_LEN)))
+    {
+        retVal = CurveId_Secp384r1;
+    }
+    else if (pItem->len == SECP521R1_ANSI_OID_LEN && (0 == os_mem_cmp(SECP521R1_ANSI_OID, &(pItem->p_data[0]), SECP521R1_ANSI_OID_LEN)))
+    {
+        retVal = CurveId_Secp521r1;
+    }
+    return retVal;
+}
+
+extern SignatureAlgorithm_t getSignatureAlgorithm(ASN1_ITEM* pItem)
+{
+    SignatureAlgorithm_t retVal = SIGNATURE_ALGORITHM_unsupported;
+    if (pItem->len == ID_ECDSA_WITH_SHA256_ANSI_OID_LEN && (0 == os_mem_cmp(pItem->p_data, &(ID_ECDSA_WITH_SHA256_ANSI_OID[0]), ID_ECDSA_WITH_SHA256_ANSI_OID_LEN)))
+    {
+        retVal = SIGNATURE_ALGORITHM_ecdsaWithSHA256;
+    }
+    else if (pItem->len == ID_ECDSA_WITH_SHA384_ANSI_OID_LEN && (0 == os_mem_cmp((pItem)->p_data, &(ID_ECDSA_WITH_SHA384_ANSI_OID[0]), ID_ECDSA_WITH_SHA384_ANSI_OID_LEN)))
+    {
+        retVal = SIGNATURE_ALGORITHM_ecdsaWithSHA384;
+    }
+    else if (pItem->len == ID_ECDSA_WITH_SHA512_ANSI_OID_LEN && (0 == os_mem_cmp(pItem->p_data, &(ID_ECDSA_WITH_SHA512_ANSI_OID[0]), ID_ECDSA_WITH_SHA512_ANSI_OID_LEN)))
+    {
+        retVal = SIGNATURE_ALGORITHM_ecdsaWithSHA512;
     }
     return retVal;
 }
@@ -422,7 +458,7 @@ unsigned int GetPKCS8PrivateKey(T_CMDS_HANDLE* p_hdl,
 
 }
 
-// input: clear ECIES or ECSIG Keypair Blob containing the keypair to be extracted.
+// input: clear ECIES, ECSIG, ECAUT Keypair Blob containing the keypair to be extracted.
 // output: public and private keys + domain params in format required by HSM internally.
 // output: Object ID for the ECC Curve.
 // Pointers returned are to within the original key blob object.
@@ -434,7 +470,7 @@ extern unsigned int ECKeysFromBlob(
     ECDP ** ppDomainParams ) // Read only output.
 {
     unsigned int err = E_ERP_SUCCESS;
-    if ((blob->BlobType != ECIES_KeyPair) && (blob->BlobType != VAUSIG_KeyPair))
+    if ((blob->BlobType != ECIES_KeyPair) && (blob->BlobType != VAUSIG_KeyPair) && (blob->BlobType != AUT_KeyPair))
     { // May be ECIES_KeyPair or ECSIG_KeyPair
         err = E_ERP_WRONG_BLOB_TYPE;
         INDEX_ERR(err, 0x04);
@@ -700,10 +736,11 @@ unsigned int DoVAUECIES(T_CMDS_HANDLE* p_hdl,
     return err;
 }
 
-extern unsigned int verifyECDSAWithSRValSHA256Signature(T_CMDS_HANDLE* p_hdl,
+extern unsigned int verifyECDSAWithSRValSHA2Signature(T_CMDS_HANDLE* p_hdl,
     size_t signableLength, unsigned char* pSignableData,    // The signed data
     size_t sigRLength, unsigned char* pSigRData,   // Signature R value
     size_t sigSLength, unsigned char* pSigSData,   // Signature S value
+    SignatureAlgorithm_t signatureAlgorithm,
     size_t ECKeyLength, unsigned char* pECKeyData)      // public key of signer in RFC 5480 format.
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -724,12 +761,31 @@ extern unsigned int verifyECDSAWithSRValSHA256Signature(T_CMDS_HANDLE* p_hdl,
         err = eca_dp_find_oid(curveOIDLen, pCurveOID, &pCurve);
         INDEX_ERR(err, 0x01);
     }
-    unsigned int hashSize = SHA_256_LEN / 8;
-    unsigned char hashValue[SHA_256_LEN / 8];
+    unsigned int hashSize = SHA_512_LEN / 8;
+    unsigned char hashValue[SHA_512_LEN / 8];
+    unsigned int hashAlgo = -1;
+    if (err == E_ERP_SUCCESS) {
+        switch (signatureAlgorithm)
+        {
+        case SIGNATURE_ALGORITHM_ecdsaWithSHA256:
+            hashAlgo = HASH_SHA256;
+            break;
+        case SIGNATURE_ALGORITHM_ecdsaWithSHA384:
+            hashAlgo = HASH_SHA384;
+            break;
+        case SIGNATURE_ALGORITHM_ecdsaWithSHA512:
+            hashAlgo = HASH_SHA512;
+            break;
+        default:
+            err = E_ERP_CERT_BAD_SIGNATURE_ALG;
+            break;
+        }
+    }
+
     // Do the sha256 hash.
     if (err == E_ERP_SUCCESS)
     {
-        err = hash_hash(HASH_SHA256,
+        err = hash_hash(hashAlgo,
             signableLength, pSignableData,
             NULL,
             &(hashValue[0]),
@@ -820,9 +876,10 @@ extern unsigned int signECDSAWithRawSigSHA256Signature(T_CMDS_HANDLE* p_hdl,
     return err;
 }
 
-extern unsigned int verifyECDSAWithANSISHA256Signature(T_CMDS_HANDLE* p_hdl,
+extern unsigned int verifyECDSAWithANSISHA2Signature(T_CMDS_HANDLE* p_hdl,
     size_t signableLength, unsigned char* pSignableData,    // The signed data
     size_t signatureLength, unsigned char* pSignatureData,   // Signature Body, as in x509 certificate
+    SignatureAlgorithm_t signatureAlgorithm,
     size_t ECKeyLength, unsigned char* pECKeyData)       // public key of signer in RFC 5480 format.
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -846,10 +903,11 @@ extern unsigned int verifyECDSAWithANSISHA256Signature(T_CMDS_HANDLE* p_hdl,
 
     if (err == E_ERP_SUCCESS)
     {
-        err = verifyECDSAWithSRValSHA256Signature(p_hdl,
+        err = verifyECDSAWithSRValSHA2Signature(p_hdl,
             signableLength, pSignableData,
             len_r, p_r,
             len_s, p_s,
+            signatureAlgorithm,
             ECKeyLength, pECKeyData);
     }
 
@@ -875,10 +933,11 @@ extern unsigned int verifyECDSAWithTPMTSHA256Signature(T_CMDS_HANDLE* p_hdl,
 
     if (err == E_ERP_SUCCESS)
     {
-        err = verifyECDSAWithSRValSHA256Signature(p_hdl,
+        err = verifyECDSAWithSRValSHA2Signature(p_hdl,
             signableLength, pSignableData,
             len_r, p_r,
             len_s, p_s,
+            SIGNATURE_ALGORITHM_ecdsaWithSHA256,
             ECKeyLength, pECKeyData);
     }
     return err;
@@ -1518,6 +1577,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
     size_t EKCurveIDLen = 0;
     unsigned char* pEKCurveID = NULL;
     unsigned int pBIsCA = 0;
+    SignatureAlgorithm_t signatureAlgorithm = 0;
     if (err == E_ERP_SUCCESS)
     {
         err = parsex509ECCertificate(
@@ -1527,7 +1587,7 @@ extern unsigned int makeAKChallenge(T_CMDS_HANDLE* p_hdl,
             &EKx509ECKeyLength, &pEKx509ECKeyData,
             &EKECPointLength, &pEKECPointData,
             &EKCurveIDLen, &pEKCurveID,
-            &pBIsCA);
+            &pBIsCA, &signatureAlgorithm);
     }
     // Get Ephemeral public key X and Y affine
     // Format of pubKeyData is 0x04 - 0x20 byte X, 0x20 byte Y
@@ -1782,7 +1842,7 @@ unsigned int x509ECDSASign(T_CMDS_HANDLE* p_hdl,
         size_t writtenLength = *pSignatureLength - 1;
         err = ecdsa_sign_encode(
             rawSigLength / 2, &(pRawSigData[0]), // SIG R Value
-            rawSigLength / 2, &(pRawSigData[rawSigLength / 2]), // SIG R Value
+            rawSigLength / 2, &(pRawSigData[rawSigLength / 2]), // SIG S Value
             &writtenLength, (*ppSignatureData) + 1);
         if (err != E_ERP_SUCCESS)
         {

@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  *
@@ -19,10 +19,18 @@ extern MDL_CONST unsigned char NIST_P256_ANSI_OID[];
 extern MDL_CONST size_t NIST_P256_ANSI_OID_LEN;
 extern MDL_CONST unsigned char BRAINPOOL_P256R1_ANSI_OID[];
 extern MDL_CONST size_t BRAINPOOL_P256R1_ANSI_OID_LEN;
+extern MDL_CONST unsigned char SECP384R1_ANSI_OID[];
+extern MDL_CONST size_t SECP384R1_ANSI_OID_LEN;
+extern MDL_CONST unsigned char SECP521R1_ANSI_OID[];
+extern MDL_CONST size_t SECP521R1_ANSI_OID_LEN;
 extern MDL_CONST unsigned char ID_EC_PUBLICKEY_ANSI_OID[];
 extern MDL_CONST size_t ID_EC_PUBLICKEY_ANSI_OID_LEN;
 extern MDL_CONST unsigned char ID_ECDSA_WITH_SHA256_ANSI_OID[];
 extern MDL_CONST size_t ID_ECDSA_WITH_SHA256_ANSI_OID_LEN;
+extern MDL_CONST unsigned char ID_ECDSA_WITH_SHA384_ANSI_OID[];
+extern MDL_CONST size_t ID_ECDSA_WITH_SHA384_ANSI_OID_LEN;
+extern MDL_CONST unsigned char ID_ECDSA_WITH_SHA512_ANSI_OID[];
+extern MDL_CONST size_t ID_ECDSA_WITH_SHA512_ANSI_OID_LEN;
 extern MDL_CONST unsigned char ID_X509_ADMISSIONS_ANSI_OID[];
 extern MDL_CONST size_t ID_X509_ADMISSIONS_ANSI_OID_LEN;
 extern MDL_CONST unsigned char ID_ERP_VAU_ANSI_OID[];
@@ -33,8 +41,9 @@ extern MDL_CONST unsigned char ID_BASIC_CONSTRAINTS_OID[];
 extern MDL_CONST size_t ID_BASIC_CONSTRAINTS_OID_LEN;
 extern MDL_CONST size_t BASIC_CONSTRAINTS_LEN;
 
-// Utility method to return >0 if the curve OBJECT IDENTIFIER in item is one that we support.
-extern int isSupportedCurveID(ASN1_ITEM* pItem);
+// Utility method to return the curveId>0 if the curve OBJECT IDENTIFIER in item is one that we support.
+extern CurveId_t getCurveID(ASN1_ITEM* pItem);
+extern SignatureAlgorithm_t getSignatureAlgorithm(ASN1_ITEM* pItem);
 
 extern char HexChar(unsigned char nibble);
 extern int _Bin2Hex(unsigned char* binIn, unsigned int inLen, char* hexOut, unsigned int bufLen);
@@ -102,16 +111,18 @@ unsigned int GetPKCS8PrivateKey(T_CMDS_HANDLE* p_hdl,
     size_t* pPrivateKeyLen, unsigned char** ppPrivateKeyData);
 
 // Verify a signature with explicitly known S and R values.
-extern unsigned int verifyECDSAWithSRValSHA256Signature(T_CMDS_HANDLE* p_hdl,
+extern unsigned int verifyECDSAWithSRValSHA2Signature(T_CMDS_HANDLE* p_hdl,
     size_t signableLength, unsigned char* pSignableData,    // The signed data
     size_t sigRLength, unsigned char* pSigRData,   // Signature R value
     size_t sigSLength, unsigned char* pSigSData,   // Signature S value
+    SignatureAlgorithm_t signatureAlgorithm,
     size_t ECKeyLength, unsigned char* pECKeyData);       // public key of signer in RFC 5480 format.
 
 // Verify a signature in the format used by x509 Certificates.
-extern unsigned int verifyECDSAWithANSISHA256Signature(T_CMDS_HANDLE* p_hdl,
+extern unsigned int verifyECDSAWithANSISHA2Signature(T_CMDS_HANDLE* p_hdl,
     size_t signableLength, unsigned char* pSignableData,    // The signed data
     size_t SignatureLength, unsigned char* pSignatureData,   // Signature Body, as in x509 certificate
+    SignatureAlgorithm_t signatureAlgorithm,
     size_t ECKeyLength, unsigned char* pECKeyData);       // public key of signer in RFC 5480 format.
 
 // Verify a signature in the format used by the TPM.

@@ -1,5 +1,5 @@
-// (C) Copyright IBM Deutschland GmbH 2021, 2023
-// (C) Copyright IBM Corp. 2021, 2023
+// (C) Copyright IBM Deutschland GmbH 2021, 2024
+// (C) Copyright IBM Corp. 2021, 2024
 //
 // non-exclusively licensed to gematik GmbH
 
@@ -14,6 +14,9 @@ pipeline {
     options {
         disableConcurrentBuilds()
         skipDefaultCheckout()
+    }
+    tools {
+        jdk 'jdk_17'
     }
     environment {
         ENABLE_GRADLE_BUILD_CACHE = 'true'
@@ -37,6 +40,48 @@ pipeline {
             }
             steps {
                 gradleCreateVersionRelease()
+            }
+        }
+        stage('SBOM and Sonar') {
+            steps {
+                 withVault(
+                    [[path: "secret/eRp/dependencytrack", secretValues: [[vaultKey: 'dependencytrack_apikey', envVar: 'DEPENDENCYTRACK_APIKEY']]],
+                        [path: "secret/eRp/dependencytrack", secretValues: [[vaultKey: 'frontend_url', envVar: 'DEPENDENCYTRACK_FRONTEND_URL']]],
+                        [path: "secret/eRp/dependencytrack", secretValues: [[vaultKey: 'serverhostname', envVar: 'DEPENDENCYTRACK_SERVER_HOSTNAME']]],
+                        [path: "secret/eRp/sonarqube", secretValues: [[vaultKey: 'sonarqubetoken', envVar: 'SONARQUBE_TOKEN']]],
+                        [path: "secret/eRp/sonarqube", secretValues: [[vaultKey: 'sonarqubeurl', envVar: 'SONARQUBE_URL']]]
+                        ]
+                    
+                 ) {
+                    staticAnalysis()
+                    dependencyTrack()
+                }
+            }
+        }
+        
+        stage('SBOM') {
+            when {
+                anyOf {
+                    branch 'master'
+                    branch 'release/*'
+                }
+            }
+            steps {
+                loadNexusConfiguration {
+                    withCredentials(
+                        [usernamePassword(credentialsId: "jenkins-github-erp", usernameVariable: 'GITHUB_USERNAME', passwordVariable: 'GITHUB_OAUTH_TOKEN')]
+                    ){
+                        script {
+                            def releaseVersion = sh(returnStdout: true, script: "git describe --tags --match 'v-[0-9\\.]*'").trim()
+                            sbomSyft(
+                                DOCKER_OPTS:'--build-arg NEXUS_USERNAME="${NEXUS_USERNAME}" --build-arg NEXUS_PASSWORD="${NEXUS_PASSWORD}" --build-arg GITHUB_USERNAME="${GITHUB_USERNAME}" --build-arg GITHUB_OAUTH_TOKEN="${GITHUB_OAUTH_TOKEN}" ' +
+                                            "--build-arg RELEASE_VERSION='${releaseVersion}' --build-arg RU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion)}' --build-arg PU_ERP_MDL_VERSION='${getHsmVersion(releaseVersion,true)}' ",
+                                DOCKER_BUILDCONTEXT:'firmware',
+                                DOCKER_FILE:'firmware/docker/Dockerfile'
+                            )
+                        }
+                    }
+                }
             }
         }
 

@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  *
@@ -117,6 +117,25 @@ extern int ERP_GenerateVAUSIGKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned c
 // Output: ASN1.DER encoded CSR
 // Return: Success or Error code.
 extern int ERP_GenerateVAUSIGCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Command to generate a new EC Signature KeyPair for AUT Signing operations
+// Input: unsigned int Desired Generation - if zero, then the highest available Generation
+//           in the HSM is used.   Otherwise the input value must
+//           match an existing Blob Key Generation present in the HSM.
+// Output: ECIES KeyPair Blob
+// Return: Success or Error code.
+extern int ERP_GenerateAUTKeyPair(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Generate CSR for a VAUAUT Keypair
+// Input: AUT KeyPair Blob
+// Input: Candidate CSR with all valid fields, except public key and signature
+//    which must be present and formally correct, but the content data is irrelevant.
+//    The Signature does not need to be valid either.
+// Output: ASN1.DER encoded CSR
+// Return: Success or Error code.
+extern int ERP_GenerateAUTCSR(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 // Externally callable FWAPI Command
 // Command to generate a new NONCE Blob with an existing Generation
@@ -348,5 +367,15 @@ extern int ERP_GetBlobContentHash(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char
 // input: Data to be signed
 // output: Signature
 extern int ERP_GetBlobContentHashWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// For Working users with a TEE Token: Sign data using the AUT Token with a brainpoolp256
+// Requires: 00000020 ERP Working permission with a valid TEE Token.
+// The Generation of the blob must be present in the HSM.
+// input: TEE Token
+// input: VAUAUT KeyPair Blob
+// input: Data to be signed
+// Return: Success or Error code.
+// output: Signature
+extern int ERP_SignVAUAUTToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
 #endif

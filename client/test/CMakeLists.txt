@@ -1,5 +1,5 @@
-# (C) Copyright IBM Deutschland GmbH 2021, 2023
-# (C) Copyright IBM Corp. 2021, 2023
+# (C) Copyright IBM Deutschland GmbH 2021, 2024
+# (C) Copyright IBM Corp. 2021, 2024
 #
 # non-exclusively licensed to gematik GmbH
 
@@ -12,6 +12,7 @@ set(TARGET_NAME "hsmclient-test")
 # list its source files
 #
 set(SOURCE_FILES "ERP_AttestTests.cpp"
+                 "ERP_AUTTests.cpp"
                  "ERP_ECIESTests.cpp"
                  "ERP_Tests.cpp"
                  "ERP_TestsBase.cpp"

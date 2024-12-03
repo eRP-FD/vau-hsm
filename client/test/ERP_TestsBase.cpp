@@ -1,6 +1,6 @@
 /**************************************************************************************************
- * (C) Copyright IBM Deutschland GmbH 2021, 2023
- * (C) Copyright IBM Corp. 2021, 2023
+ * (C) Copyright IBM Deutschland GmbH 2021, 2024
+ * (C) Copyright IBM Corp. 2021, 2024
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
@@ -75,6 +75,7 @@ std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedAKChallenge2Blob;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedAK;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::teeToken;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedECIESKeyPairBlob;
+std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedVAUAUTKeyPairBlob;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedEnrollmentNONCE;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedAttestationNONCE;
 std::unique_ptr<ERPBlob> ErpBaseTestsFixture::savedTrustedQuote;
@@ -98,6 +99,7 @@ void ErpBaseTestsFixture::SetUpTestSuite()
     savedTrustedAK = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedAkSaved.blob"));
     teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
     savedECIESKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/ECIESKeyPairSaved.blob"));
+    savedVAUAUTKeyPairBlob = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AUTKeyPairSaved.blob"));
     savedEnrollmentNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/EnrollmentQuoteNONCESaved.blob"));
     savedAttestationNONCE = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/AttestationQuoteNONCESaved.blob"));
     savedTrustedQuote = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/trustedQuoteSaved.blob"));
@@ -115,6 +117,7 @@ void ErpBaseTestsFixture::SetUpTestSuite()
     ASSERT_NE(nullptr, savedTrustedEK);
     ASSERT_NE(nullptr, savedTrustedAK);
     ASSERT_NE(nullptr, savedECIESKeyPairBlob);
+    ASSERT_NE(nullptr, savedVAUAUTKeyPairBlob);
     ASSERT_NE(nullptr, teeToken);
     ASSERT_NE(nullptr, savedEnrollmentNONCE);
     ASSERT_NE(nullptr, savedAttestationNONCE);
