@@ -112,6 +112,8 @@ typedef enum ERPBlobType {
     , TEE_Token         = 11  // A time limited Token allowing access to the VAU HSM functions.
     , Pseudoname_Key    = 12 // time limited unwrappable AES key.    See PSEUDONAME_BLOB_EXPIRY
     , RawPayload        = 13 // arbitrary Payload
+    , Pseudoname_LogKeyPackage = 15 // json import package for key_pn_log
+    , Pseudoname_LogKey = 16  // key_pn_log
 } ERPBlobType_t;
 
 
@@ -142,6 +144,10 @@ typedef struct {
 typedef struct {
     unsigned char KeyData[AES_256_LEN / 8];
 } AES256KeyBlob_t;
+
+typedef struct {
+    unsigned char KeyData[AES_128_LEN / 8];
+} AES128KeyBlob_t;
 
 typedef struct {
     unsigned char RNDData[NONCE_LEN / 8];

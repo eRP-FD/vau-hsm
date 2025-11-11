@@ -36,7 +36,7 @@ extern MDL_GLOBAL void* p_BlobSemaphore;
 
 // May only be called from countLoadedBlobKeys due to semaphore ownership.
 // Semaphore object is NOT owner-counted, i.e. if the caller owns the semaphore, it would fail to claim it here.
-void freeLoadedBlobKeyList()
+void freeLoadedBlobKeyList(void)
 {
     if (LoadedBlobKeyList != NULL)
     {
@@ -273,11 +273,13 @@ int createNewBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int * pGeneration)
         }
 
         pNewBlobKey->KeyLength = BlobKeyLength / 8;
-
-        err = aes_gen_key(pNewBlobKey->KeyLength, &(pNewBlobKey->KeyData[0]));
-        if (err != E_ERP_SUCCESS)
+        if (err == E_ERP_SUCCESS)
         {
-            INDEX_ERR(err, 0x01);
+            err = aes_gen_key(pNewBlobKey->KeyLength, &(pNewBlobKey->KeyData[0]));
+            if (err != E_ERP_SUCCESS)
+            {
+                INDEX_ERR(err, 0x01);
+            }
         }
     }
 
@@ -337,7 +339,10 @@ int deleteBlobKey(T_CMDS_HANDLE* p_hdl, unsigned int Generation)
         INDEX_ERR(err, 0x01);
     }
     os_str_snprintf(keyName, 40, "%08x", Generation);
-    err = db_delete(p_BlobKDB, keyName);
+    if (err == E_ERP_SUCCESS)
+    {
+        err = db_delete(p_BlobKDB, keyName);
+    }
 
     if (err == E_ERP_SUCCESS)
     {
@@ -359,7 +364,7 @@ size_t SizeofClearBlobData(ClearBlob_t* blob)
 // Returns the Blob Domain for which this firmware has been built.
 // Return data is read only.
 FILE_CONST char BlobDomain[5] = BLOB_DOMAIN; // null terminated "DVLP", "REFZ", "TEST" or "PROD"
-const char* getBlobDomain()
+const char* getBlobDomain(void)
 {
     return BlobDomain;
 }
@@ -437,6 +442,8 @@ unsigned int checkBlobExpiry(ClearBlob_t* aBlob)
         case RawPayload:
         case VAUSIG_KeyPair:
         case AUT_KeyPair:
+        case Pseudoname_LogKeyPackage:
+        case Pseudoname_LogKey:
             Validity = 0;
             break;
             // Transient Blobs:
@@ -758,6 +765,7 @@ unsigned int getAES256KeyBlob(T_CMDS_HANDLE* p_hdl, ClearBlob_t** ppOutBlob,ERPB
     err = fillGeneric(*ppOutBlob);
     // Psuedoname Expiry is defined and enforced in the UnsealAndCheckBlob method.
     AES256KeyBlob_t* pKeyBlob = NULL;
+    if (err == E_ERP_SUCCESS)
     {
         (*ppOutBlob)->DataLength = sizeof(AES256KeyBlob_t);
         pKeyBlob = (AES256KeyBlob_t *)&((*ppOutBlob)->Data[0]);

@@ -7,7 +7,7 @@
 
 # prerequisite: specify a recent CMake version
 #
-cmake_minimum_required(VERSION "3.16")
+cmake_minimum_required(VERSION "3.18")
 
 ########################################################################################################################
 
@@ -17,6 +17,8 @@ set(PROJECT_NAME "hsm-client")
 
 project(${PROJECT_NAME} LANGUAGES C CXX)
 
+option(BUILD_TESTING "Build testing" ON)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 ########################################################################################################################
 
 # prerequisite: make sure the platform is either Linux or Windows
@@ -29,35 +31,33 @@ endif()
 
 # set several variables with the paths of various locations needed by the build system
 #
-set(ROOT_DIRECTORY ${CMAKE_SOURCE_DIR})
-set(CMAKE_DIRECTORY ${ROOT_DIRECTORY}/cmake)
-set(SOURCE_DIRECTORY ${ROOT_DIRECTORY}/src)
-set(TEST_DIRECTORY ${ROOT_DIRECTORY}/test)
-set(TEST_RESOURCES_DIRECTORY ${TEST_DIRECTORY}/resources)
-set(BUILD_DIRECTORY ${CMAKE_BINARY_DIR})
-set(BUILD_BIN_DIRECTORY ${BUILD_DIRECTORY}/bin)
-set(BUILD_LIB_DIRECTORY ${BUILD_DIRECTORY}/lib)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${BUILD_LIB_DIRECTORY})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${BUILD_LIB_DIRECTORY})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${BUILD_BIN_DIRECTORY})
+set(SOURCE_DIRECTORY src)
+set(TEST_RESOURCES_DIRECTORY ${CMAKE_SOURCE_DIR}/test/resources)
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 ########################################################################################################################
 
 # include the relevant helper CMake scripts
 #
-include(${CMAKE_DIRECTORY}/Asn.cmake)
-include(${CMAKE_DIRECTORY}/BuildOptions.cmake)
-include(${CMAKE_DIRECTORY}/ClangTidy.cmake)
-include(${CMAKE_DIRECTORY}/Conan.cmake)
-include(${CMAKE_DIRECTORY}/Dependencies.cmake)
-include(${CMAKE_DIRECTORY}/Installation.cmake)
-include(${CMAKE_DIRECTORY}/TargetConfiguration.cmake)
+include(cmake/BuildOptions.cmake)
+include(cmake/ClangTidy.cmake)
+include(cmake/Dependencies.cmake)
+include(cmake/Asn.cmake)
+include(cmake/Installation.cmake)
+include(cmake/TargetConfiguration.cmake)
 
 ########################################################################################################################
 
 # continue processing other CMakeLists files
 #
-add_subdirectory(${SOURCE_DIRECTORY})
-add_subdirectory(${TEST_DIRECTORY})
+
+add_subdirectory(src)
+
+if (BUILD_TESTING)
+  enable_testing()
+  add_subdirectory(test)
+endif()
 
 ########################################################################################################################

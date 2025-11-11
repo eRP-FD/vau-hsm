@@ -66,7 +66,14 @@ typedef enum ERP_AuditID {
     ERP_AUDIT_Failed_Wrap_Raw_Payload                               = 52,
     ERP_AUDIT_Failed_Unwrap_Raw_Payload                             = 53,
     ERP_AUDIT_Failed_SignVAUAUTToken                                = 54,
-    ERP_AUDIT_LastUsedId                                            = 55 // Used for programmatic reasons.
+    ERP_AUDIT_Wrap_Pseudoname_KeyPackage                            = 55,
+    ERP_AUDIT_Failed_WrapPseudonameKeyPackage                       = 56,
+    ERP_AUDIT_Unwrap_Pseudoname_KeyPackage                          = 57,
+    ERP_AUDIT_Failed_UnwrapPseudonameKeyPackage                     = 58,
+    ERP_AUDIT_WrapPseudonameLogKey                                  = 59,
+    ERP_AUDIT_Failed_WrapPseudonameLogKey                           = 60,
+    ERP_AUDIT_Failed_UnwrapPseudonameLogKey                         = 61,
+    ERP_AUDIT_LastUsedId                                            = 62 // Used for programmatic reasons.
 }ERP_AuditID_t;
 
 // Used for successful setup operations

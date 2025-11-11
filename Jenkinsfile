@@ -11,6 +11,9 @@ pipeline {
             label 'master'
         }
     }
+    parameters {
+        booleanParam(defaultValue: false, description: 'Skip build, only upload client recipe', name: 'SKIP_BUILD_STAGE')
+    }
     options {
         disableConcurrentBuilds()
         skipDefaultCheckout()
@@ -51,14 +54,14 @@ pipeline {
                         [path: "secret/eRp/sonarqube", secretValues: [[vaultKey: 'sonarqubetoken', envVar: 'SONARQUBE_TOKEN']]],
                         [path: "secret/eRp/sonarqube", secretValues: [[vaultKey: 'sonarqubeurl', envVar: 'SONARQUBE_URL']]]
                         ]
-                    
+
                  ) {
                     staticAnalysis()
                     dependencyTrack()
                 }
             }
         }
-        
+
         stage('SBOM') {
             when {
                 anyOf {
@@ -130,6 +133,7 @@ pipeline {
                     branch 'master'
                     branch 'release/*'
                 }
+                expression { !params.SKIP_BUILD_STAGE }
             }
             steps {
                 loadNexusConfiguration {
@@ -164,7 +168,7 @@ pipeline {
             agent {
                 docker {
                     label 'dockerstage'
-                    image 'conanio/gcc9:latest'
+                    image 'conanio/gcc11-ubuntu16.04:2.19.1'
                     reuseNode true
                     args '-u root:sudo -v $HOME/tools:$HOME/tools'
                 }
@@ -181,12 +185,12 @@ pipeline {
                         script {
                             loadNexusConfiguration {
                                 sh '''
-                                    conan remote clean &&\
-                                    conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal true --force &&\
-                                    conan user -r erp -p "${NEXUS_PASSWORD}" "${NEXUS_USERNAME}" &&\
+                                    git config --global safe.directory '*' &&\
+                                    conan remote remove '*' &&\
+                                    conan remote add --force erp-conan-2 https://artifactory-cpp-ce.ihc-devops.net/artifactory/api/conan/erp-conan-2 &&\
+                                    conan remote login -p "${NEXUS_PASSWORD}" erp-conan-2 "${NEXUS_USERNAME}" &&\
                                     conan export client &&\
-                                    conan export client hsmclient/latest@_/_ &&\
-                                    conan upload --remote erp --confirm hsmclient
+                                    conan upload --remote erp-conan-2 --confirm hsmclient
                                '''
                             }
                         }
@@ -256,6 +260,7 @@ def getHsmVersion (releaseVersion, isPu = false){
 }
 
 def generateDescription (releaseVersion) {
+    // https://artifactory-cpp-ce.ihc-devops.net/artifactory/api/conan/erp-conan-2
     def NEXUS_SRV="nexus.epa-dev.net/repository/";
     def NEXUS_RELEASE_PATH="erp-raw-releases/com/ibm/erp/hwmake50/";
     def NEXUS_RELEASE_PKG="erp-${releaseVersion}";

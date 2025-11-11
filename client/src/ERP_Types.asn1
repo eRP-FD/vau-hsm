@@ -141,17 +141,23 @@ desiredGeneration INTEGER,
 rawPayload OCTET STRING
 }
 WrapRawPayloadWithTokenRequest ::= SEQUENCE {
-tokenTEE SingleBlob, -- Currently valid TEEToken Blob
-desiredGeneration INTEGER,
-rawPayload OCTET STRING
+    tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+    desiredGeneration INTEGER,
+    rawPayload OCTET STRING
 }
 UnwrapRawPayloadRequest ::= SEQUENCE {
-tokenTEE SingleBlob, -- Currently valid TEEToken Blob
-wrappedRawPayload SingleBlob
+    tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+    wrappedRawPayload SingleBlob
 }
 SignVAUAUTTokenRequest ::= SEQUENCE {
-tokenTEE SingleBlob, -- Currently valid TEEToken Blob
-keyPair SingleBlob, -- Currently valid VAU AUT KeyPair blob.
-signableData OCTET STRING
+    tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+    keyPair SingleBlob, -- Currently valid VAU AUT KeyPair blob.
+    signableData OCTET STRING
 }
+WrapPseudonameLogKeyRequest ::= SEQUENCE {
+    tokenTEE SingleBlob, -- Currently valid TEEToken Blob
+    desiredGeneration INTEGER,
+    keyValue OCTET STRING (16) -- 128 bit AES Key value
+}
+
 END -- End

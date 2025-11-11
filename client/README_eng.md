@@ -6,26 +6,27 @@
 
 #### Pre-build steps
 
-- a `SSH` key must be generated and its public part added to your [GitHub account](https://github.ibmgcloud.net/settings/keys). Instructions for doing so you can find [here](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
+- an `SSH` key must be generated and its public part added to your [GitHub account](https://github.ibmgcloud.net/settings/keys). Instructions for doing so you can find [here](https://docs.github.com/en/github/authenticating-to-github/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent).
 
 
 #### How to build on Linux
 
 - install dependencies: `conan`, `cmake`, `make`, `gcc`
 
-- add the eRP Conan repository from Nexus: `conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal`
+- add the eRP Conan repository from artifactory: `conan remote add erp-conan-2 https://artifactory-cpp-ce.ihc-devops.net/artifactory/api/conan/erp-conan-2`
 
 - optional: if you installed Conan for the first time and plan to use it for any C++>=11 project, also do the following: `conan profile update settings.compiler.libcxx=libstdc++11 default`
 
 - update your (perhaps `default`) Conan profile for the right build type (`Debug` or `Release`): `conan profile update settings.build_type=Debug default`
 
-- create a build folder for the right build type: `mkdir build-debug`
+- Run the first part of the build step with:
 
-- change working directory into the newly created folder and invoke CMake with the right build type: `cmake -DCMAKE_BUILD_TYPE=Debug ..`
+  `conan install . --output-folder build-debug --build=missing -s build_type=Debug|Release|RelWithDebInfo -o with_tests=True|False`
 
-- build the project: `make -j4`
+  The `with_tests` argument is optional and defaults to `False`.
+- Run the second part of the build step with:
 
-- artefacts can be found in the build folder under `lib`
+  `cmake -GNinja -Bbuild -DCMAKE_BUILD_TYPE=Debug|Release|RelWithDebInfo && cmake --build build`
 
 
 #### How to build on Windows
@@ -49,7 +50,4 @@
 
 #### How to use with CLion
 
-Integration with `CLion` works too, without (too much of a) hassle, the only things nice to have being couple adjustments under `Settings` > `Build, Execution, Deployment` > `CMake`:
-- create two profiles (from the small `+` icon): `Debug` and `Release`
-- for each profile, set (accordingly) the `CMake Options` to `-DCMAKE_BUILD_TYPE=Debug` and the `Build directory` to `build-debug`
-- optionally, `Build options` can be set for both profiles to `-- -j 4`
+The build folder can be opened as project in CLion. That way, build and run settings are already determined and nothing else has to be set up.

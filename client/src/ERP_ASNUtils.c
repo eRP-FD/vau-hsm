@@ -23,9 +23,7 @@
 #pragma warning (pop)
 #endif
 
-#include <asn1c/IA5String.h>
 #include <asn1c/INTEGER.h>
-
 #include <string.h>
 
 #define UNUSED(x) (void)(x)
@@ -119,7 +117,7 @@ int make_asn_integer(struct ASN__PRIMITIVE_TYPE_s** ppOut, unsigned long val)
 {
     int err = ERP_ERR_NOERROR;
 
-    *ppOut = (INTEGER_t *)calloc(sizeof(INTEGER_t), 1);
+    *ppOut = (INTEGER_t *)calloc(1, sizeof(INTEGER_t));
     if (*ppOut == NULL)
     {
         err = ERP_ERR_CALLOC_ERROR;
@@ -147,7 +145,7 @@ int asn_string2IA5String(struct OCTET_STRING * str, const char* inStr)
     if (err == ERP_ERR_NOERROR)
     {
         str->size = strlen(inStr);
-        str->buf = (uint8_t *)calloc(sizeof(uint8_t), str->size);
+        str->buf = (uint8_t *)calloc(str->size, sizeof(uint8_t));
         if (str->buf == NULL)
         {
             err = ERP_ERR_CALLOC_ERROR;
@@ -171,7 +169,7 @@ int asn_buffer2OctetString(struct OCTET_STRING * octs, const unsigned char* inBu
     if (err == ERP_ERR_NOERROR)
     {
         octs->size = buffLen;
-        octs->buf = (uint8_t*)calloc(sizeof(uint8_t), octs->size);
+        octs->buf = (uint8_t*)calloc(octs->size, sizeof(uint8_t));
         if (octs->buf == NULL)
         {
             err = ERP_ERR_CALLOC_ERROR;

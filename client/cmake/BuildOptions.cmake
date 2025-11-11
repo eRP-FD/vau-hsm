@@ -9,8 +9,7 @@
 # the compilation options specific for Linux
 #
 function (_private_get_linux_compile_options RESULT)
-    set(${RESULT} -fPIC
-                  -Werror
+    set(${RESULT} -Werror
                   -Wall
                   -Wextra
                   -Wpedantic
@@ -89,27 +88,3 @@ function (get_compile_options RESULT)
     set(${RESULT} ${COMPILE_OPTIONS} PARENT_SCOPE)
 endfunction()
 
-########################################################################################################################
-
-# function that returns the list of additional
-# include directories to be provided when configuring a target
-#
-function (get_include_directories RESULT)
-    set(${RESULT} ${SOURCE_DIRECTORY}
-                  ${CONAN_INCLUDE_DIRS_ASN1C}
-                  ${CONAN_INCLUDE_DIRS_ASN1C}/asn1c
-        PARENT_SCOPE)
-endfunction()
-
-########################################################################################################################
-
-# function that returns the list of linking
-# options to be used when configuring a target
-#
-function (get_link_options RESULT)
-    if (${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
-        set(${RESULT} -fPIC PARENT_SCOPE)
-    endif()
-endfunction()
-
-########################################################################################################################

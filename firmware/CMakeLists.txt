@@ -19,10 +19,7 @@ if (NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Linux" AND NOT ${CMAKE_SYSTEM_NAME} STREQ
     message(FATAL_ERROR "`${PROJECT_NAME}` builds only on Linux and Windows.")
 endif()
 
-find_program(CONAN conan)
-if (NOT CONAN)
-    message(FATAL_ERROR "Cannot find conan. Is it installed?")
-endif()
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 ####################
 # custom variables #
@@ -100,6 +97,7 @@ endif()
 # function that configures a target for building with the required compilation and linking flags
 #
 function (configure_target TARGET_NAME)
+    find_package(cryptoserversdk REQUIRED)
     set_target_properties(${TARGET_NAME} PROPERTIES PREFIX "")
 
     if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -110,7 +108,7 @@ function (configure_target TARGET_NAME)
 
     target_link_options(${TARGET_NAME} PRIVATE ${LINK_OPTIONS})
 
-    target_link_libraries(${TARGET_NAME} PRIVATE CONAN_PKG::cryptoserversdk)
+    target_link_libraries(${TARGET_NAME} PRIVATE cryptoserversdk::cryptoserversdk)
 
     target_include_directories(${TARGET_NAME} PRIVATE ${SOURCE_DIRECTORY})
 endfunction()
@@ -119,23 +117,8 @@ endfunction()
 # dependencies retrieval #
 ##########################
 
-if (NOT EXISTS ${CONAN_BUILD_INFO_SCRIPT})
-    execute_process(COMMAND ${CONAN} install .
-                                     --build=missing
-                                     --install-folder=${BUILD_DIRECTORY}
-                    WORKING_DIRECTORY ${ROOT_DIRECTORY}
-                    RESULT_VARIABLE RESULT)
-
-    if (NOT RESULT STREQUAL "0")
-        message(FATAL_ERROR "Unable to fetch dependencies: `conan install` failed. See errors above.")
-    endif()
-endif()
-
-include(${CONAN_BUILD_INFO_SCRIPT})
 
 include(${DEPLOYMENT_OPTIONS_SCRIPT})
-
-conan_basic_setup(TARGETS)
 
 ########################################################################################################################
 

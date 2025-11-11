@@ -1,6 +1,6 @@
-# define the name of a new target
-#
-set(TARGET_NAME "hsmclient")
+
+find_package(csxapi REQUIRED)
+find_package(asn1c REQUIRED)
 
 # list its source files
 #
@@ -17,18 +17,23 @@ set(PUBLIC_HEADERS "ERP_Client.h"
 #
 set(ASN1_FILES "ERP_Types.asn1")
 
-########################################################################################################################
+add_library(hsmclient ${LIBRARY_TARGET_TYPE} ${SOURCE_FILES})
+target_compile_definitions(hsmclient
+    PRIVATE $<IF:$<BOOL:${VERBOSE}>,ASN_EMIT_DEBUG=1 TRACE_HSM_API,ASN_EMIT_DEBUG=0>
+)
+set_property(TARGET hsmclient PROPERTY POSITION_INDEPENDENT_CODE ON)
+if (CMAKE_SYSTEM_NAME STREQUAL "Windows")
+    set_target_properties(hsmclient PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS TRUE)
+endif()
 
-# define and configure the target by specifying its name, type and list of source files
-#
-configure_target(${TARGET_NAME} "SHARED_LIBRARY" "${SOURCE_FILES}")
+target_link_libraries(hsmclient PRIVATE csxapi::csxapi asn1c::asn1c)
 
 # generate ASN1 sources and add them to the target
 #
-add_asn1_support(${TARGET_NAME} "${ASN1_FILES}")
+add_asn1_support(hsmclient "${ASN1_FILES}")
 
 # install the target
 #
-install_target(${TARGET_NAME} "${PUBLIC_HEADERS}")
+install_target(hsmclient "${PUBLIC_HEADERS}")
 
 ########################################################################################################################

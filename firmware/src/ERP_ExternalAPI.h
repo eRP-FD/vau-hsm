@@ -378,4 +378,38 @@ extern int ERP_GetBlobContentHashWithToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsi
 // output: Signature
 extern int ERP_SignVAUAUTToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
 
+// Externally callable FWAPI Command
+// Extract rawPayload
+// Required Permission: setup or update
+// Input: pseudoname log key package payload
+// Output: pseudoname log key package blob
+// Return: Success or Error code.
+extern int ERP_WrapPseudonameLogKeyPackage(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Extract AES 128 Pseudoname log key
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: pseudoname log Key package Blob
+// Output: Symmetric AES128 hash key.
+// Return: Success or Error code.
+extern int ERP_UnwrapPseudonameLogKeyPackage(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// wrap externally given log key into blob
+// Required Permission: setup or update
+// Input: AES-128 bit log key
+// Output: pseudoname log key blob
+// Return: Success or Error code.
+extern int ERP_WrapPseudonameLogKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
+// Externally callable FWAPI Command
+// Extract AES 128 Pseudoname log key
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: pseudoname log Key Blob
+// Output: Symmetric AES128 hash key.
+// Return: Success or Error code.
+extern int ERP_UnwrapPseudonameLogKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd);
+
 #endif

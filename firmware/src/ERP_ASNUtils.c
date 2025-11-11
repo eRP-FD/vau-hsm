@@ -1381,6 +1381,46 @@ unsigned int parseSignVAUAUTTokenRequest(
     return err;
 }
 
+unsigned int parseWrapAES128KeyRequest(
+    int l_cmd,
+    const unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    unsigned int* pDesiredGeneration,
+    unsigned int* pAESKeyLen,
+    unsigned char** ppAESKeyData)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int TableLength = 6;
+    ASN1_ITEM* Items = NULL;
+
+    err = decodeASNList(l_cmd, p_cmd, &Items, TableLength, 3);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        // Extract the tee token.
+        err = getASN1SealedBlob(&Items[1], ppTEETokenBlob);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = getASN1Integer(&Items[4], pDesiredGeneration);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        *pAESKeyLen = 0;
+        err = getASN1OCTETSTRING(&Items[5], pAESKeyLen, ppAESKeyData);
+        if ((err == E_ERP_SUCCESS) && (*pAESKeyLen != AES_128_LEN/8))
+        {
+            err = E_ERP_ASN1_CONTENT_ERROR;
+        }
+    }
+
+    // Subsidiary structures in Itemlist from der_decode point into the original buffer
+    //   and should not be deleted here.
+    FREE_IF_NOT_NULL(Items);
+    return err;
+}
+
 unsigned int buildOutputBuffer(T_CMDS_HANDLE* p_hdl, ASN1_ITEM * itemList, unsigned int numItems)
 {
     unsigned int err = E_ERP_SUCCESS;
@@ -1915,7 +1955,7 @@ unsigned int parseBasicConstraints(
 // Some TPM EK certificates pass in an empty ASN1 Sequence at this point
         if ((Items[0].tag != ASN_SEQUENCE) ||
             (Items[0].nitems > 2))
-#           // Items[0].nitems can be 1 for no path constraint, just an isCA,
+            // Items[0].nitems can be 1 for no path constraint, just an isCA,
             //    2 if isCA and path constraint are both present and
             //    0 if neither is present which is non standard, but does actually happen in the wild (Nuvoton)
         {

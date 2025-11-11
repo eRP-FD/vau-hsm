@@ -42,10 +42,6 @@ endfunction()
 # build folder of the test executable such that the executable can access the resources it needs
 #
 function (copy_test_resources TARGET_NAME)
-    if (NOT BUILD_TESTS)
-        return()
-    endif()
-
     if (NOT TARGET ${TARGET_NAME})
         message(FATAL_ERROR "Test target ${TARGET_NAME} does not exist. Define and "
                             "configure it with `configure_test_target` before copying its resources.")
@@ -56,15 +52,13 @@ function (copy_test_resources TARGET_NAME)
         message(FATAL_ERROR "Cannot get resources directory from path `${TEST_RESOURCES_DIRECTORY}`.")
     endif()
 
-    set(BUILD_BIN_DIRECTORY_RESOURCES "${BUILD_BIN_DIRECTORY}/${RESOURCES_DIRECTORY}")
-
     add_custom_command(TARGET ${TARGET_NAME}
                        POST_BUILD
                        COMMAND ${CMAKE_COMMAND}
                        ARGS -E
                             copy_directory
                             ${TEST_RESOURCES_DIRECTORY}
-                            ${BUILD_BIN_DIRECTORY_RESOURCES}
+                            "$<TARGET_FILE_DIR:${TARGET_NAME}>/${RESOURCES_DIRECTORY}"
                        VERBATIM)
 endfunction()
 

@@ -46,7 +46,6 @@ function (_private_hsm_execute_command TOOL IP PORT LOGON_KEY COMMAND RESULT_OUT
     if (NOT ${LOGON_KEY} STREQUAL "")
         set(LOGON_SUBCOMMAND "LogonSign=ADMIN,${LOGON_KEY}")
     endif()
-
     execute_process(COMMAND ${TOOL} dev=${PORT}@${IP} ${LOGON_SUBCOMMAND} ${COMMAND}
                     RESULT_VARIABLE RESULT_LOCAL
                     OUTPUT_VARIABLE OUTPUT_LOCAL
@@ -180,7 +179,7 @@ endfunction()
 # function that signs a given firmware with a given key and returns the resulting MTC file
 #
 function (hsm_sign_firmware ADMIN_TOOL IP PORT SIGN_KEY FIRMWARE RESULT_OUT ERROR_OUT)
-    set(COMMAND Model=c50 MMCSignKey=${SIGN_KEY} MakeMTC=${FIRMWARE})
+    set(COMMAND "Model=c50" "MMCSignKey=${SIGN_KEY}" "MakeMTC=${FIRMWARE}")
     _private_hsm_execute_command(${ADMIN_TOOL} ${IP} ${PORT} "" "${COMMAND}" RESULT_LOCAL OUTPUT_LOCAL ERROR_LOCAL)
 
     if (${RESULT_LOCAL})

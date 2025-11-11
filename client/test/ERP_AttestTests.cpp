@@ -684,3 +684,19 @@ TEST_F(ErpAttestationTestFixture, VsdmTestKeys)
         ASSERT_EQ(ERP_ERR_NOERROR, err);
     }
 }
+
+TEST_F(ErpAttestationTestFixture, PseudonymizationLogKeyPackage)
+{
+    unsigned int Gen = THE_ANSWER;
+    unsigned int err = ERP_ERR_NOERROR;
+    // the encrypted key is generated from ecies scheme using the vau cert public key
+    RawPayloadInput input = {};
+    input.desiredGeneration = Gen;
+    const char inputKeyPackage[] = R"({"key_version":"1","encrypted_key":"019f6fe91a518806792f529d3cfb35a24280d465d3d2d3e54ef65f73ef9624f645187943551dd6939b25cd8e0a733e9f541060ed4982f295eee95c8e436062d302a5fda4ff73917e567df89a809ca21f7af0bbaf40c5e64142641325a7b92c7ba21d00d2d68c743cd82c273d85"})";
+    memcpy(input.rawPayload, inputKeyPackage, sizeof(inputKeyPackage));
+    input.payloadLen = sizeof(inputKeyPackage);
+    SingleBlobOutput out = ERP_WrapPseudonameLogKeyPackage(m_logonSession, input);
+    ASSERT_EQ(ERP_ERR_NOERROR, out.returnCode);
+    err = writeBlobResourceFile("saved/PseudonymizationLogKey.blob", &out.BlobOut);
+    ASSERT_EQ(ERP_ERR_NOERROR, err);
+}

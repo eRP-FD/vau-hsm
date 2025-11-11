@@ -2694,3 +2694,251 @@ extern int ERP_SignVAUAUTToken(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p
     }
     return err;
 }
+
+
+// Externally callable FWAPI Command
+// Required Permission: allowed for ERP_SETUP or ERP_UPDATE
+// Input: cleartext Payload
+// Output: wrapped rawPayload blob
+// Return: Success or Error code.
+int ERP_WrapPseudonameLogKeyPackage(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    unsigned int desiredGeneration = 0;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_WrapPseudonameKeyPackage;
+    unsigned int payloadLength = 0;
+    unsigned char* pPayloadData = NULL;
+    if ((0 != check_permission(p_hdl, ERP_SETUP_PERMISSION, 2)) &&
+        (0 != check_permission(p_hdl, ERP_UPDATE_PERMISSION, 2)))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseWrapRawPayloadRequest(l_cmd, p_cmd, &desiredGeneration, &payloadLength, &pPayloadData);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = CheckAvailableGeneration(p_hdl, desiredGeneration);
+    }
+    ClearBlob_t* clear = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        clear = os_mem_new_tag(sizeof(ClearBlob_t) + payloadLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        if (clear == NULL)
+        {
+            err = E_ERP_MALLOC;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        clear->BlobType = Pseudoname_LogKeyPackage;
+        err = fillGeneric(clear);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        os_mem_cpy(&(clear->Data[0]), pPayloadData, payloadLength);
+        clear->DataLength = payloadLength;
+    }
+    SealedBlob_t* sealed = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = SealBlob(p_hdl, clear, desiredGeneration, &sealed);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSingleSealedBlobOutput(p_hdl, sealed);
+    }
+    FREE_IF_NOT_NULL(sealed);
+    FREE_IF_NOT_NULL(clear);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_Wrap_Pseudoname_KeyPackage);
+    }
+    else
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Externally callable FWAPI Command
+// Extract rawPayload
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: Payload Blob
+// Output: rawPayload
+// Return: Success or Error code.
+int ERP_UnwrapPseudonameLogKeyPackage(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_UnwrapPseudonameKeyPackage;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    SealedBlob_t* pPayloadBlob = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseUnwrapRawPayloadRequest(l_cmd, p_cmd,
+                                        &pTEETokenBlob,
+                                        &pPayloadBlob);
+    }
+
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clearPayload = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, Pseudoname_LogKeyPackage, pPayloadBlob, &clearPayload);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSimpleOctetStringOutput(p_hdl, clearPayload->DataLength, &(clearPayload->Data[0]));
+    }
+    FREE_IF_NOT_NULL(pPayloadBlob);
+    FREE_IF_NOT_NULL(clearPayload);
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_Unwrap_Pseudoname_KeyPackage);
+    }
+    else
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+int ERP_WrapPseudonameLogKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_WrapPseudonameLogKey;
+    unsigned int desiredGeneration = 0;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    unsigned int AESKeyLength = 0;
+    unsigned char* pAESKey = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseWrapAES128KeyRequest(l_cmd, p_cmd, &pTEETokenBlob, &desiredGeneration, &AESKeyLength, &pAESKey);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = CheckAvailableGeneration(p_hdl, desiredGeneration);
+    }
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clear = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        clear = os_mem_new_tag(sizeof(ClearBlob_t) + AESKeyLength, OS_MEM_TYPE_SECURE, __FILE__, __LINE__);
+        if (clear == NULL)
+        {
+            err = E_ERP_MALLOC;
+        }
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        clear->BlobType = Pseudoname_LogKey;
+        err = fillGeneric(clear);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        os_mem_cpy(&(clear->Data[0]), pAESKey, AESKeyLength);
+        clear->DataLength = AESKeyLength;
+    }
+    SealedBlob_t* sealed = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = SealBlob(p_hdl, clear, desiredGeneration, &sealed);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSingleSealedBlobOutput(p_hdl, sealed);
+    }
+    FREE_IF_NOT_NULL(sealed);
+    FREE_IF_NOT_NULL(clear);
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+
+    if (err == E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, ERP_AUDIT_WrapPseudonameLogKey);
+    }
+    else
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}
+
+// Externally callable FWAPI Command
+// Extract AES 128 Pseudoname log key
+// Required Permission: Working
+// Input: currently valid TEE Token
+// Input: pseudoname Key Blob
+// Output: Symmetric AES128 key.
+// Return: Success or Error code.
+int ERP_UnwrapPseudonameLogKey(T_CMDS_HANDLE* p_hdl, int l_cmd, unsigned char* p_cmd)
+{
+    unsigned int err = E_ERP_SUCCESS;
+    ERP_AuditID_t auditID = ERP_AUDIT_Failed_UnwrapPseudonameLogKey;
+    SealedBlob_t* pTEETokenBlob = NULL;
+    SealedBlob_t* pKeyBlob = NULL;
+    if (0 != check_permission(p_hdl, ERP_WORKING_PERMISSION, 2))
+    {
+        err = E_ERP_PERMISSION_DENIED;
+        auditID = ERP_AUDIT_Permission_Failure;
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = parseTwoBlobInputRequest(l_cmd, p_cmd,
+            &pTEETokenBlob,
+            &pKeyBlob);
+    }
+
+    ClearBlob_t* clearTEEToken = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, TEE_Token, pTEETokenBlob, &clearTEEToken);
+    }
+    ClearBlob_t* clearKey = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        err = UnsealBlobAndCheckType(p_hdl, Pseudoname_LogKey, pKeyBlob, &clearKey);
+    }
+    AES128KeyBlob_t* keyBlob = NULL;
+    if (err == E_ERP_SUCCESS)
+    {
+        keyBlob = (AES128KeyBlob_t*)&(clearKey->Data[0]);
+    }
+    if (err == E_ERP_SUCCESS)
+    {
+        err = makeSimpleOctetStringOutput(p_hdl, AES_128_LEN / 8, &(keyBlob->KeyData[0]));
+    }
+    FREE_IF_NOT_NULL(pKeyBlob);
+    FREE_IF_NOT_NULL(clearKey);
+    FREE_IF_NOT_NULL(pTEETokenBlob);
+    FREE_IF_NOT_NULL(clearTEEToken);
+    if (err != E_ERP_SUCCESS)
+    {
+        auditErrWithID(err, auditID);
+    }
+    return (int)err;
+}

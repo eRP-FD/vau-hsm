@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 ###################################################################################################
 
 # (C) Copyright IBM Deutschland GmbH 2021, 2024
@@ -9,112 +7,111 @@
 
 ###################################################################################################
 
-from conans import CMake
-from conans import ConanFile
-from conans import tools
-from conans.errors import ConanException
+from conan import ConanFile
+from conan.errors import ConanInvalidConfiguration
+from conan.tools.build import check_min_cppstd
+from conan.tools.cmake import CMake, CMakeDeps, CMakeToolchain, cmake_layout
+from conan.tools.env import VirtualBuildEnv, VirtualRunEnv
+from conan.tools.scm import Git
 
-###################################################################################################
+required_conan_version = ">=1.53.0"
 
-import os
-import shutil
-import stat
-
-###################################################################################################
 
 class HsmClientPackage(ConanFile):
+    name = "hsmclient"
+    url = "https://github.ibmgcloud.net/eRp/vau-hsm"
+    homepage = "https://github.ibmgcloud.net/eRp/vau-hsm/"
+    description = "The VAU HSM client access library"
+    license = "proprietary"
+    package_type = "library"
+    settings = "os", "arch", "compiler", "build_type"
+    options = {
+        "shared": [True, False],
+        "fPIC": [True, False],
+        "verbose": [True, False],
+        "with_tests": [True, False],
+    }
+    default_options = {
+        "shared": False,
+        "fPIC": True,
+        "verbose": False,
+        "with_tests": False,
+        "asn1c/*:silent": False,
+        "asn1c/*:with_unit_tests": False,
+        "gtest/*:build_gmock": False,
+        "gtest/*:shared": True,
+        "csxapi/*:shared": True,
+    }
+    exports_sources = ["CMakeLists.txt", "cmake/*", "src/*", "test/*"]
 
-    # custom properties for usage by this specific recipe's code, not by the Conan SDK
+    @property
+    def _min_cppstd(self):
+        return 17
 
-    _build_tests_cmake_argument = 'BUILD_TESTS'
+    @property
+    def _compilers_minimum_version(self):
+        return {
+            "gcc": "7",
+            "clang": "7",
+            "apple-clang": "10",
+        }
 
-    _no_clang_tidy_cmake_argument = 'WITHOUT_CLANG_TIDY'
+    def config_options(self):
+        if self.settings.os == "Windows":
+            del self.options.fPIC
 
-    _verbose_cmake_argument = 'VERBOSE'
-
-    _cmake = None
-
-    # Conan properties, used by the Conan SDK
-
-    name = 'hsmclient'
-
-    homepage = 'https://github.ibmgcloud.net/eRp/vau-hsm/tree/master/client'
-
-    description = 'The VAU HSM client access library'
-
-    author = 'Theodor Serbana <theodor.serbana@ibm.com>'
-
-    license = 'proprietary'
-
-    url = 'https://github.ibmgcloud.net/eRp/vau-hsm'
-
-    options = {'verbose': [True, False],
-               'with_tests': [True, False]}
-
-    default_options = {'verbose': False,
-                       'with_tests': False,
-                       'asn1c:silent': False,
-                       'asn1c:with_unit_tests': False,
-                       'gtest:build_gmock': False,
-                       'gtest:shared': True,
-                       'csxapi:shared': True}
-
-    settings = {'os': ['Linux', 'Windows'],
-                'compiler': ['gcc', 'clang', 'Visual Studio'],
-                'build_type': ['Debug', 'Release', 'RelWithDebInfo'],
-                'arch': ['x86', 'x86_64']}
-
-    generators = ['cmake']
-
-    exports_sources = ['CMakeLists.txt',
-                       'cmake/*',
-                       'src/*',
-                       'test/*']
-
-    def _get_cmake(self):
-        if self._cmake:
-            return self._cmake
-
-        self._cmake = CMake(self, set_cmake_flags=True)
-
-        # do not run clang-tidy
-        #
-        self._cmake.definitions[self._no_clang_tidy_cmake_argument] = 1
-
-        # build the tests if option was given
-        #
-        if self.options.with_tests:
-            self._cmake.definitions[self._build_tests_cmake_argument] = 1
-
-        # define verbose flag if option was given
-        #
-        if self.options.verbose:
-            if not tools.os_info.is_windows:
-                raise ConanException('Option "verbose" only works on Windows due to csxapi')
-
-            self._cmake.definitions[self._verbose_cmake_argument] = 1
-
-        # call cmake configure
-        #
-        self._cmake.configure()
-        return self._cmake
-
-    def set_version(self):
-        if not self.version:
-            git = tools.Git()
-            self.version = git.run('describe --tags --abbrev=0 --match "v-[0-9\.]*"')[2:]
+    def configure(self):
+        if self.options.shared:
+            self.options.rm_safe("fPIC")
 
     def requirements(self):
         self.requires("csxapi/1.0")
         self.requires("asn1c/cci.20200522")
         if self.options.with_tests:
-            self.requires("gtest/1.15.0")
-            self.requires("openssl/1.1.1k")
+            self.test_requires("gtest/1.15.0")
+            self.test_requires("openssl/[>=1.1 <4]")
+
+    def build_requirements(self):
+        self.tool_requires("asn1c/cci.20200522")
+        self.tool_requires("cmake/[>=3.18 <4]")
+
+    def layout(self):
+        cmake_layout(self)
+
+    def validate(self):
+        if self.settings.compiler.cppstd:
+            check_min_cppstd(self, self._min_cppstd)
+        if self.settings.os != "Windows" and self.options.verbose:
+            raise ConanInvalidConfiguration('Option "verbose" only works on Windows due to csxapi')
+
+    def generate(self):
+        run_env = VirtualRunEnv(self)
+        run_env.generate(scope="build")
+        tc = CMakeToolchain(self)
+        # do not run clang-tidy
+        tc.variables["WITHOUT_CLANG_TIDY"] = True
+        tc.variables["BUILD_TESTING"] = self.options.with_tests
+        if self.options.verbose:
+            tc.variables["VERBOSE"] = True
+        tc.variables["CONAN_ASN1C_ROOT"] = self.dependencies["asn1c"].package_folder
+        tc.generate()
+        deps = CMakeDeps(self)
+        deps.generate()
+
+        build_env = VirtualBuildEnv(self)
+        build_env.generate(scope="build")
+
+        # for dep in self.dependencies.values():
+        #     copy(self, "*.dll", dep.cpp_info.libdirs[0], self.build_folder)
+
+    def set_version(self):
+        if not self.version:
+            git = Git(self, folder=self.recipe_folder)
+            self.version = git.run('describe --tags --abbrev=0 --match "v-[0-9\.]*"')[2:].lower()
 
     def build(self):
-        # build the source code
-        #
-        cmake = self._get_cmake()
+        cmake = CMake(self)
+        cmake.configure()
         cmake.build()
 
         # run the tests if option was given
@@ -123,16 +120,11 @@ class HsmClientPackage(ConanFile):
             cmake.test()
 
     def package(self):
-        # call the CMake install target
-        #
-        cmake = self._get_cmake()
+        cmake = CMake(self)
         cmake.install()
 
     def package_info(self):
-        self.cpp_info.libs = tools.collect_libs(self)
+        self.cpp_info.libs = ["hsmclient"]
 
-    def imports(self):
-        self.copy('*.dll', 'bin', 'bin')
-        self.copy('*.so*', 'lib', 'lib', root_package='csxapi')
 
 ###################################################################################################

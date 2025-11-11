@@ -14,6 +14,7 @@
 #include <fstream>
 #include <memory>
 #include <cstddef>
+#include <cstdint>
 
 #define TEST_CONNECT_TIMEOUT_MS 5000
 #define TEST_READ_TIMEOUT_MS   1800000
@@ -171,5 +172,8 @@ unsigned int teststep_WrapRawPayload(HSMSession sesh, unsigned int Generation, s
 unsigned int teststep_WrapRawPayloadWithToken(HSMSession sesh, unsigned int Generation, size_t payloadLength,
                                            const unsigned char *rawPayload, SingleBlobOutput *payloadBlob);
 unsigned int teststep_UnwrapRawPayload(HSMSession sesh, ERPBlob *payloadBlob, RawPayloadOutput *payloadOut);
+unsigned int teststep_UnwrapPseudonameLogKeyPackage(HSMSession sesh, ERPBlob *payloadBlob, RawPayloadOutput *payloadOut);
+unsigned int teststep_WrapPseudonameLogKey(HSMSession sesh, unsigned int Generation, const unsigned char *pAES128Key, SingleBlobOutput *payloadBlob);
+unsigned int teststep_UnwrapPseudonameLogKey(HSMSession sesh, ERPBlob* keyBlob, AES128KeyOutput *aesKeyOutput);
 
 #endif

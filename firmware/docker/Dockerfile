@@ -5,19 +5,13 @@
 
 ########################################################################################################################
 
-FROM conanio/gcc9:1.43.0 AS prerequisites
+FROM ubuntu:jammy AS prerequisites
 
 USER root
-ARG NEXUS_USERNAME
-ARG NEXUS_PASSWORD
 ARG NEXUS_SRV=nexus.epa-dev.net/repository/
 ARG NEXUS_TI_PATH=erp-contrib/ti_compiler_suites/
 ARG NEXUS_TI_PKG=ti_cgt_c6000_7.4.24_linux_installer_x86.bin
 ARG RELEASE_VERSION
-ARG GITHUB_USERNAME
-ARG GITHUB_OAUTH_TOKEN
-ENV GITHUB_USERNAME=${GITHUB_USERNAME:-''}
-ENV GITHUB_OAUTH_TOKEN=${GITHUB_OAUTH_TOKEN:-''}
 
 # install prerequisites
 #
@@ -29,12 +23,11 @@ RUN DEBIAN_FRONTEND=noninteractive                             \
                                                openssh-client  \
                                                curl            \
                                                git             \
-                                               openssh-client  \
-                                               libc6-i386      \
                                                lib32stdc++6    \
-                                               lib32gcc1       \
                                                lib32z1         \
                                                xutils-dev      \
+                                               python3-pip \
+                                               make \
     &&                                                         \
     apt-get clean all &&                                       \
     apt-get autoclean -y &&                                    \
@@ -45,17 +38,25 @@ RUN DEBIAN_FRONTEND=noninteractive                             \
 # due to conan base image based off of Ubuntu 19, ca-certificates contains an old Let's Encrypt CA
 #
 RUN sed -i '/^mozilla\/DST_Root_CA_X3.crt$/ s/^/!/' /etc/ca-certificates.conf
-RUN update-ca-certificates
+RUN update-ca-certificates && pip install --upgrade conan
 
 # use HTTPS checkout due to issues with SSH key formatting when passed through as a build arg
 #
+ARG GITHUB_USERNAME
+ARG GITHUB_OAUTH_TOKEN
+ENV GITHUB_USERNAME=${GITHUB_USERNAME:-''}
+ENV GITHUB_OAUTH_TOKEN=${GITHUB_OAUTH_TOKEN:-''}
 RUN git config --global                                                                                 \
                url.https://${GITHUB_USERNAME:-}:${GITHUB_OAUTH_TOKEN:-}@github.ibmgcloud.net/.insteadOf \
                git@github.ibmgcloud.net:
 
 # download TI toolchain
 #
-RUN curl -fSsL -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD}        \
+ARG NEXUS_USERNAME
+ARG NEXUS_PASSWORD
+ARG NEXUS_USERNAME_TI
+ARG NEXUS_PASSWORD_TI
+RUN curl -fSsL -u ${NEXUS_USERNAME_TI:-$NEXUS_USERNAME}:${NEXUS_PASSWORD_TI:-$NEXUS_PASSWORD}        \
          https://${NEXUS_SRV}${NEXUS_TI_PATH}${NEXUS_TI_PKG} \
          -o /opt/ti.bin
 
@@ -70,12 +71,13 @@ RUN chmod +x /opt/ti.bin &&                    \
 
 # setup Conan and add the Nexus Conan repository
 #
-RUN conan config init --force &&                                                    \
-    conan profile new default --detect --force &&                                   \
-    conan profile update settings.build_type=Release default &&                     \
-    conan profile update settings.compiler.libcxx=libstdc++11 default &&            \
-    conan remote add erp https://nexus.epa-dev.net/repository/erp-conan-internal && \
-    conan user $NEXUS_USERNAME -r erp -p $NEXUS_PASSWORD
+ARG CONAN_LOGIN_USERNAME
+ARG CONAN_PASSWORD
+RUN conan profile detect && \
+    conan remote add erp-conan-2 https://artifactory-cpp-ce.ihc-devops.net/artifactory/api/conan/erp-conan-2 && \
+    conan remote add erp-conan-internal https://artifactory-cpp-ce.ihc-devops.net/artifactory/api/conan/erp-conan-internal && \
+    conan remote login -p "${CONAN_PASSWORD:-$NEXUS_PASSWORD}" 'erp-*' "${CONAN_LOGIN_USERNAME:-$NEXUS_USERNAME}"
+
 
 ########################################################################################################################
 
@@ -89,8 +91,7 @@ COPY . .
 # configure & build
 #
 WORKDIR /build
-RUN cmake -S /source -DCMAKE_BUILD_TYPE=Release
-RUN cmake --build .
+RUN conan build /source --output-folder=. --build=missing -s '&:arch=x86' -s '&:build_type=Release'
 
 # clean up
 #
@@ -177,7 +178,7 @@ RUN rm -rf $HOME/.conan     \
 
 ########################################################################################################################
 
-FROM ubuntu:20.04 AS run
+FROM ubuntu:jammy AS run
 
 # install dependencies
 #
@@ -192,7 +193,7 @@ RUN DEBIAN_FRONTEND=noninteractive                          \
 #
 WORKDIR /run
 RUN rm -rf *
-COPY --from=build /build/simulator .
+COPY --from=build /build/build/Release/simulator .
 
 # this is the environment variable that the HSM simulator checks to grab the port it will be listening on
 #

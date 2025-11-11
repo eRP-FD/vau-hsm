@@ -137,6 +137,10 @@ FILE_CONST P_CMDS_FCT Module_func_tab[] =
     ,ERP_GenerateAUTKeyPair     // SFC = 36
     ,ERP_GenerateAUTCSR         // SFC = 37
     ,ERP_SignVAUAUTToken        // SFC = 38
+    ,ERP_WrapPseudonameLogKeyPackage // SFC = 39
+    ,ERP_UnwrapPseudonameLogKeyPackage // SFC = 40
+    ,ERP_WrapPseudonameLogKey   // SFC = 41
+    ,ERP_UnwrapPseudonameLogKey // SFC = 42
 };
 
 MDL_GLOBAL DB* p_BlobKDB;

@@ -1,6 +1,6 @@
 # IDE settings folders
 #
-**/.vs
+**/.vs*
 **/.idea
 
 # build folders
@@ -10,6 +10,7 @@
 !docker/build
 **/build*debug
 **/build*release
+CMakeUserPresets.json
 
 # asn1 generated stubs
 #

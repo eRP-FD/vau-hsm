@@ -4,7 +4,8 @@
  *
  * non-exclusively licensed to gematik GmbH
  **************************************************************************************************/
-
+#define _BSD_SOURCE
+#define _DEFAULT_SOURCE
 #include "ERP_Client.h"
 
 #include "ERP_ASNUtils.h"
@@ -39,9 +40,10 @@
 #include <asn1_hsmclient/TEETokenRequest.h>
 #include <asn1_hsmclient/TrustTPMMfrRequest.h>
 #include <asn1_hsmclient/TwoBlobKeyRequest.h>
+#include <asn1_hsmclient/UnwrapRawPayloadRequest.h>
+#include <asn1_hsmclient/WrapPseudonameLogKeyRequest.h>
 #include <asn1_hsmclient/WrapRawPayloadRequest.h>
 #include <asn1_hsmclient/WrapRawPayloadWithTokenRequest.h>
-#include <asn1_hsmclient/UnwrapRawPayloadRequest.h>
 #include <asn1_hsmclient/SignVAUAUTTokenRequest.h>
 #include <asn1_hsmclient/X509CSR.h>
 
@@ -574,7 +576,7 @@ ERP_API_FUNC UIntOutput ERP_GenerateBlobKey(
     UIntOutput retVal = { 0 , 0 };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t * )calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t * )calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -667,7 +669,7 @@ ERP_API_FUNC EmptyOutput ERP_DeleteBlobKey(
     EmptyOutput retVal = { 0 };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t * )calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t * )calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -734,7 +736,7 @@ ERP_API_FUNC NONCEOutput ERP_GenerateNONCE(
     NONCEOutput retVal = { 0, {0}, {0,0,{0}} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t *)calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t *)calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -988,7 +990,7 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateAES256Key(
     SingleBlobOutput retVal = { 0 , {0,0,"" } };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t*)calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t*)calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1078,7 +1080,7 @@ ERP_API_FUNC SingleBlobOutput ERP_GenerateECKeyPair(
     SingleBlobOutput retVal = { 0 , {0,0,"" } };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t*)calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t*)calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1168,7 +1170,7 @@ ERP_API_FUNC x509CSROutput ERP_Generate_EC_CSR(
     x509CSROutput retVal = { ERP_ERR_NOERROR, 0,"" };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    GetVAUCSRRequest_t* request = (GetVAUCSRRequest_t *)calloc(sizeof(GetVAUCSRRequest_t), 1);
+    GetVAUCSRRequest_t* request = (GetVAUCSRRequest_t *)calloc(1, sizeof(GetVAUCSRRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1299,7 +1301,7 @@ ERP_API_FUNC SingleBlobOutput ERP_TrustTPMMfr(
     SingleBlobOutput retVal = { 0, {0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    TrustTPMMfrRequest_t* request = (TrustTPMMfrRequest_t *)calloc(sizeof(TrustTPMMfrRequest_t), 1);
+    TrustTPMMfrRequest_t* request = (TrustTPMMfrRequest_t *)calloc(1, sizeof(TrustTPMMfrRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1411,7 +1413,7 @@ ERP_API_FUNC SingleBlobOutput ERP_EnrollTPMEK(
     SingleBlobOutput retVal = { 0, {0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    EnrollTPMRequest_t* request = (EnrollTPMRequest_t *)calloc(sizeof(EnrollTPMRequest_t), 1);
+    EnrollTPMRequest_t* request = (EnrollTPMRequest_t *)calloc(1, sizeof(EnrollTPMRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1490,7 +1492,7 @@ ERP_API_FUNC AKChallengeOutput ERP_GetAKChallenge(
     AKChallengeOutput retVal = { ERP_ERR_NOERROR, {0,0,""},0,"",0,"" };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    GetAKChallenge_t* request = (GetAKChallenge_t *)calloc(sizeof(GetAKChallenge_t), 1);
+    GetAKChallenge_t* request = (GetAKChallenge_t *)calloc(1, sizeof(GetAKChallenge_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1623,7 +1625,7 @@ ERP_API_FUNC SingleBlobOutput ERP_EnrollTPMAK(
     SingleBlobOutput retVal = { 0, {0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    EnrollAKRequest_t* request = calloc(sizeof(EnrollAKRequest_t), 1);
+    EnrollAKRequest_t* request = calloc(1, sizeof(EnrollAKRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1714,7 +1716,7 @@ ERP_API_FUNC SingleBlobOutput ERP_EnrollEnclave(
     SingleBlobOutput retVal = { 0, {0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    EnrollEnclaveRequest_t* request = calloc(sizeof(EnrollEnclaveRequest_t), 1);
+    EnrollEnclaveRequest_t* request = calloc(1, sizeof(EnrollEnclaveRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1805,7 +1807,7 @@ ERP_API_FUNC SingleBlobOutput ERP_GetTEEToken(
     SingleBlobOutput retVal = { 0,{0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    TEETokenRequest_t* request = calloc(sizeof(TEETokenRequest_t), 1);
+    TEETokenRequest_t* request = calloc(1, sizeof(TEETokenRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -1898,7 +1900,7 @@ DeriveKeyOutput ERP_DeriveKey(
     DeriveKeyOutput retVal = { ERP_ERR_NOERROR,0,{0},{0} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    DeriveKeyRequest_t* request = calloc(sizeof(DeriveKeyRequest_t), 1);
+    DeriveKeyRequest_t* request = calloc(1, sizeof(DeriveKeyRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2024,7 +2026,7 @@ AES128KeyOutput ERP_DoVAUECIES128(
     AES128KeyOutput retVal = { ERP_ERR_NOERROR, "" };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    DoVAUECIESRequest_t* request = calloc(sizeof(DoVAUECIESRequest_t), 1);
+    DoVAUECIESRequest_t* request = calloc(1, sizeof(DoVAUECIESRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2079,7 +2081,7 @@ AES128KeyOutput ERP_DoVAUECIES128(
 #endif
 
     // Extract Single Blob from result:
-    AES256_t* response = NULL;    /* Note this 0! */
+    AES128_t* response = NULL;    /* Note this 0! */
 
     if (retVal.returnCode == ERP_ERR_NOERROR)
     {
@@ -2166,7 +2168,7 @@ ERP_API_FUNC PublicKeyOutput ERP_GetECPublicKey(
     PublicKeyOutput retVal = { ERP_ERR_NOERROR, 0,"" };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    SingleBlobRequest_t* request = calloc(sizeof(SingleBlobRequest_t), 1);
+    SingleBlobRequest_t* request = calloc(1, sizeof(SingleBlobRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2272,7 +2274,7 @@ ERP_API_FUNC PrivateKeyOutput ERP_GetVAUSIGPrivateKey(
     PrivateKeyOutput retVal = { ERP_ERR_NOERROR, 0,"" };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    TwoBlobKeyRequest_t* request = calloc(sizeof(TwoBlobKeyRequest_t), 1);
+    TwoBlobKeyRequest_t* request = calloc(1, sizeof(TwoBlobKeyRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2391,7 +2393,7 @@ ERP_API_FUNC RNDBytesOutput ERP_GetRNDBytes(
     RNDBytesOutput retVal = { ERP_ERR_NOERROR, 0, {0} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2510,7 +2512,7 @@ ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
     AES256KeyOutput retVal = { ERP_ERR_NOERROR,{0} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    TwoBlobKeyRequest_t* request = calloc(sizeof(TwoBlobKeyRequest_t), 1);
+    TwoBlobKeyRequest_t* request = calloc(1, sizeof(TwoBlobKeyRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2601,10 +2603,12 @@ ERP_API_FUNC AES256KeyOutput UnwrapAES256Key(
     }
     if (p_answ != NULL)
     {
+        explicit_bzero(p_answ, p_l_answ);
         cs_free_answ(p_answ);
     }
     if (pCmdData != NULL)
     {
+        explicit_bzero(pCmdData, cmdLength);
         free(pCmdData);
     }
     return retVal;
@@ -2662,7 +2666,7 @@ ERP_API_FUNC BUBlobOutput_t ERP_ExportSingleBlobKey(
     BUBlobOutput_t retVal = { 0 , {0,{0},{0},{0},{0},0,{0} } };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    INTSequence_t* intIn = (INTSequence_t*)calloc(sizeof(INTSequence_t), 1);
+    INTSequence_t* intIn = (INTSequence_t*)calloc(1, sizeof(INTSequence_t));
     if (intIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2739,7 +2743,7 @@ ERP_API_FUNC EmptyOutput ERP_ImportSingleBlobKey(
     EmptyOutput retVal = { 0 };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    BackupBlobRequest_t* blobIn = (BackupBlobRequest_t*)calloc(sizeof(BackupBlobRequest_t), 1);
+    BackupBlobRequest_t* blobIn = (BackupBlobRequest_t*)calloc(1, sizeof(BackupBlobRequest_t));
     if (blobIn == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2847,7 +2851,7 @@ ERP_API_FUNC SingleBlobOutput ERP_MigrateBlob(
     SingleBlobOutput retVal = { 0,{0,0,""} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    MigrateBlobRequest_t* request = calloc(sizeof(MigrateBlobRequest_t), 1);
+    MigrateBlobRequest_t* request = calloc(1, sizeof(MigrateBlobRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -2933,7 +2937,7 @@ ERP_API_FUNC SHA256Output ERP_GetBlobContentHash(
     SHA256Output retVal = { ERP_ERR_NOERROR,{0} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    SingleBlobRequest_t* request = calloc(sizeof(SingleBlobRequest_t), 1);
+    SingleBlobRequest_t* request = calloc(1, sizeof(SingleBlobRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3051,7 +3055,7 @@ ERP_API_FUNC SHA256Output ERP_GetBlobContentHashWithToken(
     SHA256Output retVal = { ERP_ERR_NOERROR,{0} };
 
     // Need to use calloc because lib relies on zeroing of empty structure memory.
-    TwoBlobKeyRequest_t* request = calloc(sizeof(TwoBlobKeyRequest_t), 1);
+    TwoBlobKeyRequest_t* request = calloc(1, sizeof(TwoBlobKeyRequest_t));
     if (request == NULL)
     {
         retVal.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3300,18 +3304,17 @@ ERP_API_FUNC TPMParsedQuote_t ERP_ParseTPMQuote(
     return retVal;
 }
 
-ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayload(
-    HSMSession sesh,
-    RawPayloadInput input)
+static SingleBlobOutput WrapRawPayloadRequest(HSMSession sesh,
+    RawPayloadInput input, unsigned int sfc)
 {
-    SingleBlobOutput retval = {ERP_ERR_NOERROR, {0} };
+        SingleBlobOutput retval = {ERP_ERR_NOERROR, {0} };
     unsigned char* p_answ = NULL;
     unsigned int p_l_answ = 0;
     unsigned char* pCmdData = NULL;
     size_t cmdLength = 0;
 
     // send WrapRawPayloadRequest
-    WrapRawPayloadRequest_t* request = (WrapRawPayloadRequest_t *)calloc(sizeof(WrapRawPayloadRequest_t), 1);
+    WrapRawPayloadRequest_t* request = (WrapRawPayloadRequest_t *)calloc(1, sizeof(WrapRawPayloadRequest_t));
     if (request == NULL)
     {
         retval.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3347,7 +3350,7 @@ ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayload(
     // recieve SingleBlob
     retval.returnCode = ERP_FirmwareExec(sesh,
                                          ERP_MDL_ID,
-                                         ERP_SFC_WRAP_PAYLOAD,
+                                         sfc,
                                          pCmdData,
                                          (unsigned int)cmdLength,
                                          &p_answ,
@@ -3369,16 +3372,25 @@ out:
     }
     if (p_answ != NULL)
     {
+        explicit_bzero(p_answ, p_l_answ);
         cs_free_answ(p_answ);
     }
     if (pCmdData != NULL)
     {
+        explicit_bzero(pCmdData, cmdLength);
         free(pCmdData);
     }
 
     return retval;
 }
 
+
+ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayload(
+    HSMSession sesh,
+    RawPayloadInput input)
+{
+    return WrapRawPayloadRequest(sesh, input, ERP_SFC_WRAP_PAYLOAD);
+}
 
 ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
     HSMSession sesh,
@@ -3391,7 +3403,7 @@ ERP_API_FUNC SingleBlobOutput ERP_WrapRawPayloadWithToken(
     size_t cmdLength = 0;
 
     // send WrapRawPayloadWithTokenRequest
-    WrapRawPayloadWithTokenRequest_t* request = (WrapRawPayloadWithTokenRequest_t *)calloc(sizeof(WrapRawPayloadWithTokenRequest_t), 1);
+    WrapRawPayloadWithTokenRequest_t* request = (WrapRawPayloadWithTokenRequest_t *)calloc(1, sizeof(WrapRawPayloadWithTokenRequest_t));
     if (request == NULL)
     {
         retval.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3454,30 +3466,30 @@ out:
     }
     if (p_answ != NULL)
     {
+        explicit_bzero(p_answ, p_l_answ);
         cs_free_answ(p_answ);
     }
     if (pCmdData != NULL)
     {
+        explicit_bzero(pCmdData, cmdLength);
         free(pCmdData);
     }
 
     return retval;
 }
 
-
-ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
-    HSMSession sesh,
-    WrappedPayloadInput input)
+static RawPayloadOutput UnwrapRawPayloadRequest(HSMSession sesh,
+    WrappedPayloadInput input, unsigned int sfc)
 {
-    RawPayloadOutput retval = {ERP_ERR_NOERROR, 0, {0} };
-    unsigned char* p_answ = NULL;
+    RawPayloadOutput retval = {ERP_ERR_NOERROR, 0, {0}};
+    unsigned char *p_answ = NULL;
     unsigned int p_l_answ = 0;
-    unsigned char* pCmdData = NULL;
-    ERPOctetString_t* response = NULL;
+    unsigned char *pCmdData = NULL;
+    ERPOctetString_t *response = NULL;
     size_t cmdLength = 0;
 
     // send UnwrapRawPayloadRequest
-    UnwrapRawPayloadRequest_t* request = (UnwrapRawPayloadRequest_t *)calloc(sizeof(UnwrapRawPayloadRequest_t), 1);
+    UnwrapRawPayloadRequest_t *request = (UnwrapRawPayloadRequest_t *)calloc(1, sizeof(UnwrapRawPayloadRequest_t));
     if (request == NULL)
     {
         retval.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3507,7 +3519,7 @@ ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
     // recieve ERPOctetString
     retval.returnCode = ERP_FirmwareExec(sesh,
                                          ERP_MDL_ID,
-                                         ERP_SFC_UNWRAP_PAYLOAD,
+                                         sfc,
                                          pCmdData,
                                          (unsigned int)cmdLength,
                                          &p_answ,
@@ -3518,10 +3530,10 @@ ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
     }
     asn_dec_rval_t rval;
     rval = asn_DEF_ERPOctetString.op->ber_decoder(0,
-            &asn_DEF_ERPOctetString,
-            (void**)&response,
-            p_answ, p_l_answ,
-            0);
+                                                  &asn_DEF_ERPOctetString,
+                                                  (void **)&response,
+                                                  p_answ, p_l_answ,
+                                                  0);
 
     if (rval.code != RC_OK)
     {
@@ -3551,14 +3563,23 @@ out:
     }
     if (p_answ != NULL)
     {
+        explicit_bzero(p_answ, p_l_answ);
         cs_free_answ(p_answ);
     }
     if (pCmdData != NULL)
     {
+        explicit_bzero(pCmdData, cmdLength);
         free(pCmdData);
     }
 
     return retval;
+}
+
+ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
+    HSMSession sesh,
+    WrappedPayloadInput input)
+{
+    return UnwrapRawPayloadRequest(sesh, input, ERP_SFC_UNWRAP_PAYLOAD);
 }
 
 
@@ -3574,7 +3595,7 @@ ERP_API_FUNC AutSignatureOutput ERP_SignVAUAUTToken(
     size_t cmdLength = 0;
 
     // send SignVAUAUTTokenRequest
-    SignVAUAUTTokenRequest_t* request = (SignVAUAUTTokenRequest_t *)calloc(sizeof(SignVAUAUTTokenRequest_t), 1);
+    SignVAUAUTTokenRequest_t* request = (SignVAUAUTTokenRequest_t *)calloc(1, sizeof(SignVAUAUTTokenRequest_t));
     if (request == NULL)
     {
         retval.returnCode = ERP_ERR_CALLOC_ERROR;
@@ -3666,4 +3687,180 @@ out:
     }
 
     return retval;
+}
+
+
+SingleBlobOutput ERP_WrapPseudonameLogKeyPackage(
+    HSMSession sesh,
+    RawPayloadInput input)
+{
+    return WrapRawPayloadRequest(sesh, input, ERP_SFC_WRAP_PSEUDONAME_LOG_KEY_PACKAGE);
+}
+
+
+RawPayloadOutput ERP_UnwrapPseudonameLogKeyPackage(
+    HSMSession sesh,
+    WrappedPayloadInput input)
+{
+    return UnwrapRawPayloadRequest(sesh, input, ERP_SFC_UNWRAP_PSEUDONAME_LOG_KEY_PACKAGE);
+}
+
+SingleBlobOutput ERP_WrapPseudonameLogKey(HSMSession sesh, AESKey128Input input)
+{
+    SingleBlobOutput retVal = {ERP_ERR_NOERROR, {0}};
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    unsigned char* pCmdData = NULL;
+    size_t cmdLength = 0;
+
+    WrapPseudonameLogKeyRequest_t *request = calloc(1, sizeof(WrapPseudonameLogKeyRequest_t));
+    if (request == NULL)
+    {
+        retVal.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+    retVal.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->tokenTEE), &(input.TEEToken));
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    request->desiredGeneration = input.desiredGeneration;
+    retVal.returnCode = asn_buffer2OctetString(&(request->keyValue), input.AESKey, AES_128_LEN);
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_enc_rval_t er = der_encode_dynamic_buffer(
+        &asn_DEF_WrapPseudonameLogKeyRequest,
+        request,
+        &cmdLength,
+        &pCmdData);
+    // Failed to encode the data.
+    if (er.encoded == -1)
+    {
+        retVal.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    // recieve SingleBlob
+    retVal.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_WRAP_PSEUDONAME_LOG_KEY,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+#ifdef TRACE_HSM_API
+    API_xtrace("Answ", p_answ, p_l_answ);
+#endif
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    HandleSingleBlobResult(p_answ, p_l_answ, &retVal);
+out:
+    if (request != NULL)
+    {
+        asn_DEF_WrapPseudonameLogKeyRequest.op->free_struct(&asn_DEF_WrapPseudonameLogKeyRequest, request, 0);
+    }
+    if (p_answ != NULL)
+    {
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        explicit_bzero(pCmdData, cmdLength);
+        free(pCmdData);
+    }
+    return retVal;
+}
+
+AES128KeyOutput ERP_UnwrapPseudonameLogKey(HSMSession sesh, TwoBlobGetKeyInput input)
+{
+    AES128KeyOutput retVal = {ERP_ERR_NOERROR, {0}};
+    // Need to use calloc because lib relies on zeroing of empty structure memory.
+    TwoBlobKeyRequest_t *request = calloc(1, sizeof(TwoBlobKeyRequest_t));
+    AES128_t* response = NULL;
+    unsigned char* p_answ = NULL;
+    unsigned int p_l_answ = 0;
+    size_t cmdLength = 0;
+    unsigned char *pCmdData = NULL;
+    if (request == NULL)
+    {
+        retVal.returnCode = ERP_ERR_CALLOC_ERROR;
+        goto out;
+    }
+    retVal.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->teeToken), &(input.TEEToken));
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    retVal.returnCode = asn_ERPBlob2ASNSingleBlob(&(request->key), &(input.Key));
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+    asn_enc_rval_t er; /* Encoder return value */
+    er = der_encode_dynamic_buffer(&asn_DEF_TwoBlobKeyRequest, request,
+                                   &cmdLength, &pCmdData);
+    if (er.encoded == -1)
+    {
+        retVal.returnCode = ERP_ERR_ASN1ENCODING_ERROR;
+        goto out;
+    }
+
+    retVal.returnCode = ERP_FirmwareExec(sesh,
+                                         ERP_MDL_ID,
+                                         ERP_SFC_UNWRAP_PSEUDONAME_LOG_KEY,
+                                         pCmdData,
+                                         (unsigned int)cmdLength,
+                                         &p_answ,
+                                         &p_l_answ);
+    if (retVal.returnCode != ERP_ERR_NOERROR)
+    {
+        goto out;
+    }
+
+    asn_dec_rval_t rval = asn_DEF_AES128.op->ber_decoder(0,
+                                                         &asn_DEF_AES128,
+                                                         (void **)&response,
+                                                         p_answ, p_l_answ,
+                                                         0);
+    if (rval.code != RC_OK)
+    {
+        retVal.returnCode = ERP_ERR_ASN1DECODING_ERROR;
+        goto out;
+    }
+    if ((response->keyValue.size != AES_128_LEN) ||
+        (response->keyValue.size > MAX_BUFFER))
+    {
+        retVal.returnCode = ERP_ERR_BUFFER_TOO_SMALL;
+        goto out;
+    }
+    // Already checked to be AES_128_LEN
+    memcpy(&(retVal.AESKey[0]), response->keyValue.buf, response->keyValue.size);
+
+out:
+    if (response != NULL)
+    {
+        asn_DEF_AES128.op->free_struct(&asn_DEF_AES128, response, 0);
+    }
+    if (request != NULL)
+    {
+        asn_DEF_TwoBlobKeyRequest.op->free_struct(&asn_DEF_TwoBlobKeyRequest, request, 0);
+    }
+    if (p_answ != NULL)
+    {
+        explicit_bzero(p_answ, p_l_answ);
+        cs_free_answ(p_answ);
+    }
+    if (pCmdData != NULL)
+    {
+        explicit_bzero(pCmdData, cmdLength);
+        free(pCmdData);
+    }
+
+    return retVal;
 }

@@ -5,21 +5,12 @@
 
 ########################################################################################################################
 
-# enable testing only if the build was configured with tests
-#
-if (BUILD_TESTS)
-    enable_testing()
-endif()
 
 ########################################################################################################################
 
 # set the general supported/required compiler features (like C & C++ standard versions, etc)
 #
 set_general_compile_features()
-
-# fetch the dependencies' build infos via Conan
-#
-setup_conan()
 
 # enable static code analysis via clang-tidy
 #
@@ -61,14 +52,9 @@ function (_private_apply_build_options_to_target TARGET_NAME)
     get_compile_options(COMPILE_OPTIONS_RESULT)
     target_compile_options(${TARGET_NAME} PRIVATE ${COMPILE_OPTIONS_RESULT})
 
-    get_include_directories(INCLUDE_DIRECTORIES_RESULT)
-    target_include_directories(${TARGET_NAME} PRIVATE ${INCLUDE_DIRECTORIES_RESULT})
+    target_include_directories(${TARGET_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/src)
 
-    get_link_options(LINK_OPTIONS_RESULT)
-    target_link_options(${TARGET_NAME} PRIVATE ${LINK_OPTIONS_RESULT})
-
-    get_libraries_to_link_against(LIBRARIES_RESULT)
-    target_link_libraries(${TARGET_NAME} PRIVATE ${LIBRARIES_RESULT})
+    target_link_libraries(${TARGET_NAME} PRIVATE csxapi::csxapi asn1c::asn1c)
 endfunction()
 
 ########################################################################################################################
@@ -77,22 +63,13 @@ endfunction()
 # a list of other targets that it tests and therefore depends on and the
 # list of its own source files) and configures it with all the necessary flags for building
 #
-function (configure_test_target TARGET_NAME TARGETS_UNDER_TEST SOURCE_FILES)
-    if (NOT BUILD_TESTS)
-        return()
-    endif()
+function (configure_test_target TARGET_NAME SOURCE_FILES)
 
     _private_check_target_source_files(${TARGET_NAME} "${SOURCE_FILES}")
-
-    add_executable(${TARGET_NAME} ${SOURCE_FILES})
 
     add_test(NAME ${TARGET_NAME} COMMAND ${TARGET_NAME} WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
 
     _private_apply_build_options_to_target(${TARGET_NAME})
-
-    get_test_libraries_to_link_against(TEST_LIBRARIES_RESULT)
-
-    target_link_libraries(${TARGET_NAME} PRIVATE ${TEST_LIBRARIES_RESULT} ${TARGETS_UNDER_TEST})
 endfunction()
 
 ########################################################################################################################

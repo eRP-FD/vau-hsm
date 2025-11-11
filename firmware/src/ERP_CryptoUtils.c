@@ -1139,7 +1139,7 @@ unsigned int ConvertTPMT_PUBLICToANSI(T_CMDS_HANDLE* p_hdl,
     if (err == E_ERP_SUCCESS)
     { // Y Coord
         yCoord = &(pubData[offset]);
-        offset += 0x20;
+        // offset += 0x20; // end of data
     }
     if (err == E_ERP_SUCCESS)
     {
@@ -1387,7 +1387,7 @@ unsigned int parseTPMT_Signature(size_t sigLength, unsigned char* pSig, unsigned
     if (err == E_ERP_SUCCESS)
     {
         *ppSigS = pSig + offset;
-        offset += EC_COORD_SIZE / 8; // Should take us to end of data.   (This line left in for future parsing to be added below, someday.)
+        // offset += EC_COORD_SIZE / 8; // Should take us to end of data.   (This line left in for future parsing to be added below, someday.)
     }
     return err;
 }

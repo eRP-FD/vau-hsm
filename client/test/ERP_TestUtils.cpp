@@ -47,7 +47,7 @@ Buffer readERPResourceFile(const std::string& filename, bool bMustExist)
     std::ifstream readFile = std::ifstream(fullFileName, std::ios::in | std::ios::binary);;
     if (bMustExist)
     {
-        EXPECT_TRUE(readFile.is_open());
+        EXPECT_TRUE(readFile.is_open()) << fullFileName;
         if (!readFile.is_open())
         {
             std::cerr << "Test resource file missing: " << filename.c_str() << "\n";
@@ -833,4 +833,42 @@ unsigned int teststep_UnwrapRawPayload(HSMSession sesh, ERPBlob* payloadBlob, Ra
     input.wrappedRawPayload = *payloadBlob;
     *payloadOut = ERP_UnwrapRawPayload(sesh, input);
     return payloadOut->returnCode;
+}
+
+
+unsigned int teststep_UnwrapPseudonameLogKeyPackage(HSMSession sesh, ERPBlob* payloadBlob, RawPayloadOutput* payloadOut)
+{
+    WrappedPayloadInput input{};
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    input.TEEToken = *teeToken;
+    input.wrappedRawPayload = *payloadBlob;
+    *payloadOut = ERP_UnwrapPseudonameLogKeyPackage(sesh, input);
+    return payloadOut->returnCode;
+}
+
+unsigned int teststep_WrapPseudonameLogKey(HSMSession sesh, unsigned int Generation, const unsigned char *pAES128Key, SingleBlobOutput *payloadBlob)
+{
+    AESKey128Input input{};
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    input.TEEToken = *teeToken;
+    input.desiredGeneration = Generation;
+    memcpy(&input.AESKey[0], pAES128Key, AES_128_LEN);
+    *payloadBlob = ERP_WrapPseudonameLogKey(sesh, input);
+    return payloadBlob->returnCode;
+}
+
+unsigned int teststep_UnwrapPseudonameLogKey(HSMSession sesh, ERPBlob* keyBlob, AES128KeyOutput *aesKeyOutput)
+{
+    TwoBlobGetKeyInput input{};
+    // Take the TEEToken from a previous test run:
+    auto teeToken = std::unique_ptr<ERPBlob>(readBlobResourceFile("saved/StaticTEETokenSaved.blob"));
+    EXPECT_NE(nullptr, teeToken);
+    input.TEEToken = *teeToken;
+    input.Key = *keyBlob;
+    *aesKeyOutput = ERP_UnwrapPseudonameLogKey(sesh, input);
+    return aesKeyOutput->returnCode;
 }

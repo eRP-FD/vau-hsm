@@ -362,6 +362,12 @@ typedef struct {
     uint8_t signatureData[MAX_BUFFER];
 } AutSignatureOutput;
 
+typedef struct AESKey128Input_s {
+    ERPBlob TEEToken;
+    uint32_t desiredGeneration; // for output blob
+    uint8_t AESKey[AES_128_LEN];
+} AESKey128Input;
+
 #ifdef __cplusplus
 #define ERP_API_FUNC extern "C"
 #else
@@ -866,6 +872,66 @@ ERP_API_FUNC RawPayloadOutput ERP_UnwrapRawPayload(
 ERP_API_FUNC AutSignatureOutput ERP_SignVAUAUTToken(
     HSMSession sesh,
     AutSignatureInput input);
+
+
+/**
+ * Wrap the given Pseudoname log key package
+ * @pre Requires: 20000000 - Administrator permission.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn with 20000000 Admin permission.
+ * @param input.desiredGeneration               Generation for blob generation
+ * @param input.payloadLen                      length of the data to be wrapped
+ * @param input.rawPayload                      rawPayload data to be wrapped
+ * @return WrappedPayloadOutput.returnCode      0 for no error, error code otherwise
+ *         WrappedPayloadOutput.wrappedRawPayload  wrapped rawPayload blob
+ */
+ERP_API_FUNC SingleBlobOutput ERP_WrapPseudonameLogKeyPackage(
+    HSMSession sesh,
+    RawPayloadInput input);
+
+
+/**
+ * Unwrap the given Pseudoname log key package
+ * @pre Requires: 00000020 ERP Working and a currently valid TEEToken.
+ * @param sesh                                  a valid HSM session, i.e. sesh.status == HSMLoggedIn erp working
+ * @param input.TEEToken                        currently valid TEE Token
+ * @param input.wrappedRawPayload               Wrapped rawPayload as returned by ERP_WrapPayload
+ * @return RawPayloadOutput.returnCode          0 for no error, error code otherwise
+ *         RawPayloadOutput.payloadLen          length of the rawPayload
+ *         RawPayloadOutput.rawPayload          rawPayload data
+ */
+ERP_API_FUNC RawPayloadOutput ERP_UnwrapPseudonameLogKeyPackage(
+    HSMSession sesh,
+    WrappedPayloadInput input);
+
+/**
+ * WrapPseudoname Log Key to be used for pseudonymisation of logs.   This requires a valid TEE Token.
+ *
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param input.TEEToken                          currently valid TEE Token
+ * @param input.desiredGeneration                 desired key generation for wrapped blob
+ * @param input.AESKey                            AES-key to be wrapped
+ * @return SingleBlobOutput.returnCode            0 for no error, error code otherwise
+ *         SingleBlobOutput.BlobOut               Wrapped blob
+ */
+ERP_API_FUNC SingleBlobOutput ERP_WrapPseudonameLogKey(
+    HSMSession sesh,
+    AESKey128Input input
+);
+
+/**
+ * Return the secret value of a Pseudoname Log Key to be used for pseudonymisation of logs.   This requires a valid TEE Token.
+ *
+ * @param sesh                                    a valid HSM session, i.e. sesh.status == HSMLoggedIn with erp working or erp setup
+ * @param input.TEEToken                          currently valid TEE Token
+ * @param input.KeyPair                           ERP Blob containing a Pseudoname Key encrypted AES 256 key which has been generated
+ *                                                  by the ERP_GeneratePseudonameKey method called by the VAU.
+ * @return AES128KeyOutput.returnCode             0 for no error, error code otherwise
+ *         AES128KeyOutput.AESKey                 AES 128 symmetric key
+ */
+ERP_API_FUNC AES128KeyOutput ERP_UnwrapPseudonameLogKey(
+    HSMSession sesh,
+    TwoBlobGetKeyInput input);
+
 
 
 #endif

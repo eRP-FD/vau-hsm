@@ -5,9 +5,10 @@
 
 ########################################################################################################################
 
-# define the name of a new test target
-#
-set(TARGET_NAME "hsmclient-test")
+find_package(csxapi REQUIRED)
+find_package(asn1c REQUIRED)
+find_package(GTest REQUIRED)
+find_package(OpenSSL REQUIRED)
 
 # list its source files
 #
@@ -28,21 +29,23 @@ set(SOURCE_FILES "ERP_AttestTests.cpp"
                  "ERP_TestParams.cpp"
                  "ERP_PseudonameKeyTests.cpp"
                  "ERP_WrapRawPayloadTests.cpp"
+                 ERP_PseudonymLogKeyTests.cpp
                  )
-
-# also list the targets under test (that the test target depends on)
-#
-set(TARGETS_UNDER_TEST "hsmclient")
 
 ########################################################################################################################
 
+add_executable(hsmclient-test ${SOURCE_FILES})
+target_link_libraries(hsmclient-test
+     PRIVATE GTest::gtest GTest::gtest_main OpenSSL::SSL OpenSSL::Crypto hsmclient
+)
 # define and configure the test target by specifying its name,
 # list of targets that it tests and list of its own source files
 #
-configure_test_target(${TARGET_NAME} "${TARGETS_UNDER_TEST}" "${SOURCE_FILES}")
+configure_test_target(hsmclient-test hsmclient "${SOURCE_FILES}")
+
 
 # make the resources needed by the test available at runtime
 #
-copy_test_resources(${TARGET_NAME})
+copy_test_resources(hsmclient-test)
 
 ########################################################################################################################

@@ -250,6 +250,15 @@ unsigned int parseSignVAUAUTTokenRequest(
     unsigned int* pPayloadLen,
     unsigned char** ppPayloadData);
 
+unsigned int parseWrapAES128KeyRequest(
+    int l_cmd,
+    const unsigned char* p_cmd,
+    // All Parameters from here are output:
+    SealedBlob_t** ppTEETokenBlob,
+    unsigned int* pDesiredGeneration,
+    size_t* pAESKeyLen,
+    unsigned char** ppAESKeyData);
+
 // Method to validate an x509 ANSI X9.62 encoded public key.
 // To avoid lots of copying and reallocating, the pointers returned by this method are all
 //   pointing into the original data buffer so do not delete the input buffer until you are
