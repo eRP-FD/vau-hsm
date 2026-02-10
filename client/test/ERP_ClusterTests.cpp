@@ -167,9 +167,9 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     auto pAKPub = readERPResourceFile("AKPub.bin");
     // Outputs
     auto pCredChallengeBlob = getEmptyBlob(Gen);
-    unsigned char encCredentialData[MAX_BUFFER] = "";
+    std::uint8_t encCredentialData[MAX_BUFFER] = "";
     size_t encCredentialLength = 0;
-    unsigned char secretData[MAX_BUFFER] = "";
+    std::uint8_t secretData[MAX_BUFFER] = "";
     size_t secretLength = 0;
     if (err == ERP_ERR_SUCCESS)
     {
@@ -188,16 +188,16 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     }
     if (err == ERP_ERR_NOERROR)
     {
-        writeERPResourceFile("encCredHSM.bin", std::vector<char>(
+        writeERPResourceFile("encCredHSM.bin", std::vector<std::uint8_t>(
             &(encCredentialData[0]), &(encCredentialData[0]) + encCredentialLength));
-        writeERPResourceFile("secretHSM.bin", std::vector<char>(
+        writeERPResourceFile("secretHSM.bin", std::vector<std::uint8_t>(
             &(secretData[0]), &(secretData[0]) + secretLength));
         writeBlobResourceFile("AKChallenge.blob", pCredChallengeBlob.get());
     }
     // 8. getNONCE for TPM Enrollment Quote - do this out of sequence to allow a single manual TPM step.
     NONCEOutput quoteNONCE = ERP_GenerateNONCE(ErpClusterTestFixture::m_logonSession, genIn);
     writeBlobResourceFile("EnrollmentQuoteNONCE.blob", &(quoteNONCE.BlobOut));
-    unsigned char variedEnrollmentNONCE[NONCE_LEN];
+    std::uint8_t variedEnrollmentNONCE[NONCE_LEN];
     // Don't save the NONCE, but save the varied NONCE value instead.
     if (err == ERP_ERR_SUCCESS)
     {
@@ -205,19 +205,19 @@ TEST_F(ErpClusterTestFixture, AttestationSequencePart1)
     }
     if (err == ERP_ERR_SUCCESS)
     {
-        writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<char>(variedEnrollmentNONCE, variedEnrollmentNONCE + 0x20));
+        writeERPResourceFile("EnrollmentQuoteNONCE.bin", std::vector<std::uint8_t>(variedEnrollmentNONCE, variedEnrollmentNONCE + 0x20));
     }
     // 10. get New NONCE for TEE Token request - do this out of sequence to allow a single manual TPM step.
     NONCEOutput attestNONCE = ERP_GenerateNONCE(ErpClusterTestFixture::m_logonSession, genIn);
     writeBlobResourceFile("AttestationQuoteNONCE.Blob", &(attestNONCE.BlobOut));
-    unsigned char variedAttestationNONCE[NONCE_LEN];
+    std::uint8_t variedAttestationNONCE[NONCE_LEN];
     if (err == ERP_ERR_SUCCESS)
     {
         err = varyNONCE("ERP_ATTESTATION", attestNONCE.NONCE, &(variedAttestationNONCE[0]));
     }
     if (err == ERP_ERR_SUCCESS)
     {
-        writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<char>(variedAttestationNONCE, variedAttestationNONCE + 0x20));
+        writeERPResourceFile("AttestationQuoteNONCE.bin", std::vector<std::uint8_t>(variedAttestationNONCE, variedAttestationNONCE + 0x20));
     }
     // 6. Go to TPM to answer challenge...
     // If done, this will create AKChallenge.blob and creddecHSM.bin.   If you wish to use these in the next steps copy
@@ -560,4 +560,11 @@ TEST_F(ErpClusterTestFixture, Permission_GetRNDBytes) {
     rndOut = ERP_GetRNDBytes(ErpClusterTestFixture::m_logonSession, desiredBytes);
     EXPECT_EQ(ERP_ERR_NOERROR, rndOut.returnCode);
     EXPECT_EQ(32, rndOut.RNDDataLen);
+}
+
+TEST_F(ErpClusterTestFixture, DeviceName)
+{
+    const char* dev = ERP_ClusterGetCurrentDevice(m_logonSession);
+    std::cerr << "Current device " << dev << "\n";
+    EXPECT_TRUE(dev != NULL);
 }

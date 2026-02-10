@@ -253,6 +253,30 @@ ERP_API_FUNC HSMSession ERP_ClusterConnect(
     return retVal;
 }
 
+const char* ERP_ClusterGetCurrentDevice(HSMSession sesh)
+{
+    const char* device = NULL;
+    if (sesh.bIsCluster == 0)
+    {
+        return NULL;
+    }
+
+    switch (sesh.status)
+    {
+    case HSMAnonymousOpen:
+    case HSMLoggedIn:
+        device = cs_cluster_get_current_device(sesh.h_cs);
+        break;
+    case HSMUninitialised:
+    case HSMClosed:
+    case HSMLoginFailed:
+    case HSMError:
+        break;
+    }
+
+    return device;
+}
+
 // One of Password or KeySpec must be NULL.
 HSMSession ERP_SingleLogonImplementation(
     HSMSession sesh,

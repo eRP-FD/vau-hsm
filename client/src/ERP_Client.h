@@ -410,6 +410,10 @@ ERP_API_FUNC HSMSession ERP_ClusterConnect(
     unsigned int  reconnect_interval // I: interval after a failover before retrying a connection to the orignal HSM
 );
 
+// Return the current device connected to in the cluster, if any. Otherwise
+// will return NULL
+ERP_API_FUNC const char* ERP_ClusterGetCurrentDevice(HSMSession sesh);
+
 // Logs on a user with a password.
 // The HSMSession value returned replaces the one passed in as an argument - typical invocation
 //   might look like this:

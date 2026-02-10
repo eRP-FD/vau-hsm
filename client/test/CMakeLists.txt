@@ -30,6 +30,7 @@ set(SOURCE_FILES "ERP_AttestTests.cpp"
                  "ERP_PseudonameKeyTests.cpp"
                  "ERP_WrapRawPayloadTests.cpp"
                  ERP_PseudonymLogKeyTests.cpp
+                 ERP_ClusterTests.cpp
                  )
 
 ########################################################################################################################
